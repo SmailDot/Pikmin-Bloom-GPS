@@ -180,7 +180,24 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         binding.btnPause.setOnClickListener { PatrolService.pause(this) }
         binding.btnResume.setOnClickListener { PatrolService.resume(this) }
         binding.btnHome.setOnClickListener { PatrolService.returnHome(this) }
-        binding.btnStop.setOnClickListener { PatrolService.stop(this) }
+        binding.btnStop.setOnClickListener { confirmStop() }
+    }
+
+    /** A plain stop leaves the game at the fake position (looks like a teleport); suggest 回家 first. */
+    private fun confirmStop() {
+        val phase = PatrolService.state.value.phase
+        val movingOrPaused = phase == PatrolPhase.WALKING || phase == PatrolPhase.DWELLING || phase == PatrolPhase.PAUSED
+        if (!movingOrPaused) {
+            PatrolService.stop(this)
+            return
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dlg_stop_title)
+            .setMessage(R.string.dlg_stop_msg)
+            .setPositiveButton(R.string.action_return_home_first) { _, _ -> PatrolService.returnHome(this) }
+            .setNegativeButton(R.string.action_stop_anyway) { _, _ -> PatrolService.stop(this) }
+            .setNeutralButton(R.string.action_cancel, null)
+            .show()
     }
 
     private fun collectFlows() {
@@ -229,16 +246,28 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         }
     }
 
+    private var overlayGeneration = 0L
+
     private fun rebuildOverlays() {
         val waypoints = store.load()
-        overlays.rebuildStatic(waypoints, currentHome, plannedRoute(waypoints))
+        val home = currentHome
+        val generation = ++overlayGeneration
+        // Draw markers/circles immediately; the route preview (planner) is computed off the main thread.
+        overlays.rebuildStatic(waypoints, home, emptyList())
+        if (waypoints.isEmpty()) return
+        lifecycleScope.launch {
+            val route = withContext(Dispatchers.Default) { plannedRoute(waypoints, home) }
+            if (generation == overlayGeneration && route.isNotEmpty()) {
+                overlays.rebuildStatic(waypoints, home, route)
+            }
+        }
     }
 
     /** The route the planner would walk on lap 0, used purely as a preview polyline. */
-    private fun plannedRoute(waypoints: List<Waypoint>): List<GeoPoint> {
+    private fun plannedRoute(waypoints: List<Waypoint>, home: LatLng?): List<GeoPoint> {
         if (waypoints.isEmpty()) return emptyList()
         val config = prefs.config()
-        val start = currentHome ?: waypoints.first().latLng
+        val start = home ?: waypoints.first().latLng
         val plan = runCatching {
             PatrolPlanner.planLap(
                 start = start,
@@ -312,7 +341,8 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         show(binding.btnPause, moving)
         show(binding.btnResume, phase == PatrolPhase.PAUSED)
         show(binding.btnHome, moving || phase == PatrolPhase.PAUSED)
-        show(binding.btnStop, phase != PatrolPhase.IDLE && phase != PatrolPhase.STARTING)
+        // 停止 stays available while STARTING so a slow GPS fix can be aborted.
+        show(binding.btnStop, phase != PatrolPhase.IDLE && phase != PatrolPhase.STOPPING)
     }
 
     private fun renderPosition(state: PatrolState) {
@@ -431,6 +461,20 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     // ------------------------------------------------------------------ import / export
 
     private fun importFrom(uri: Uri) {
+        val existing = store.load().size
+        if (existing > 0) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.dlg_import_replace_title)
+                .setMessage(getString(R.string.dlg_import_replace_msg, existing))
+                .setPositiveButton(R.string.action_replace) { _, _ -> importNow(uri) }
+                .setNegativeButton(R.string.action_cancel, null)
+                .show()
+        } else {
+            importNow(uri)
+        }
+    }
+
+    private fun importNow(uri: Uri) {
         lifecycleScope.launch {
             val text = withContext(Dispatchers.IO) {
                 runCatching {

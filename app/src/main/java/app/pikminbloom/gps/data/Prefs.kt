@@ -38,7 +38,7 @@ class Prefs(context: Context) {
     }
 
     var defaultRadiusM: Double
-        get() = str(KEY_DEFAULT_RADIUS, Waypoint.DEFAULT_RADIUS_M).coerceIn(5.0, 40.0)
+        get() = str(KEY_DEFAULT_RADIUS, Waypoint.DEFAULT_RADIUS_M).coerceIn(8.0, 40.0)
         set(v) = sp.edit { putString(KEY_DEFAULT_RADIUS, v.toString()) }
 
     var defaultDwellSec: Int

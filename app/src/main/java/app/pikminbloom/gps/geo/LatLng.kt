@@ -7,5 +7,5 @@ data class LatLng(val lat: Double, val lon: Double) {
         require(lon in -180.0..180.0) { "lon out of range: $lon" }
     }
 
-    override fun toString(): String = "%.6f,%.6f".format(lat, lon)
+    override fun toString(): String = String.format(java.util.Locale.US, "%.6f,%.6f", lat, lon)
 }

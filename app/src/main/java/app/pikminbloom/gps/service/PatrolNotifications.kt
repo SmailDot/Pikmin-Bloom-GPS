@@ -111,7 +111,7 @@ class PatrolNotifications(private val ctx: Context) {
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
-    private fun service(action: String): PendingIntent = PendingIntent.getService(
+    private fun service(action: String): PendingIntent = PendingIntent.getForegroundService(
         ctx, action.hashCode(),
         Intent(ctx, PatrolService::class.java).setAction(action),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,

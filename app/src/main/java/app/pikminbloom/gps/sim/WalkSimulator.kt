@@ -92,7 +92,8 @@ class WalkSimulator(
         elapsedSec += dt
         if (elapsedSec >= nextSpeedRedrawAt) {
             val j = config.speedJitterPct / 100.0
-            speedFactor = 1.0 + random.nextDouble(-j, j)
+            // Random.nextDouble(from, until) requires until > from, so 0 % jitter must be special-cased.
+            speedFactor = if (j > 1e-9) 1.0 + random.nextDouble(-j, j) else 1.0
             nextSpeedRedrawAt = elapsedSec + random.nextDouble(3.0, 8.0)
         }
         drift()
@@ -118,6 +119,8 @@ class WalkSimulator(
 
         while (remaining > 1e-9 && !finished) {
             val seg = plan.segments[segIdx]
+            // Never consume two arrival points in one tick: each arrival must be reported once.
+            if (arrived != null && seg.arrivalAtEnd) break
             val left = seg.lengthM - distIntoSeg
             val step = min(left, remaining)
             distIntoSeg += step
@@ -174,6 +177,8 @@ class WalkSimulator(
         // Bounded random walks: lateral noise <= 1 m, accuracy inside the band, altitude +-1 m.
         noiseNorthM = (noiseNorthM + random.nextDouble(-0.25, 0.25)).coerceIn(-1.0, 1.0)
         noiseEastM = (noiseEastM + random.nextDouble(-0.25, 0.25)).coerceIn(-1.0, 1.0)
+        val mag = kotlin.math.hypot(noiseNorthM, noiseEastM)
+        if (mag > 1.0) { noiseNorthM /= mag; noiseEastM /= mag }
         accuracy = (accuracy + random.nextDouble(-0.4, 0.4).toFloat())
             .coerceIn(config.accuracyMinM, config.accuracyMaxM)
         altitude = (altitude + random.nextDouble(-0.05, 0.05)).coerceIn(config.altitudeM - 1.0, config.altitudeM + 1.0)

@@ -14,7 +14,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import app.pikminbloom.gps.R
-import app.pikminbloom.gps.data.LoopMode
 import app.pikminbloom.gps.data.PatrolConfig
 import app.pikminbloom.gps.data.PatrolPhase
 import app.pikminbloom.gps.data.PatrolState
@@ -34,6 +33,8 @@ import app.pikminbloom.gps.sim.WalkSimulator
 import app.pikminbloom.gps.steps.StepInjector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,12 +46,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.Executors
 import kotlin.math.floor
 
 /**
  * Foreground service that runs the whole patrol: captures the real position ("home"), installs the
  * mock providers, ticks the [WalkSimulator] once a second, flushes steps to Health Connect and walks
  * back home on request.
+ *
+ * Threading: everything that touches the simulator, the plan or the step accounting runs on the
+ * single-threaded [engine] dispatcher. Control actions arriving on the main thread are posted there.
  */
 class PatrolService : LifecycleService() {
 
@@ -59,6 +64,8 @@ class PatrolService : LifecycleService() {
     private lateinit var mock: MockLocationController
     private lateinit var steps: StepInjector
     private lateinit var notifications: PatrolNotifications
+
+    private val engine = Executors.newSingleThreadExecutor { r -> Thread(r, "PikminGPS-engine") }.asCoroutineDispatcher()
 
     private var config = PatrolConfig()
     private var waypoints: List<Waypoint> = emptyList()
@@ -72,14 +79,22 @@ class PatrolService : LifecycleService() {
     private var lastTickElapsedMs = 0L
     private var lastNotificationMs = 0L
 
-    // Step accounting (all guarded by running on the single tick coroutine).
-    private var stepsAccrued = 0.0        // fractional steps since session start
-    private var stepsFlushed = 0L         // integer steps already handed to Health Connect (or dropped)
+    // Step accounting (engine thread only).
+    private var stepsAccrued = 0.0
+    private var stepsFlushed = 0L
     private var distanceSinceFlush = 0.0
     private var flushWindowStart: Instant = Instant.now()
     private var stepsWrittenToday = 0L
     private var settleTicks = 0
-    private var stopRequested = false
+
+    /** Set (on the engine thread) to make the tick loop exit and run the matching finish sequence. */
+    private sealed class Finish {
+        data object Stop : Finish()
+        data object ReturnedHome : Finish()
+        data class Failed(val message: String) : Finish()
+    }
+    @Volatile private var pendingFinish: Finish? = null
+    @Volatile private var stopRequested = false
 
     override fun onCreate() {
         super.onCreate()
@@ -92,14 +107,22 @@ class PatrolService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        when (intent?.action) {
-            ACTION_START -> handleStart(intent)
-            ACTION_PAUSE -> setPaused(true)
-            ACTION_RESUME -> setPaused(false)
-            ACTION_RETURN_HOME -> beginReturnHome()
-            ACTION_STOP -> requestStop()
-            ACTION_SKIP_WAYPOINT -> skipWaypoint()
-            else -> if (state.value.phase == PatrolPhase.IDLE) stopSelf()
+        val action = intent?.action
+        if (action == ACTION_START) {
+            handleStart(intent)
+            return START_NOT_STICKY
+        }
+        if (state.value.phase == PatrolPhase.IDLE) {
+            // Stale notification action / nothing running: discharge the start obligation and go away.
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        when (action) {
+            ACTION_PAUSE -> lifecycleScope.launch(engine) { setPaused(true) }
+            ACTION_RESUME -> lifecycleScope.launch(engine) { setPaused(false) }
+            ACTION_RETURN_HOME -> lifecycleScope.launch(engine) { beginReturnHome() }
+            ACTION_STOP -> lifecycleScope.launch(engine) { requestStop() }
+            ACTION_SKIP_WAYPOINT -> lifecycleScope.launch(engine) { skipWaypoint() }
         }
         return START_NOT_STICKY
     }
@@ -107,21 +130,28 @@ class PatrolService : LifecycleService() {
     // ------------------------------------------------------------------ start
 
     private fun handleStart(intent: Intent) {
+        // Location permission must exist before startForeground(type = location) on API 34+.
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            _state.update { it.copy(lastError = getString(R.string.svc_err_no_location_permission)) }
+            _events.tryEmit(PatrolEvent.Error(getString(R.string.svc_err_no_location_permission)))
+            notifications.error(getString(R.string.svc_err_no_location_permission))
+            stopSelf()
+            return
+        }
+        // Always satisfy startForegroundService(), even for a duplicate start.
+        if (!goForeground()) return
         if (state.value.phase != PatrolPhase.IDLE) {
             Log.i(TAG, "start ignored: already ${state.value.phase}")
             return
         }
-        // Must happen right away (Android 12+ gives us a few seconds) and before any suspension.
         _state.value = PatrolState(phase = PatrolPhase.STARTING, mockAppSelected = mock.isMockAppSelected())
-        if (!goForeground()) return
+        stopRequested = false
+        pendingFinish = null
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            fail(getString(R.string.svc_err_no_location_permission)); return
-        }
         config = prefs.config()
         waypoints = store.load()
-        if (waypoints.isEmpty()) { fail(getString(R.string.svc_err_no_waypoints)); return }
-        if (!mock.isMockAppSelected()) { fail(getString(R.string.svc_err_not_mock_app)); return }
+        if (waypoints.isEmpty()) { failNow(getString(R.string.svc_err_no_waypoints)); return }
+        if (!mock.isMockAppSelected()) { failNow(getString(R.string.svc_err_not_mock_app)); return }
 
         val overrideHome = if (intent.hasExtra(EXTRA_HOME_LAT) && intent.hasExtra(EXTRA_HOME_LON)) {
             runCatching { LatLng(intent.getDoubleExtra(EXTRA_HOME_LAT, 0.0), intent.getDoubleExtra(EXTRA_HOME_LON, 0.0)) }.getOrNull()
@@ -129,13 +159,18 @@ class PatrolService : LifecycleService() {
         val startIndex = intent.getIntExtra(EXTRA_START_AT_INDEX, 0).coerceIn(0, waypoints.size - 1)
         acquireWakeLock()
 
-        lifecycleScope.launch(Dispatchers.Default) {
+        lifecycleScope.launch(engine) {
             try {
+                // A crashed/killed previous run may have left test providers installed; they would
+                // make every "real" fix look mocked, so clear them before capturing home.
+                mock.stop()
                 val h = overrideHome ?: mock.currentRealLocation(20_000)
-                if (h == null) { withContext(Dispatchers.Main) { fail(getString(R.string.svc_err_no_home)) }; return@launch }
+                if (stopRequested) { failNow(getString(R.string.svc_phase_stopping), silent = true); return@launch }
+                if (h == null) { failNow(getString(R.string.svc_err_no_home)); return@launch }
                 home = h
                 prefs.home = h
                 stepsWrittenToday = if (config.injectSteps && steps.isAvailable) steps.stepsWrittenByUsToday() else 0L
+                if (stopRequested) { failNow(getString(R.string.svc_phase_stopping), silent = true); return@launch }
                 mock.start(config)   // throws MockNotAllowedException
                 sim = WalkSimulator(config)
                 lap = 0
@@ -152,12 +187,13 @@ class PatrolService : LifecycleService() {
                         currentWaypointName = plan.segments.firstOrNull()?.waypointIndex?.let { i -> waypoints.getOrNull(i)?.name },
                     )
                 }
+                lastNotificationMs = 0
                 startTicking()
             } catch (e: MockNotAllowedException) {
-                withContext(Dispatchers.Main) { fail(e.message ?: getString(R.string.svc_err_not_mock_app)) }
+                failNow(e.message ?: getString(R.string.svc_err_not_mock_app))
             } catch (t: Throwable) {
                 Log.e(TAG, "start failed", t)
-                withContext(Dispatchers.Main) { fail(t.message ?: "start failed") }
+                failNow(t.message ?: "start failed")
             }
         }
     }
@@ -168,7 +204,7 @@ class PatrolService : LifecycleService() {
         true
     } catch (t: Throwable) {
         Log.e(TAG, "startForeground failed", t)
-        fail(t.message ?: "startForeground failed")
+        failNow(t.message ?: "startForeground failed")
         false
     }
 
@@ -180,21 +216,24 @@ class PatrolService : LifecycleService() {
         Log.i(TAG, "lap $lap loaded: ${plan.segments.size} segments, ${"%.0f".format(plan.totalLengthM)} m")
     }
 
-    // ------------------------------------------------------------------ tick loop
+    // ------------------------------------------------------------------ tick loop (engine thread)
 
     private fun startTicking() {
         tickJob?.cancel()
         lastTickElapsedMs = SystemClock.elapsedRealtime()
-        tickJob = lifecycleScope.launch(Dispatchers.Default) {
-            while (isActive) {
+        tickJob = lifecycleScope.launch(engine) {
+            while (isActive && pendingFinish == null) {
                 try {
                     tick()
                 } catch (t: Throwable) {
                     Log.e(TAG, "tick failed", t)
                     _state.update { it.copy(lastError = t.message) }
                 }
+                if (pendingFinish != null) break
                 delay(config.tickMs)
             }
+            val finish = pendingFinish ?: return@launch
+            withContext(NonCancellable) { runFinish(finish) }
         }
     }
 
@@ -202,21 +241,17 @@ class PatrolService : LifecycleService() {
         val nowMs = SystemClock.elapsedRealtime()
         val dt = ((nowMs - lastTickElapsedMs) / 1000.0).coerceIn(0.0, 3.0)
         lastTickElapsedMs = nowMs
-        val phase = state.value.phase
 
-        when (phase) {
-            PatrolPhase.PAUSED -> {
-                mock.push(sim.current())
-            }
+        when (state.value.phase) {
+            PatrolPhase.PAUSED -> mock.push(sim.current())
             PatrolPhase.WALKING, PatrolPhase.DWELLING -> {
                 val s = sim.advance(dt)
                 mock.push(s)
                 account(s)
                 if (s.arrivedAtWaypoint != null) onArrived(s.arrivedAtWaypoint)
-                val newPhase = phaseFor(s.kind)
                 _state.update {
                     it.copy(
-                        phase = newPhase, position = s.position, speedMps = s.speedMps,
+                        phase = phaseFor(s.kind), position = s.position, speedMps = s.speedMps,
                         currentWaypointIndex = s.waypointIndex ?: it.currentWaypointIndex,
                         currentWaypointName = s.waypointIndex?.let { i -> waypoints.getOrNull(i)?.name } ?: it.currentWaypointName,
                         distanceToTargetM = distanceToTarget(s),
@@ -225,12 +260,12 @@ class PatrolService : LifecycleService() {
                 if (s.lapFinished) onLapFinished(s)
             }
             PatrolPhase.RETURNING_HOME -> {
-                val h = home ?: run { finishStop(); return }
+                val h = home ?: run { pendingFinish = Finish.Stop; return }
                 if (config.returnMode == ReturnMode.TELEPORT || sim.finished) {
                     mock.pushRaw(h, accuracyM = 5f, altitudeM = config.altitudeM)
                     _state.update { it.copy(position = h, speedMps = 0.0, distanceToTargetM = 0.0) }
                     settleTicks++
-                    if (settleTicks >= SETTLE_TICKS) { finishReturnHome() }
+                    if (settleTicks >= SETTLE_TICKS) pendingFinish = Finish.ReturnedHome
                 } else {
                     val s = sim.advance(dt)
                     mock.push(s)
@@ -243,9 +278,20 @@ class PatrolService : LifecycleService() {
             else -> Unit
         }
 
-        maybeFlushSteps(force = false)
+        if (pendingFinish == null) maybeFlushSteps(force = false)
         maybeUpdateNotification()
-        if (stopRequested && phase != PatrolPhase.STOPPING) finishStop()
+    }
+
+    private suspend fun runFinish(finish: Finish) {
+        _state.update { it.copy(phase = PatrolPhase.STOPPING) }
+        runCatching { maybeFlushSteps(force = true) }.onFailure { Log.w(TAG, "final flush failed", it) }
+        mock.stop()
+        when (finish) {
+            Finish.ReturnedHome -> { notifications.returnedHome(); _events.tryEmit(PatrolEvent.ReturnedHome) }
+            Finish.Stop -> _events.tryEmit(PatrolEvent.Stopped)
+            is Finish.Failed -> { _events.tryEmit(PatrolEvent.Error(finish.message)); notifications.error(finish.message) }
+        }
+        withContext(Dispatchers.Main) { teardown((finish as? Finish.Failed)?.message) }
     }
 
     private fun account(s: Sample) {
@@ -286,7 +332,7 @@ class PatrolService : LifecycleService() {
         }
     }
 
-    // ------------------------------------------------------------------ steps
+    // ------------------------------------------------------------------ steps (engine thread)
 
     private suspend fun maybeFlushSteps(force: Boolean) {
         val now = Instant.now()
@@ -300,23 +346,22 @@ class PatrolService : LifecycleService() {
         }
         val room = (config.dailyStepCap - stepsWrittenToday).coerceAtLeast(0)
         val toWrite = minOf(pending, room)
-        val distance = if (pending > 0) distanceSinceFlush * (toWrite.toDouble() / pending) else 0.0
+        val distance = distanceSinceFlush * (toWrite.toDouble() / pending)
         val ok = if (toWrite > 0) steps.write(flushWindowStart, now, toWrite, distance) else true
         if (ok) {
             stepsWrittenToday += toWrite
-            stepsFlushed += pending           // steps beyond the cap are dropped on purpose
+            stepsFlushed += pending           // steps beyond the daily cap are dropped on purpose
             flushWindowStart = now
             distanceSinceFlush = 0.0
             _state.update { it.copy(stepsWrittenToday = stepsWrittenToday) }
             if (toWrite > 0) _events.tryEmit(PatrolEvent.StepsWritten(toWrite, stepsWrittenToday))
         } else if (windowSec > 45 * 60) {
-            // Health Connect keeps failing: drop the oversized window rather than write a 1 h blob later.
             Log.w(TAG, "dropping $pending steps: Health Connect unavailable for ${windowSec}s")
             stepsFlushed += pending; flushWindowStart = now; distanceSinceFlush = 0.0
         }
     }
 
-    // ------------------------------------------------------------------ control
+    // ------------------------------------------------------------------ control (engine thread)
 
     private fun setPaused(paused: Boolean) {
         val p = state.value.phase
@@ -344,7 +389,8 @@ class PatrolService : LifecycleService() {
     private fun beginReturnHome() {
         val p = state.value.phase
         if (p == PatrolPhase.IDLE || p == PatrolPhase.RETURNING_HOME || p == PatrolPhase.STOPPING) return
-        val h = home ?: return requestStop()
+        if (p == PatrolPhase.STARTING) { requestStop(); return }
+        val h = home ?: run { requestStop(); return }
         val from = sim.current().position
         settleTicks = 0
         if (config.returnMode == ReturnMode.WALK) {
@@ -359,46 +405,27 @@ class PatrolService : LifecycleService() {
         Log.i(TAG, "returning home (${config.returnMode}) from $from to $h, ${"%.0f".format(GeoMath.distanceM(from, h))} m")
     }
 
-    private fun finishReturnHome() {
-        lifecycleScope.launch(Dispatchers.Default) {
-            _state.update { it.copy(phase = PatrolPhase.STOPPING) }
-            tickJob?.cancel()
-            maybeFlushSteps(force = true)
-            mock.stop()
-            notifications.returnedHome()
-            _events.tryEmit(PatrolEvent.ReturnedHome)
-            withContext(Dispatchers.Main) { teardown() }
-        }
-    }
-
     private fun requestStop() {
-        val p = state.value.phase
-        if (p == PatrolPhase.IDLE) { stopSelf(); return }
-        if (p == PatrolPhase.STARTING) { stopRequested = true; return }
-        finishStop()
-    }
-
-    private fun finishStop() {
-        if (state.value.phase == PatrolPhase.STOPPING) return
-        _state.update { it.copy(phase = PatrolPhase.STOPPING) }
-        lifecycleScope.launch(Dispatchers.Default) {
-            tickJob?.cancel()
-            maybeFlushSteps(force = true)
-            mock.stop()
-            _events.tryEmit(PatrolEvent.Stopped)
-            withContext(Dispatchers.Main) { teardown() }
+        when (state.value.phase) {
+            PatrolPhase.IDLE -> stopSelf()
+            PatrolPhase.STARTING -> stopRequested = true      // start coroutine checks this at its next step
+            PatrolPhase.STOPPING -> Unit
+            else -> if (pendingFinish == null) pendingFinish = Finish.Stop
         }
     }
 
-    private fun fail(message: String) {
+    /** Immediate failure before the tick loop exists (start path). Safe from any thread. */
+    private fun failNow(message: String, silent: Boolean = false) {
         Log.w(TAG, "fail: $message")
-        _state.update { it.copy(phase = PatrolPhase.STOPPING, lastError = message) }
-        _events.tryEmit(PatrolEvent.Error(message))
-        notifications.error(message)
-        lifecycleScope.launch(Dispatchers.Default) {
+        _state.update { it.copy(phase = PatrolPhase.STOPPING, lastError = if (silent) null else message) }
+        if (!silent) {
+            _events.tryEmit(PatrolEvent.Error(message))
+            notifications.error(message)
+        }
+        lifecycleScope.launch(engine) {
             tickJob?.cancel()
             mock.stop()
-            withContext(Dispatchers.Main) { teardown(keepError = message) }
+            withContext(Dispatchers.Main) { teardown(if (silent) null else message) }
         }
     }
 
@@ -414,6 +441,7 @@ class PatrolService : LifecycleService() {
             healthConnectReady = steps.isAvailable,
         )
         stopRequested = false
+        pendingFinish = null
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -451,6 +479,7 @@ class PatrolService : LifecycleService() {
             _state.value = PatrolState(home = prefs.home, mockAppSelected = mock.isMockAppSelected(), healthConnectReady = steps.isAvailable)
         }
         releaseWakeLock()
+        engine.close()
         super.onDestroy()
     }
 
@@ -487,13 +516,17 @@ class PatrolService : LifecycleService() {
             ContextCompat.startForegroundService(context, i)
         }
 
-        fun pause(context: Context) = context.startService(intent(context, ACTION_PAUSE))
-        fun resume(context: Context) = context.startService(intent(context, ACTION_RESUME))
-        fun returnHome(context: Context) = context.startService(intent(context, ACTION_RETURN_HOME))
-        fun stop(context: Context) = context.startService(intent(context, ACTION_STOP))
-        fun skipWaypoint(context: Context) = context.startService(intent(context, ACTION_SKIP_WAYPOINT))
+        private fun send(context: Context, action: String) {
+            // The service is a running foreground service whenever these make sense; when it is not,
+            // onStartCommand stops itself immediately, which also discharges the start obligation.
+            runCatching { ContextCompat.startForegroundService(context, intent(context, action)) }
+                .onFailure { Log.w(TAG, "send $action failed: ${it.message}") }
+        }
 
-        @Suppress("unused")
-        private val loopModes = LoopMode.entries
+        fun pause(context: Context) = send(context, ACTION_PAUSE)
+        fun resume(context: Context) = send(context, ACTION_RESUME)
+        fun returnHome(context: Context) = send(context, ACTION_RETURN_HOME)
+        fun stop(context: Context) = send(context, ACTION_STOP)
+        fun skipWaypoint(context: Context) = send(context, ACTION_SKIP_WAYPOINT)
     }
 }

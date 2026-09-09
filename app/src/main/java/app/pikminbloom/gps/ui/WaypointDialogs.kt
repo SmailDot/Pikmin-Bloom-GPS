@@ -19,7 +19,7 @@ import java.util.UUID
 /** Add / edit / reorder dialogs for Big Flower waypoints. Pure UI: everything persists via [WaypointStore]. */
 object WaypointDialogs {
 
-    private const val MIN_RADIUS_M = 5.0
+    private const val MIN_RADIUS_M = 8.0
     private const val MAX_RADIUS_M = 40.0
     private const val MIN_DWELL_SEC = 0
     private const val MAX_DWELL_SEC = 1800

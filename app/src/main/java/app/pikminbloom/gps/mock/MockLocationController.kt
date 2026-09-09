@@ -98,6 +98,10 @@ class MockLocationController(context: Context) {
     fun start(config: PatrolConfig) {
         val manager = lm ?: throw MockNotAllowedException("LocationManager unavailable")
         activeProviders.clear()
+        lastFlpError = null
+        // Belt and braces: a crashed previous run may have left providers behind. Only meaningful
+        // while we are the selected mock app (the call is a no-op / SecurityException otherwise).
+        for (provider in ALL_PROVIDERS) runCatching { manager.removeTestProvider(provider) }
 
         val wanted = buildList {
             add(LocationManager.GPS_PROVIDER)
@@ -143,13 +147,21 @@ class MockLocationController(context: Context) {
             try {
                 fused.setMockMode(true)
                     .addOnSuccessListener { flpMockEnabled = true; Log.i(TAG, "FLP mock mode on") }
-                    .addOnFailureListener { Log.w(TAG, "FLP setMockMode(true) failed: ${it.message}") }
-                flpMockEnabled = true
+                    .addOnFailureListener {
+                        flpMockEnabled = false
+                        lastFlpError = it.message
+                        Log.w(TAG, "FLP setMockMode(true) failed: ${it.message}")
+                    }
             } catch (t: Throwable) {
+                lastFlpError = t.message
                 Log.w(TAG, "FLP setMockMode threw", t)
             }
         }
     }
+
+    /** Last Fused Location Provider mock-mode failure, if any (null when everything worked). */
+    @Volatile var lastFlpError: String? = null
+        private set
 
     private fun addTestProvider(manager: LocationManager, provider: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -249,15 +261,13 @@ class MockLocationController(context: Context) {
     fun stop() {
         val manager = lm
         if (manager != null) {
-            for (provider in activeProviders) {
+            // Remove every provider we may own, including ones left by a killed earlier process
+            // (activeProviders is empty after a restart). Harmless when nothing is installed.
+            val toRemove = if (activeProviders.isEmpty()) ALL_PROVIDERS else activeProviders.toList()
+            for (provider in toRemove) {
                 runCatching { manager.setTestProviderEnabled(provider, false) }
-                    .onFailure { Log.w(TAG, "disable $provider: ${it.message}") }
                 runCatching { manager.removeTestProvider(provider) }
                     .onFailure { Log.w(TAG, "remove $provider: ${it.message}") }
-            }
-            // Belt and braces: a crashed previous run may have left providers behind.
-            for (provider in ALL_PROVIDERS) {
-                if (provider !in activeProviders) runCatching { manager.removeTestProvider(provider) }
             }
         }
         activeProviders.clear()
@@ -285,19 +295,23 @@ class MockLocationController(context: Context) {
             Log.w(TAG, "currentRealLocation: no ACCESS_FINE_LOCATION")
             return null
         }
-        val fromFlp = withTimeoutOrNull(timeoutMs) {
-            val cts = CancellationTokenSource()
-            val fresh = try {
-                awaitTask(fused.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token))
-            } catch (t: Throwable) {
-                Log.w(TAG, "getCurrentLocation failed", t); null
-            }
-            fresh?.takeIf { !it.isMockFix() }?.toLatLng()
-                ?: try {
-                    awaitTask(fused.lastLocation)?.takeIf { !it.isMockFix() }?.toLatLng()
+        val cts = CancellationTokenSource()
+        val fromFlp = try {
+            withTimeoutOrNull(timeoutMs) {
+                val fresh = try {
+                    awaitTask(fused.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token))
                 } catch (t: Throwable) {
-                    Log.w(TAG, "lastLocation failed", t); null
+                    Log.w(TAG, "getCurrentLocation failed", t); null
                 }
+                fresh?.takeIf { !it.isMockFix() }?.toLatLng()
+                    ?: try {
+                        awaitTask(fused.lastLocation)?.takeIf { !it.isMockFix() }?.toLatLng()
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "lastLocation failed", t); null
+                    }
+            }
+        } finally {
+            cts.cancel()   // stop the high-accuracy request when we time out or get cancelled
         }
         return fromFlp ?: lastKnownFromManager()
     }

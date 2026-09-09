@@ -117,7 +117,7 @@ class WaypointStore private constructor(context: Context) {
                                     id = UUID.randomUUID().toString(),
                                     name = name?.takeIf { it.isNotBlank() } ?: "大花 ${out.size + fallback.size + 1}",
                                     lat = la, lon = lo,
-                                    radiusM = radius.coerceIn(5.0, 40.0),
+                                    radiusM = radius.coerceIn(8.0, 40.0),
                                     dwellSec = dwell.coerceIn(0, 1800),
                                 )
                                 if (n == "wpt") out.add(wp) else fallback.add(wp)
@@ -169,7 +169,7 @@ class WaypointStore private constructor(context: Context) {
                     id = o.optString("id").takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
                     name = o.optString("name").takeIf { it.isNotBlank() } ?: "大花 ${i + 1}",
                     lat = lat, lon = lon,
-                    radiusM = o.optDouble("radiusM", Waypoint.DEFAULT_RADIUS_M).coerceIn(5.0, 40.0),
+                    radiusM = o.optDouble("radiusM", Waypoint.DEFAULT_RADIUS_M).coerceIn(8.0, 40.0),
                     dwellSec = o.optInt("dwellSec", Waypoint.DEFAULT_DWELL_SEC).coerceIn(0, 1800),
                 )
             )

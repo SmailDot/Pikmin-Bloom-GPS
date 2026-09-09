@@ -52,11 +52,11 @@
     <string name="dlg_add_waypoint_title">新增大花</string>
     <string name="dlg_edit_waypoint_title">編輯大花</string>
     <string name="hint_waypoint_name">名稱</string>
-    <string name="hint_waypoint_radius">繞行半徑（公尺，5–40）</string>
+    <string name="hint_waypoint_radius">繞行半徑（公尺，8–40）</string>
     <string name="hint_waypoint_dwell">停留秒數（0–1800）</string>
     <string name="label_coords">座標：%1$s</string>
     <string name="err_name_required">請輸入名稱</string>
-    <string name="err_radius_range">半徑需介於 5 到 40 公尺</string>
+    <string name="err_radius_range">半徑需介於 8 到 40 公尺</string>
     <string name="err_dwell_range">停留秒數需介於 0 到 1800</string>
     <string name="default_waypoint_name">大花 %1$d</string>
 
@@ -69,6 +69,14 @@
     <string name="action_move_down">下移</string>
     <string name="action_start_here">從這裡開始巡邏</string>
     <string name="action_add_waypoint">新增大花</string>
+
+    <string name="dlg_stop_title">直接停止？</string>
+    <string name="dlg_stop_msg">直接停止會讓遊戲下一秒看到你回到真實位置，看起來像瞬移。建議先按「回家」走回去，到家後會自動解除模擬。</string>
+    <string name="action_return_home_first">先回家</string>
+    <string name="action_stop_anyway">直接停止</string>
+    <string name="dlg_import_replace_title">取代目前的大花清單？</string>
+    <string name="dlg_import_replace_msg">匯入會取代目前的 %1$d 個大花，此動作無法復原。</string>
+    <string name="action_replace">取代</string>
 
     <string name="title_waypoint_list">大花清單</string>
     <string name="waypoint_list_empty">還沒有大花。在地圖上長按即可新增。</string>

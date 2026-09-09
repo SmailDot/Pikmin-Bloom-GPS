@@ -3,6 +3,9 @@ package app.pikminbloom.gps
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.util.Log
+import app.pikminbloom.gps.mock.MockLocationController
+import app.pikminbloom.gps.service.PatrolService
 import com.google.android.material.color.DynamicColors
 import org.osmdroid.config.Configuration
 
@@ -20,6 +23,21 @@ class PikminGpsApp : Application() {
         }
 
         createNotificationChannels()
+        cleanupStaleMockProviders()
+    }
+
+    /**
+     * If the previous process died mid-patrol, its test providers are still installed and the phone's
+     * GPS is frozen at the last fake position for every app. Remove them as early as possible.
+     */
+    private fun cleanupStaleMockProviders() {
+        if (PatrolService.isRunning) return
+        try {
+            val mock = MockLocationController(this)
+            if (mock.isMockAppSelected()) mock.stop()
+        } catch (t: Throwable) {
+            Log.w("PikminGPS", "stale mock cleanup failed", t)
+        }
     }
 
     private fun createNotificationChannels() {
