@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory/>
+    <PreferenceCategory
+        android:title="@string/preferences_downloadSettings_Title"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false">
+
+        <SwitchPreferenceCompat
+            android:key="customTabsOff"
+            android:title="@string/preferences_customTabsOff_Title"
+            android:icon="@drawable/baseline_open_in_browser_24"
+            app:summary="@string/preferences_customTabsOff_Summary"
+            android:persistent="true"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="allow_download_on_non_arm64"
+            android:title="@string/preferences_allow_download_on_non_arm64_Title"
+            android:icon="@drawable/ic_baseline_browser_updated_24"
+            app:summary="@string/preferences_allow_download_on_non_arm64_Summary"
+            android:persistent="true"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/preferences_locationSettings_Title"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false">
+
+        <Preference
+            android:key="location_accuracy"
+            android:title="@string/preferences_location_accuracy_Title"
+            android:icon="@drawable/ic_baseline_share_location_24"
+            app:summary="@string/preferences_location_accuracy_Summary" />
+
+        <SwitchPreferenceCompat
+            android:key="location_check_A12"
+            android:title="@string/preferences_location_check_A12_Title"
+            android:icon="@drawable/baseline_not_listed_location_24"
+            app:summary="@string/preferences_location_check_A12_Summary"
+            android:persistent="true"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="location_accuracy_check"
+            android:title="@string/preferences_location_accuracy_check_Title"
+            android:icon="@drawable/baseline_notifications_off_24"
+            app:summary="@string/preferences_location_accuracy_check_Summary"
+            android:persistent="true"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/preferences_pokeSettings_Title"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false">
+
+        <Preference
+            android:key="disable_auto_update_pok"
+            android:title="@string/preferences_disable_auto_update_pok_Title"
+            android:icon="@drawable/ic_baseline_sync_disabled_24"
+            app:summary="@string/preferences_disable_auto_update_pok_Summary" />
+
+        <SwitchPreferenceCompat
+            android:key="pok_download_on_apkmirror"
+            android:title="@string/preferences_pok_download_on_apkmirror_Title"
+            android:icon="@drawable/ic_baseline_download_24"
+            app:summary="@string/preferences_pok_download_on_apkmirror_Summary"
+            android:persistent="true"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="allow_download_on_non_samsung"
+            android:title="@string/preferences_allow_download_on_non_samsung_Title"
+            android:icon="@drawable/ic_baseline_download_24"
+            app:summary="@string/preferences_allow_download_on_non_samsung_Summary"
+            android:persistent="true"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pgtools_testversion"
+            android:title="@string/preferences_pgtools_testversion_Title"
+            android:icon="@drawable/ic_baseline_download_24"
+            app:summary="@string/preferences_pgtools_testversion_Summary"
+            android:persistent="true"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/preferences_mhnSettings_Title"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false">
+
+        <Preference
+            android:key="disable_auto_update_mhn"
+            android:title="@string/preferences_disable_auto_update_mhn_Title"
+            android:icon="@drawable/ic_baseline_sync_disabled_24"
+            app:summary="@string/preferences_disable_auto_update_mhn_Summary" />
+
+        <SwitchPreferenceCompat
+            android:key="mhn_download_on_apkmirror"
+            android:title="@string/preferences_mhn_download_on_apkmirror_Title"
+            android:icon="@drawable/ic_baseline_download_24"
+            app:summary="@string/preferences_mhn_download_on_apkmirror_Summary"
+            android:persistent="true"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="mhntools_testversion"
+            android:title="@string/preferences_mhntools_testversion_Title"
+            android:icon="@drawable/ic_baseline_download_24"
+            app:summary="@string/preferences_mhntools_testversion_Summary"
+            android:persistent="true"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/about"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false">
+
+        <Preference
+            android:key="shopee"
+            android:title="@string/preferences_about_shopee_title"
+            android:icon="@drawable/ic_baseline_shopping_bag_24"
+            app:summary="@string/preferences_about_shopee_summary" />
+
+        <Preference
+            android:key="facebook"
+            android:title="@string/preferences_about_facebook_title"
+            android:icon="@drawable/ic_baseline_email_24"
+            app:summary="@string/preferences_about_facebook_summary" />
+
+        <Preference
+            android:key="discord"
+            android:title="@string/preferences_about_discord_title"
+            android:icon="@drawable/ic_baseline_mark_unread_chat_alt_24"
+            app:summary="@string/preferences_about_discord_summary" />
+
+        <Preference
+            android:key="github"
+            android:title="@string/preferences_about_github_title"
+            android:icon="@drawable/ic_baseline_code_24" />
+
+        <Preference
+            android:key="app"
+            android:title="@string/preferences_about_app_title"
+            android:icon="@drawable/ic_baseline_info_24"
+            app:summary="" />
+    </PreferenceCategory>
+</PreferenceScreen>

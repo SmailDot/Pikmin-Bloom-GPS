@@ -1,0 +1,103 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id "com.google.protobuf" version "0.9.5"
+}
+
+android {
+    compileSdk 37
+
+    defaultConfig {
+        applicationId "app.lokey0905.location"
+        minSdk 28
+        targetSdkVersion compileSdk
+        versionCode 3
+        versionName "2.28"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags ''
+                arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    buildFeatures {
+        buildConfig true
+        viewBinding true
+        aidl true
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/INDEX.LIST', 'META-INF/io.netty.versions.properties', 'META-INF/META-INF/DEPENDENCIES', 'META-INF/DEPENDENCIES']
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file('CMakeLists.txt')
+            version '3.18.1'
+        }
+    }
+    namespace 'app.lokey0905.location'
+
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:4.32.0'
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java {
+                    option 'lite'
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.browser:browser:1.10.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'androidx.core:core-ktx:1.18.0'
+    implementation 'androidx.compose.material3:material3:1.4.0'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.9.8'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.9.8'
+    implementation 'androidx.preference:preference-ktx:1.2.1'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.2.0'
+
+    implementation 'com.google.android.material:material:1.13.0'
+    implementation 'com.google.android.gms:play-services-ads:25.2.0'
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
+    implementation 'com.google.protobuf:protobuf-javalite:4.34.1'
+
+    implementation 'com.onesignal:OneSignal:5.7.7'
+    implementation 'com.hendraanggrian.material:collapsingtoolbarlayout-subtitle:1.5.0'
+    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20260719'
+}
