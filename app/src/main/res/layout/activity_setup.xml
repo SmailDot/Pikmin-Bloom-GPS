@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:title="@string/title_setup" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/space_l"
+        android:paddingTop="@dimen/space_s"
+        android:paddingEnd="@dimen/space_l"
+        android:paddingBottom="@dimen/space_xl">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_m"
+                android:text="@string/setup_header"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+            <include
+                android:id="@+id/rowLocation"
+                layout="@layout/item_setup_row" />
+
+            <include
+                android:id="@+id/rowNotification"
+                layout="@layout/item_setup_row" />
+
+            <include
+                android:id="@+id/rowMock"
+                layout="@layout/item_setup_row" />
+
+            <include
+                android:id="@+id/rowHealth"
+                layout="@layout/item_setup_row" />
+
+            <include
+                android:id="@+id/rowBattery"
+                layout="@layout/item_setup_row" />
+
+            <include
+                android:id="@+id/rowGame"
+                layout="@layout/item_setup_row" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>
