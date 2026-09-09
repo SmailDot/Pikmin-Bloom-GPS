@@ -15,5 +15,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "location"
+rootProject.name = "PikminBloomGPS"
 include ':app'

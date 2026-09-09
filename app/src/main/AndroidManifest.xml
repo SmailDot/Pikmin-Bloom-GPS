@@ -2,18 +2,42 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Map tiles (OpenStreetMap) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Real position ("home") capture + mock providers -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="QueryAllPackagesPermission" />
-    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
-    <uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT" />
+    <!-- Declaring this makes the app appear in Developer options > "Select mock location app". -->
+    <uses-permission
+        android:name="android.permission.ACCESS_MOCK_LOCATION"
+        tools:ignore="MockLocation,ProtectedPermissions" />
+
+    <!-- Foreground patrol service -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Health Connect: steps / distance written while patrolling -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.WRITE_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <uses-permission android:name="android.permission.health.WRITE_DISTANCE" />
+
+    <queries>
+        <!-- Health Connect app (Android 13-) and system module (Android 14+) -->
+        <package android:name="com.google.android.apps.healthdata" />
+        <package android:name="com.google.android.healthconnect.controller" />
+        <!-- Pikmin Bloom, so we can offer a "open the game" shortcut -->
+        <package android:name="com.nianticlabs.pikmin" />
+    </queries>
 
     <application
-        android:name=".LocationApp"
+        android:name=".PikminGpsApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -21,44 +45,58 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.DynamicColors"
-        tools:targetApi="31" >
-        <receiver
-            android:name=".widget.LocationAccuracyActivity"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/locationaccuracyactivity_info" />
-        </receiver>
+        android:theme="@style/Theme.PikminGps"
+        tools:targetApi="31">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="true"
-            android:label="@string/app_name">
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.CREATE_SHORTCUT" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-            <meta-data android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
         </activity>
 
-        <service
-            android:name=".IsolatedService"
+        <activity
+            android:name=".ui.SettingsActivity"
             android:exported="false"
-            android:isolatedProcess="true"
-            android:useAppZygote="true" />
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-9117573027413270~1732244523" />
+            android:label="@string/title_settings"
+            android:parentActivityName=".ui.MainActivity" />
+
+        <activity
+            android:name=".ui.SetupActivity"
+            android:exported="false"
+            android:label="@string/title_setup"
+            android:parentActivityName=".ui.MainActivity" />
+
+        <!-- Health Connect permission rationale (Android 13 and below open this via the HC app) -->
+        <activity
+            android:name=".ui.HealthRationaleActivity"
+            android:exported="true"
+            android:label="@string/title_health_rationale">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Android 14+ opens the rationale through this alias -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+            android:targetActivity=".ui.HealthRationaleActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
+
+        <service
+            android:name=".service.PatrolService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
     </application>
 
 </manifest>

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="green">#3DDC84</color>
+    <color name="ic_launcher_background">#FF2E7D32</color>
     <color name="ic_launcher_foreground">@android:color/white</color>
-    <color name="light_blue_50">#FFE1F5FE</color>
-    <color name="light_blue_200">#FF81D4FA</color>
-    <color name="light_blue_600">#FF039BE5</color>
-    <color name="light_blue_900">#FF01579B</color>
+    <color name="petal_pink">#FFF48FB1</color>
+    <color name="petal_center">#FFFFD54F</color>
+    <color name="route_line">#CC1E88E5</color>
+    <color name="orbit_circle">#334CAF50</color>
+    <color name="home_marker">#FFE53935</color>
 </resources>
