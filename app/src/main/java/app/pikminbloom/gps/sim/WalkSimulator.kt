@@ -23,6 +23,8 @@ data class Sample(
     val arrivedAtWaypoint: Int?,
     /** True on the sample that reaches the end of the loaded plan. */
     val lapFinished: Boolean,
+    /** False on vehicle legs: distance still accrues, but no steps are written for it. */
+    val countsSteps: Boolean = true,
     /** Progress along the plan in metres (exact, without lateral noise). */
     val progressM: Double = 0.0,
 )
@@ -111,20 +113,25 @@ class WalkSimulator(
             return lastSample
         }
 
-        val speed = targetSpeed * speedFactor
-        var remaining = speed * dt
+        // Time, not distance, is what a tick actually spends. Legs can have very different speeds
+        // (a highway leg followed by a walk), so crossing from one into the next mid-tick must
+        // switch to the new leg's speed instead of finishing the tick at the old one.
+        var remainingTime = dt
         var moved = 0.0
         var arrived: Int? = null
         var lapDone = false
+        var lastLegSpeed = 0.0
 
-        while (remaining > 1e-9 && !finished) {
+        while (remainingTime > 1e-9 && !finished) {
             val seg = plan.segments[segIdx]
             // Never consume two arrival points in one tick: each arrival must be reported once.
             if (arrived != null && seg.arrivalAtEnd) break
+            val legSpeed = ((seg.travelMode?.speedMps ?: targetSpeed) * speedFactor).coerceAtLeast(1e-6)
+            lastLegSpeed = legSpeed
             val left = seg.lengthM - distIntoSeg
-            val step = min(left, remaining)
+            val step = min(left, legSpeed * remainingTime)
             distIntoSeg += step
-            remaining -= step
+            remainingTime -= step / legSpeed
             moved += step
             progress += step
             if (distIntoSeg >= seg.lengthM - 1e-9) {
@@ -150,7 +157,9 @@ class WalkSimulator(
         val exact = exactPosition()
         lastSample = Sample(
             position = noisy(exact),
-            speedMps = if (finished) 0.0 else speed,
+            // Report the speed of the leg we ended the tick on, so a fix taken just after a
+            // highway leg does not still claim 90 km/h while the avatar is walking.
+            speedMps = if (finished) 0.0 else ((seg.travelMode?.speedMps ?: targetSpeed) * speedFactor).takeIf { it > 0 } ?: lastLegSpeed,
             bearingDeg = lastBearing,
             accuracyM = accuracy,
             altitudeM = altitude,
@@ -161,6 +170,7 @@ class WalkSimulator(
             arrivedAtWaypoint = arrived,
             lapFinished = lapDone,
             progressM = progress,
+            countsSteps = seg.travelMode?.countsSteps ?: true,
         )
         return lastSample
     }

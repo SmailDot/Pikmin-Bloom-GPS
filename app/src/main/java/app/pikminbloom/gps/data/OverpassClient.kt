@@ -5,6 +5,7 @@ import app.pikminbloom.gps.geo.GeoMath
 import app.pikminbloom.gps.geo.LatLng
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -67,6 +68,137 @@ object OverpassClient {
     private const val DEDUPE_M = 25.0
 
     class OverpassException(message: String) : Exception(message)
+
+    /** A place that produces a particular [Decor]. */
+    data class DecorHit(
+        val decor: Decor,
+        val position: LatLng,
+        val name: String,
+        val distanceM: Double,
+        /** Null until [checkPurity] has run. */
+        val competingDecor: List<Decor>? = null,
+    ) {
+        val isPure: Boolean? get() = competingDecor?.isEmpty()
+    }
+
+    // ------------------------------------------------------------------ decor search
+
+    /**
+     * Nearest places that produce [decor], closest first.
+     *
+     * Only the target category is queried, so this stays cheap even over a large radius; purity is
+     * a separate, on-demand call ([checkPurity]) because judging it needs every *other* category
+     * around a point and that is far too much data to fetch for a whole city.
+     */
+    suspend fun findDecor(
+        center: LatLng,
+        decor: Decor,
+        radiusM: Int = 5_000,
+        limit: Int = 20,
+    ): List<DecorHit> = withContext(Dispatchers.IO) {
+        val body = query(buildDecorQuery(center, decor, radiusM.coerceIn(200, 50_000)))
+        parseDecor(body, center, decor, limit)
+    }
+
+    /**
+     * Which other decor categories sit within [Decor.PURITY_RADIUS_M] of [hit]. An empty list makes
+     * it a "pure point" (純點): everything picked up there is the decor you wanted.
+     */
+    suspend fun checkPurity(hit: DecorHit): DecorHit = withContext(Dispatchers.IO) {
+        val body = query(buildAllDecorQuery(hit.position, Decor.PURITY_RADIUS_M.toInt()))
+        val others = LinkedHashSet<Decor>()
+        val elements = JSONObject(body).optJSONArray("elements") ?: JSONArray()
+        for (i in 0 until elements.length()) {
+            val el = elements.optJSONObject(i) ?: continue
+            val tags = tagsOf(el.optJSONObject("tags")) ?: continue
+            val pos = positionOf(el) ?: continue
+            if (GeoMath.distanceM(hit.position, pos) > Decor.PURITY_RADIUS_M) continue
+            // The target place itself does not count against its own purity.
+            if (GeoMath.distanceM(hit.position, pos) < 5.0) continue
+            Decor.classify(tags).forEach { if (it != hit.decor) others.add(it) }
+        }
+        hit.copy(competingDecor = others.toList())
+    }
+
+    fun buildDecorQuery(center: LatLng, decor: Decor, radiusM: Int): String {
+        val a = around(center, radiusM)
+        val clauses = decor.rules.joinToString("\n  ") { "nwr($a)${it.toOverpass()};" }
+        return "[out:json][timeout:90];\n(\n  $clauses\n);\nout center tags;"
+    }
+
+    private fun buildAllDecorQuery(center: LatLng, radiusM: Int): String {
+        val a = around(center, radiusM)
+        val clauses = Decor.entries
+            .flatMap { it.rules }
+            .distinctBy { it.toOverpass() }
+            .joinToString("\n  ") { "nwr($a)${it.toOverpass()};" }
+        return "[out:json][timeout:90];\n(\n  $clauses\n);\nout center tags;"
+    }
+
+    fun parseDecor(json: String, center: LatLng, decor: Decor, limit: Int): List<DecorHit> {
+        val elements = JSONObject(json).optJSONArray("elements") ?: return emptyList()
+        val hits = ArrayList<DecorHit>(elements.length())
+        for (i in 0 until elements.length()) {
+            val el = elements.optJSONObject(i) ?: continue
+            val tags = tagsOf(el.optJSONObject("tags")) ?: continue
+            if (tags["access"] == "private" || tags["landuse"] == "military") continue
+            val pos = positionOf(el) ?: continue
+            if (!decor.matches(tags)) continue
+            hits.add(
+                DecorHit(
+                    decor = decor,
+                    position = pos,
+                    name = pickName(el.optJSONObject("tags")!!) ?: decor.placeName,
+                    distanceM = GeoMath.distanceM(center, pos),
+                )
+            )
+        }
+        val sorted = hits.sortedBy { it.distanceM }
+        val kept = ArrayList<DecorHit>(minOf(limit, sorted.size))
+        for (h in sorted) {
+            if (kept.size >= limit) break
+            if (kept.any { GeoMath.distanceM(it.position, h.position) < DEDUPE_M }) continue
+            kept.add(h)
+        }
+        return kept
+    }
+
+    private fun tagsOf(o: JSONObject?): Map<String, String>? {
+        if (o == null) return null
+        val map = HashMap<String, String>(o.length())
+        for (k in o.keys()) map[k] = o.optString(k)
+        return map
+    }
+
+    private fun positionOf(el: JSONObject): LatLng? {
+        val lat: Double
+        val lon: Double
+        if (el.has("lat") && el.has("lon")) {
+            lat = el.optDouble("lat", Double.NaN); lon = el.optDouble("lon", Double.NaN)
+        } else {
+            val c = el.optJSONObject("center") ?: return null
+            lat = c.optDouble("lat", Double.NaN); lon = c.optDouble("lon", Double.NaN)
+        }
+        if (lat.isNaN() || lon.isNaN() || lat !in -90.0..90.0 || lon !in -180.0..180.0) return null
+        return LatLng(lat, lon)
+    }
+
+    private fun around(center: LatLng, radiusM: Int): String =
+        "around:$radiusM,${"%.6f".format(java.util.Locale.US, center.lat)},${"%.6f".format(java.util.Locale.US, center.lon)}"
+
+    /** POSTs to whichever mirror answers first. */
+    private fun query(ql: String): String {
+        var lastError: Exception? = null
+        for (endpoint in ENDPOINTS) {
+            try {
+                return post(endpoint, ql)
+            } catch (t: Exception) {
+                Log.w(TAG, "Overpass $endpoint failed: ${t.message}")
+                lastError = t
+            }
+        }
+        throw OverpassException(lastError?.message ?: "no Overpass mirror answered")
+    }
 
     /**
      * Queries every mirror in turn until one answers.

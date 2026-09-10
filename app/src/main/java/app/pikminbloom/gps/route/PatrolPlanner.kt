@@ -2,6 +2,7 @@ package app.pikminbloom.gps.route
 
 import app.pikminbloom.gps.data.LoopMode
 import app.pikminbloom.gps.data.PatrolConfig
+import app.pikminbloom.gps.data.TravelMode
 import app.pikminbloom.gps.data.Waypoint
 import app.pikminbloom.gps.geo.GeoMath
 import app.pikminbloom.gps.geo.LatLng
@@ -23,6 +24,8 @@ data class RouteSegment(
     val waypointIndex: Int?,
     val kind: SegmentKind,
     val arrivalAtEnd: Boolean = false,
+    /** Null means "walk at the patrol's configured speed and count the steps". */
+    val travelMode: TravelMode? = null,
 ) {
     val lengthM: Double = GeoMath.distanceM(from, to)
     val bearingDeg: Double = GeoMath.bearingDeg(from, to)
@@ -118,8 +121,34 @@ object PatrolPlanner {
         return PatrolPlan.of(segments)
     }
 
-    fun planReturnHome(from: LatLng, home: LatLng): PatrolPlan =
-        PatrolPlan.of(listOf(RouteSegment(from, home, null, SegmentKind.TRAVEL)))
+    fun planReturnHome(from: LatLng, home: LatLng, mode: TravelMode? = null): PatrolPlan =
+        PatrolPlan.of(listOf(RouteSegment(from, home, null, SegmentKind.TRAVEL, travelMode = mode)))
+
+    /**
+     * A trip to somewhere far away: one long leg at [mode]'s speed (no steps, no planting), then a
+     * lawn-mower sweep of [wanderRadiusM] around the destination at walking speed for
+     * [wanderSec] seconds, which is where the decor and the steps actually come from.
+     */
+    fun planTripTo(
+        from: LatLng,
+        destination: LatLng,
+        config: PatrolConfig,
+        mode: TravelMode = TravelMode.suggestFor(GeoMath.distanceM(from, destination)),
+        wanderRadiusM: Double = 60.0,
+        wanderSec: Int = 900,
+    ): PatrolPlan {
+        val segments = ArrayList<RouteSegment>()
+        val radius = max(wanderRadiusM, MIN_ORBIT_RADIUS_M)
+        val entry = edgePointTowards(destination, radius, from)
+        if (GeoMath.distanceM(from, entry) > 1.0) {
+            segments.add(RouteSegment(from, entry, 0, SegmentKind.TRAVEL, arrivalAtEnd = true, travelMode = mode))
+        }
+        val wander = orbitPath(destination, radius, wanderSec.coerceAtLeast(0) * config.speedMps, entry)
+        for (i in 1 until wander.size) {
+            segments.add(RouteSegment(wander[i - 1], wander[i], 0, SegmentKind.ORBIT))
+        }
+        return PatrolPlan.of(segments)
+    }
 
     /** Point on the circle around [center] that is closest to [towards] (or due north if inside/at the center). */
     fun edgePointTowards(center: LatLng, radiusM: Double, towards: LatLng): LatLng {

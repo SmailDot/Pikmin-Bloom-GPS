@@ -308,8 +308,11 @@ class PatrolService : LifecycleService() {
 
     private fun account(s: Sample) {
         if (s.distanceDeltaM <= 0.0) return
-        stepsAccrued += s.distanceDeltaM / config.strideM
-        distanceSinceFlush += s.distanceDeltaM
+        // Vehicle legs move the position but produce no steps; nobody walks while driving.
+        if (s.countsSteps) {
+            stepsAccrued += s.distanceDeltaM / config.strideM
+            distanceSinceFlush += s.distanceDeltaM
+        }
         _state.update {
             it.copy(distanceWalkedM = it.distanceWalkedM + s.distanceDeltaM, sessionSteps = floor(stepsAccrued).toLong())
         }

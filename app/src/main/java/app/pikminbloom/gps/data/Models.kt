@@ -27,6 +27,40 @@ data class Waypoint(
 
 enum class LoopMode { LOOP, PINGPONG, ONCE }
 
+/**
+ * How to cover a leg of a journey.
+ *
+ * Long legs are the problem this solves. Walking 30 km at walking speed takes six hours, and
+ * "walking" it at 20 km/h is a speed no human sustains. Covering it at a vehicle speed instead is
+ * both faster and more ordinary-looking, and it is honest about steps: nobody takes steps while
+ * driving, so [countsSteps] is false for every vehicle and no step data is written for those legs.
+ *
+ * Pikmin Bloom stops planting flowers somewhere around 15-20 km/h, so vehicle legs plant nothing
+ * either. That is expected: the point of a vehicle leg is to *arrive*, and the walking starts there.
+ */
+enum class TravelMode(val speedKmh: Double, val countsSteps: Boolean, val label: String) {
+    WALK(4.7, true, "步行"),
+    BRISK(7.0, true, "快走"),
+    RUN(10.0, true, "慢跑"),
+    BIKE(18.0, false, "腳踏車"),
+    CAR(45.0, false, "汽機車"),
+    HIGHWAY(90.0, false, "高速公路"),
+    PLANE(600.0, false, "飛機"),
+    ;
+
+    val speedMps: Double get() = speedKmh / 3.6
+
+    companion object {
+        /** Sensible mode for a leg of [distanceM], so the user does not have to think about it. */
+        fun suggestFor(distanceM: Double): TravelMode = when {
+            distanceM < 1_500 -> WALK
+            distanceM < 15_000 -> CAR
+            distanceM < 300_000 -> HIGHWAY
+            else -> PLANE
+        }
+    }
+}
+
 enum class ReturnMode { WALK, TELEPORT }
 
 /** All tunables, persisted by Prefs. Defaults are chosen to look like a normal walk (~4.7 km/h). */
