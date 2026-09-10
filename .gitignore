@@ -21,3 +21,6 @@ local.properties
 /.gradle
 /.kotlin
 /local.properties
+
+# Device test screenshots contain the real location and game account; keep them local.
+/docs/test/
