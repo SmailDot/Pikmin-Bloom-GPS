@@ -33,8 +33,15 @@
             app:key="default_radius_m"
             app:title="@string/pref_default_radius_title" />
 
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="orbit_at_waypoints"
+            app:summary="@string/pref_orbit_summary"
+            app:title="@string/pref_orbit_title" />
+
         <EditTextPreference
             app:defaultValue="120"
+            app:dependency="orbit_at_waypoints"
             app:key="default_dwell_sec"
             app:title="@string/pref_default_dwell_title" />
     </PreferenceCategory>

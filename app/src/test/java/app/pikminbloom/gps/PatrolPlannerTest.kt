@@ -14,7 +14,7 @@ import org.junit.Test
 class PatrolPlannerTest {
 
     private val home = LatLng(25.0330, 121.5654)
-    private val config = PatrolConfig(speedMps = 1.3)
+    private val config = PatrolConfig(speedMps = 1.3, orbitAtWaypoints = true)
     private val flowerA = Waypoint("a", "A", 25.0348, 121.5654, radiusM = 30.0, dwellSec = 120)   // ~200 m north
     private val flowerB = Waypoint("b", "B", 25.0348, 121.5680, radiusM = 30.0, dwellSec = 0)     // pass-through
 
@@ -68,6 +68,18 @@ class PatrolPlannerTest {
         assertTrue("only ${cells.size} distinct cells", cells.size >= 30)
         // Only one arrival flag per waypoint.
         assertEquals(1, plan.segments.count { it.arrivalAtEnd })
+    }
+
+    @Test
+    fun orbitDisabledJustPassesThroughEveryFlower() {
+        val off = config.copy(orbitAtWaypoints = false)
+        val plan = PatrolPlanner.planLap(home, listOf(flowerA, flowerB), off, listOf(0, 1))
+        assertTrue("no orbit expected", plan.segments.none { it.kind == SegmentKind.ORBIT })
+        assertEquals(2, plan.segments.size)
+        assertEquals(2, plan.segments.count { it.arrivalAtEnd })
+        // Each leg ends on the flower's circle edge, so the game still counts us as "at" the flower.
+        assertEquals(30.0, GeoMath.distanceM(flowerA.latLng, plan.segments[0].to), 0.1)
+        assertEquals(30.0, GeoMath.distanceM(flowerB.latLng, plan.segments[1].to), 0.1)
     }
 
     @Test

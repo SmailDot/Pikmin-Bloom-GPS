@@ -94,10 +94,11 @@ object PatrolPlanner {
             val wp = waypoints.getOrNull(idx) ?: continue
             val center = wp.latLng
             val radius = max(wp.radiusM, MIN_ORBIT_RADIUS_M)
-            val targetOrbitM = wp.dwellSec.coerceAtLeast(0) * config.speedMps
+            val dwellSec = if (config.orbitAtWaypoints) wp.dwellSec.coerceAtLeast(0) else 0
+            val targetOrbitM = dwellSec * config.speedMps
             val rotation = lap * 37.0 + idx * 11.0
 
-            if (wp.dwellSec <= 0 || targetOrbitM < MIN_SEGMENT_M * 2) {
+            if (dwellSec <= 0 || targetOrbitM < MIN_SEGMENT_M * 2) {
                 // Pass-through visit: walk to the circle edge nearest to us.
                 val edge = edgePointTowards(center, radius, cursor)
                 // Kept even when tiny: the leg carries the arrival flag.

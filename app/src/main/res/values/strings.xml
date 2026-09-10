@@ -167,6 +167,14 @@
 
     <!-- ============================ 設定頁 ============================ -->
     <string name="pref_cat_walk">走路</string>
+    <string name="pref_orbit_title">抵達後在大花圈內繞行</string>
+    <string name="pref_orbit_summary">開啟：抵達大花後在 40 公尺圈內來回種花（衝開花用）。關閉：只經過大花，直接前往下一個。</string>
+    <string name="pref_speed_hint">建議 4–12 km/h。超過約 15–20 km/h 遊戲會停止種花（上限 20）。</string>
+    <string name="hc_priority_warning_title">步數沒有被計入</string>
+    <string name="hc_priority_warning_msg">本 App 已寫入 %1$d 步，但 Health Connect 今日總計只有 %2$d 步，代表本 App 不在「資料來源」清單中，遊戲讀不到這些步數。
+
+請到 Health Connect →「管理資料」→「資料來源與優先順序」→「新增資料來源」→ 選「皮克敏巡花助手」。</string>
+    <string name="action_open_hc_sources">開啟 Health Connect</string>
     <string name="pref_speed_title">走路速度</string>
     <string name="pref_jitter_title">速度抖動</string>
     <string name="pref_stride_title">步幅</string>

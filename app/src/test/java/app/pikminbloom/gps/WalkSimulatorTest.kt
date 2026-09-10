@@ -15,7 +15,7 @@ import kotlin.random.Random
 class WalkSimulatorTest {
 
     private val home = LatLng(25.0330, 121.5654)
-    private val config = PatrolConfig(speedMps = 1.3, speedJitterPct = 10.0)
+    private val config = PatrolConfig(speedMps = 1.3, speedJitterPct = 10.0, orbitAtWaypoints = true)
     private val flower = Waypoint("a", "A", 25.0348, 121.5654, radiusM = 30.0, dwellSec = 60)
 
     private fun plan() = PatrolPlanner.planLap(home, listOf(flower), config, listOf(0))

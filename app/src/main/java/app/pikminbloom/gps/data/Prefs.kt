@@ -17,11 +17,13 @@ class Prefs(context: Context) {
     fun config(): PatrolConfig {
         val d = PatrolConfig()
         return PatrolConfig(
-            // km/h in the UI, m/s internally; 2.5 m/s (9 km/h) stays under Pikmin's planting cutoff.
-            speedMps = (str(KEY_SPEED_KMH, d.speedMps * 3.6) / 3.6).coerceIn(0.3, 2.5),
+            // km/h in the UI, m/s internally. Pikmin Bloom stops planting somewhere around
+            // 15-20 km/h, so 20 km/h (5.56 m/s) is the highest value we allow.
+            speedMps = (str(KEY_SPEED_KMH, d.speedMps * 3.6) / 3.6).coerceIn(0.3, MAX_SPEED_MPS),
             speedJitterPct = str(KEY_SPEED_JITTER_PCT, d.speedJitterPct).coerceIn(0.0, 30.0),
             strideM = (str(KEY_STRIDE_CM, d.strideM * 100) / 100.0).coerceIn(0.4, 1.2),
             loopMode = enum(KEY_LOOP_MODE, d.loopMode),
+            orbitAtWaypoints = sp.getBoolean(KEY_ORBIT, d.orbitAtWaypoints),
             injectSteps = sp.getBoolean(KEY_INJECT_STEPS, d.injectSteps),
             stepFlushIntervalSec = str(KEY_STEP_FLUSH_SEC, d.stepFlushIntervalSec.toDouble()).toInt().coerceIn(20, 600),
             dailyStepCap = str(KEY_DAILY_STEP_CAP, d.dailyStepCap.toDouble()).toLong().coerceIn(0, 200_000),
@@ -92,7 +94,11 @@ class Prefs(context: Context) {
     }
 
     companion object {
+        /** 20 km/h. Above roughly this speed Pikmin Bloom stops planting flowers. */
+        const val MAX_SPEED_MPS = 20.0 / 3.6
+
         const val KEY_SPEED_KMH = "speed_kmh"
+        const val KEY_ORBIT = "orbit_at_waypoints"
         const val KEY_SPEED_JITTER_PCT = "speed_jitter_pct"
         const val KEY_STRIDE_CM = "stride_cm"
         const val KEY_LOOP_MODE = "loop_mode"

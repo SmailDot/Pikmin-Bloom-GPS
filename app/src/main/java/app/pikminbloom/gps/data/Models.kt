@@ -35,6 +35,12 @@ data class PatrolConfig(
     val speedJitterPct: Double = 10.0,
     val strideM: Double = 0.70,
     val loopMode: LoopMode = LoopMode.LOOP,
+    /**
+     * When false the patrol only walks THROUGH each Big Flower's circle and moves straight on to the
+     * next one, ignoring [Waypoint.dwellSec]. Turn it on only when you want to farm one flower's
+     * 40 m circle (planting toward the 300-flower bloom).
+     */
+    val orbitAtWaypoints: Boolean = false,
     val injectSteps: Boolean = true,
     val stepFlushIntervalSec: Int = 60,
     val dailyStepCap: Long = 50_000,

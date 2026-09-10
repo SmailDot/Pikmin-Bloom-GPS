@@ -177,6 +177,21 @@ class StepInjector(context: Context) {
         return total
     }
 
+    /**
+     * Health Connect only counts an app toward the daily totals once the user has added it under
+     * 管理資料 → 資料來源與優先順序. Until then our records exist but are invisible to Pikmin Bloom.
+     *
+     * @return null when we cannot tell (no data written yet, or the aggregate call failed),
+     *         true when our steps are included in the total, false when they are being ignored.
+     */
+    suspend fun stepsAreCountedInTotals(): Boolean? {
+        val ours = stepsWrittenByUsToday()
+        if (ours <= 0) return null
+        val total = stepsToday()
+        if (total <= 0) return false
+        return total >= ours
+    }
+
     /** Deletes every steps/distance record this app wrote today (only our own records are affected). */
     suspend fun deleteOurRecordsToday(): Boolean {
         val hc = client ?: return false
@@ -189,6 +204,23 @@ class StepInjector(context: Context) {
         } catch (t: Throwable) {
             Log.w(TAG, "deleteRecords failed: ${t.message}"); false
         }
+    }
+
+    /** Opens Health Connect's "manage data" screen, where 資料來源與優先順序 lives. */
+    fun openHealthConnectDataSources(context: Context) {
+        val intents = listOf(
+            Intent("android.health.connect.action.MANAGE_HEALTH_DATA"),
+            Intent("android.health.connect.action.HEALTH_HOME_SETTINGS"),
+            Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS),
+        )
+        for (i in intents) {
+            try {
+                context.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                return
+            } catch (_: Throwable) {
+            }
+        }
+        openHealthConnectSettings(context)
     }
 
     fun openHealthConnectSettings(context: Context) {
