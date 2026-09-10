@@ -86,6 +86,7 @@ class PatrolService : LifecycleService() {
     private var flushWindowStart: Instant = Instant.now()
     private var stepsWrittenToday = 0L
     private var settleTicks = 0
+    private var lastArrivalAlertMs = 0L
 
     /** Set (on the engine thread) to make the tick loop exit and run the matching finish sequence. */
     private sealed class Finish {
@@ -204,7 +205,15 @@ class PatrolService : LifecycleService() {
         true
     } catch (t: Throwable) {
         Log.e(TAG, "startForeground failed", t)
-        failNow(t.message ?: "startForeground failed")
+        // A location-type foreground service may only be started while the app is "eligible",
+        // i.e. with a visible activity. Anything else (an adb broadcast, a stale notification
+        // action) lands here, and the raw platform message is useless to a user.
+        val friendly = if (t is SecurityException || t.javaClass.simpleName.contains("ForegroundServiceStartNotAllowed")) {
+            getString(R.string.svc_err_background_start)
+        } else {
+            t.message ?: "startForeground failed"
+        }
+        failNow(friendly)
         false
     }
 
@@ -287,7 +296,10 @@ class PatrolService : LifecycleService() {
         runCatching { maybeFlushSteps(force = true) }.onFailure { Log.w(TAG, "final flush failed", it) }
         mock.stop()
         when (finish) {
-            Finish.ReturnedHome -> { notifications.returnedHome(); _events.tryEmit(PatrolEvent.ReturnedHome) }
+            Finish.ReturnedHome -> {
+                notifications.returnedHome(vibrate = config.vibrateOnArrival)
+                _events.tryEmit(PatrolEvent.ReturnedHome)
+            }
             Finish.Stop -> _events.tryEmit(PatrolEvent.Stopped)
             is Finish.Failed -> { _events.tryEmit(PatrolEvent.Error(finish.message)); notifications.error(finish.message) }
         }
@@ -315,20 +327,40 @@ class PatrolService : LifecycleService() {
         val name = waypoints.getOrNull(index)?.name ?: "#${index + 1}"
         Log.i(TAG, "arrived at $index ($name)")
         _events.tryEmit(PatrolEvent.ArrivedAtWaypoint(index, name))
-        if (config.notifyOnArrival) notifications.arrived(name)
+        if (!config.notifyOnArrival) return
+        // Rate limit: passing several flowers in a row must not turn into a burst of buzzes.
+        val now = SystemClock.elapsedRealtime()
+        val gapMs = config.arrivalAlertMinGapSec * 1000L
+        val quiet = lastArrivalAlertMs != 0L && now - lastArrivalAlertMs < gapMs
+        lastArrivalAlertMs = now
+        notifications.arrived(name, vibrate = config.vibrateOnArrival && !quiet)
     }
 
     private fun onLapFinished(s: Sample) {
         val finishedLap = lap
+        val completed = finishedLap + 1
         _events.tryEmit(PatrolEvent.LapFinished(finishedLap))
-        _state.update { it.copy(lapsCompleted = finishedLap + 1) }
+        _state.update { it.copy(lapsCompleted = completed) }
         lap++
+
+        val limit = config.autoReturnAfterLaps
+        if (limit > 0 && completed >= limit) {
+            Log.i(TAG, "completed $completed lap(s), limit $limit → returning home")
+            beginReturnHome()
+            return
+        }
         val nextOrder = PatrolPlanner.orderFor(lap, waypoints.size, config.loopMode)
         if (nextOrder.isEmpty()) {
             Log.i(TAG, "route finished (ONCE) → returning home")
             beginReturnHome()
-        } else {
-            loadLap(s.position)
+            return
+        }
+        loadLap(s.position)
+        // A lap with nowhere to walk (one flower and no orbiting, or flowers on top of each other)
+        // would "arrive" again on the very next tick and spin the notification once a second.
+        if (plan.totalLengthM < MIN_LAP_M) {
+            Log.i(TAG, "lap $lap is degenerate (${"%.1f".format(plan.totalLengthM)} m) → nothing left to walk, returning home")
+            beginReturnHome()
         }
     }
 
@@ -345,7 +377,16 @@ class PatrolService : LifecycleService() {
             stepsFlushed += pending; flushWindowStart = now; distanceSinceFlush = 0.0; return
         }
         val room = (config.dailyStepCap - stepsWrittenToday).coerceAtLeast(0)
-        val toWrite = minOf(pending, room)
+        // Keep the cadence humanly plausible if the user asked for a ceiling.
+        val cadenceRoom = if (config.maxCadenceSpm > 0) {
+            (config.maxCadenceSpm * windowSec / 60.0).toLong().coerceAtLeast(1)
+        } else {
+            Long.MAX_VALUE
+        }
+        val toWrite = minOf(pending, room, cadenceRoom)
+        if (toWrite < pending) {
+            Log.i(TAG, "writing $toWrite of $pending steps (daily room $room, cadence room $cadenceRoom)")
+        }
         val distance = distanceSinceFlush * (toWrite.toDouble() / pending)
         val ok = if (toWrite > 0) steps.write(flushWindowStart, now, toWrite, distance) else true
         if (ok) {
@@ -498,6 +539,9 @@ class PatrolService : LifecycleService() {
 
         private const val NOTIFICATION_INTERVAL_MS = 5_000L
         private const val SETTLE_TICKS = 3
+
+        /** Shorter than this and a lap has no walking in it, so repeating it would just spin. */
+        private const val MIN_LAP_M = 5.0
 
         private val _state = MutableStateFlow(PatrolState())
         val state: StateFlow<PatrolState> = _state

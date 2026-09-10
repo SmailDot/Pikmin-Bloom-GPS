@@ -13,10 +13,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreferenceCompat
 import app.pikminbloom.gps.BuildConfig
 import app.pikminbloom.gps.R
 import app.pikminbloom.gps.data.Prefs
 import app.pikminbloom.gps.databinding.ActivitySettingsBinding
+import app.pikminbloom.gps.service.PatrolService
 import app.pikminbloom.gps.steps.StepInjector
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
@@ -53,6 +55,12 @@ class SettingsActivity : AppCompatActivity() {
 
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.preferences, rootKey)
+            // Alert / battery / auto-return options live in their own file and are merged in here.
+            addPreferencesFromResource(R.xml.preferences_extra)
+
+            numeric(Prefs.KEY_ALERT_GAP_SEC, decimal = false, unit = R.string.fmt_second, fallback = "60")
+            numeric(Prefs.KEY_AUTO_RETURN_LAPS, decimal = false, unit = R.string.fmt_lap, fallback = "0")
+            numeric(Prefs.KEY_MAX_CADENCE, decimal = false, unit = R.string.fmt_spm, fallback = "0")
 
             numeric(Prefs.KEY_SPEED_KMH, decimal = true, unit = R.string.fmt_kmh, fallback = "4.7")
             numeric(Prefs.KEY_SPEED_JITTER_PCT, decimal = true, unit = R.string.fmt_percent, fallback = "10")
@@ -64,6 +72,12 @@ class SettingsActivity : AppCompatActivity() {
             numeric(Prefs.KEY_ACC_MIN, decimal = true, unit = R.string.fmt_meter, fallback = "3")
             numeric(Prefs.KEY_ACC_MAX, decimal = true, unit = R.string.fmt_meter, fallback = "9")
             numeric(Prefs.KEY_ALTITUDE, decimal = true, unit = R.string.fmt_meter, fallback = "20")
+
+            findPreference<SwitchPreferenceCompat>(Prefs.KEY_OVERLAY_ENABLED)
+                ?.setOnPreferenceChangeListener { _, value ->
+                    onOverlayEnabledChanged(value as? Boolean ?: false)
+                    true
+                }
 
             findPreference<Preference>(KEY_DELETE_TODAY)?.setOnPreferenceClickListener {
                 confirmDeleteTodaySteps(); true
@@ -77,6 +91,33 @@ class SettingsActivity : AppCompatActivity() {
                     .show()
                 true
             }
+        }
+
+        /**
+         * The switch itself always flips; without "顯示在其他應用程式上層" the bar simply never shows,
+         * so send the user to the system screen (HyperOS also needs 後台彈出介面).
+         */
+        private fun onOverlayEnabledChanged(enabled: Boolean) {
+            val context = requireContext()
+            if (!enabled) {
+                OverlayService.stop(context)
+                return
+            }
+            if (!Permissions.canDrawOverlays(context)) {
+                MaterialAlertDialogBuilder(context)
+                    .setTitle(R.string.dlg_overlay_permission_title)
+                    .setMessage(R.string.dlg_overlay_permission_msg)
+                    .setPositiveButton(R.string.action_open_overlay_settings) { _, _ ->
+                        if (!Permissions.openOverlaySettings(context)) {
+                            Toast.makeText(context, R.string.toast_no_activity, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .show()
+                return
+            }
+            // Already patrolling: show it right away instead of waiting for the next start.
+            if (PatrolService.isRunning) OverlayService.start(context)
         }
 
         /** Numeric [EditTextPreference]: right keyboard + a summary that shows the value with its unit. */

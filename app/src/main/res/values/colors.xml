@@ -7,4 +7,16 @@
     <color name="route_line">#CC1E88E5</color>
     <color name="orbit_circle">#334CAF50</color>
     <color name="home_marker">#FFE53935</color>
+
+    <!-- Floating control bar (ui/OverlayService). An overlay window has no activity theme, so these
+         must be explicit and identical in light and dark mode. -->
+    <color name="overlay_bg">#E62A2C30</color>
+    <color name="overlay_text">#FFFFFFFF</color>
+    <color name="overlay_icon">#FFFFFFFF</color>
+    <color name="overlay_ripple">#40FFFFFF</color>
+    <color name="overlay_phase_normal">#FF43A047</color>
+    <color name="overlay_phase_paused">#FFFFB300</color>
+    <color name="overlay_phase_returning">#FF1E88E5</color>
+    <color name="overlay_phase_error">#FFE53935</color>
+    <color name="overlay_phase_idle">#FF757575</color>
 </resources>

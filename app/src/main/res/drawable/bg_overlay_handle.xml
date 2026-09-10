@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Round handle of the floating control bar. The colour is replaced at runtime with the phase
+     colour (View.setBackgroundTintList), so the solid here is only the default. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/overlay_phase_normal" />
+</shape>

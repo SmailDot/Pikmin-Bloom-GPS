@@ -15,6 +15,12 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_overlay"
+        android:icon="@drawable/ic_flower"
+        android:title="@string/menu_overlay"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_setup"
         android:icon="@drawable/ic_check"
         android:title="@string/menu_setup"

@@ -59,6 +59,10 @@
                 layout="@layout/item_setup_row" />
 
             <include
+                android:id="@+id/rowOverlay"
+                layout="@layout/item_setup_row" />
+
+            <include
                 android:id="@+id/rowGame"
                 layout="@layout/item_setup_row" />
         </LinearLayout>

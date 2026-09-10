@@ -173,3 +173,111 @@ Exported `BroadcastReceiver` with action `app.pikminbloom.gps.DEBUG_CMD`, extras
 - Pikmin 若之後開始拒絕 `isMock` 定位，非 root 方案無解（目前社群普遍可用）。
 - Health Connect 步數是否被 Pikmin 採計取決於遊戲端讀取方式（recordingMethod 過濾未知）；先以 `autoRecorded` + `TYPE_PHONE` 測試，必要時改 `activelyRecorded`。
 - HyperOS 省電策略會殺前景服務：需電池最佳化排除 + 自啟動允許。
+
+---
+
+# 附錄：2026-09-10 實機測試與需求變更
+
+## A. 實機測試結果（POCO X6 Pro / Android 16 / Pikmin Bloom 152.0）
+
+全部通過：三個 test provider（gps/network/fused）+ FLP mock 皆生效、巡邏沿路線移動、抵達大花觸發事件、
+每 60 秒寫入 Health Connect、按回家後走回原點並自動移除 provider（實測 158 m）。
+遊戲端「生活記錄」地圖出現模擬走路的腳印軌跡，種花正常。
+
+## B. 已知陷阱：Health Connect 資料來源優先順序（**必讀**）
+
+寫入 `StepsRecord` 成功 **不代表** 遊戲讀得到。Health Connect 只把列在
+**管理資料 → 資料來源與優先順序** 清單中的 App 計入每日總計。
+
+實測數據：本 App 已寫入 984 步，`readRecords`（自己的 dataOrigin）讀得到 984，
+但 `aggregate(COUNT_TOTAL)` 回傳 0，Health Connect UI 顯示「772 步 · 小米運動健康」。
+把「皮克敏巡花助手」加入資料來源後，總計立刻變成 1,756。
+
+該畫面的官方說明文字即是證據：
+> 如果從清單移除資料來源，該來源仍會具有寫入權限，但其資料就不會再計入總數。
+
+因應措施：`StepInjector.stepsAreCountedInTotals()` 比對 aggregate 與自身 origin 的差異，
+偵測到被忽略就提示使用者，並提供 `openHealthConnectDataSources()` 直達該設定頁。
+
+另注意：`aggregate()` 在背景呼叫會丟 `SecurityException ... must be in foreground`，
+除非宣告 `android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND`（已加入 manifest）。
+
+「使用手機追蹤測量」模式讀的是硬體計步器，**任何 App 都無法寫入**，遊戲必須維持 Health Connect 模式。
+
+## C. 需求變更
+
+1. **速度上限 20 km/h**：原本 `Prefs.config()` 把 speedMps 夾在 2.5 m/s（9 km/h），
+   使用者設 20 被默默降速。改為 `MAX_SPEED_MPS = 20/3.6`。
+   注意遊戲約在 15–20 km/h 停止種花，UI 需提示建議值 4–12 km/h。
+2. **繞行改為開關**：新增 `PatrolConfig.orbitAtWaypoints`（預設 **false**）與偏好設定
+   `orbit_at_waypoints`。關閉時 `PatrolPlanner.planLap` 忽略 `dwellSec`，
+   只走到大花圈邊緣就前往下一個。`default_dwell_sec` 依賴此開關。
+3. **浮動控制列**：`ui/OverlayService`，TYPE_APPLICATION_OVERLAY 懸浮於遊戲上方，
+   可拖曳、可收合，提供暫停/繼續/回家/停止與即時狀態。
+
+## D. 自動化可行性結論（2026-09-10 實機調查）
+
+### D1. 自動點擊領花蜜 — **不做**
+- Unity 畫面對無障礙服務完全不透明。五個不同遊戲畫面的 `uiautomator dump` 產生
+  **位元組完全相同**的 3375 bytes XML，唯一節點是
+  `com.nianticlabs.pikmin:id/unitySurfaceView`（SurfaceView, bounds [0,0][1220,2712]）。
+  連「商店」「好友」等大按鈕都沒有節點。
+- 因此既無法定位大花，**也沒有任何回饋管道確認點擊是否成功**（沒有 window content change 事件）。
+- 盲點座標亦不可行：地圖被拖曳後永不自動回正（實測靜置 15 秒畫面不變），
+  且縮放/旋轉/鏡頭俯角皆持久化。實測兩次盲點全部點錯（開到皮克敏派遣頁與詳細卡）。
+- 風險：`AccessibilityManager.getEnabledAccessibilityServiceList()` 不需權限即可被任何 App 讀取，
+  是成熟的偵測向量。改定位已違反 §3.1，再加自動點擊等於多一類獨立可偵測的違規（§6 禁止 automation）。
+- 報酬過低：每朵大花每次開花僅 1–3 花蜜。
+- 替代方案：維持現行「抵達時通知 + 震動」，由使用者手動點兩下。
+
+### D2. 自動偵測大花位置 — **用 OpenStreetMap 候選點**
+- 無任何公開資料源列出大花座標；大花是 Wayspot 的**輪替子集**，官方會增刪。
+- 官方 Wayfarer 地圖需登入且無 API；IITC 匯出違反 Niantic 條款；
+  MITM 遊戲流量需 root + Frida，會觸發偵測，一律不採用。
+- 採用 **Overpass API（OpenStreetMap）** 產生候選點：`data/OverpassClient.kt`。
+  依 Wayfarer 收錄傾向對 historic / memorial / tourism=artwork / place_of_worship /
+  playground 等標籤排序，過濾 access=private 與軍事區，25 m 內去重，命中率約 3–6 成。
+  ODbL 僅在再散布時需標註，本機清單不觸發。
+
+## E. 第二階段構想：俯瞰模式螢幕辨識（**尚未實作，需使用者同意**）
+
+使用者 2026-09-10 指出：遊戲底部中央的**俯瞰模式**切換鈕，會把畫面變成接近正上方的平面地圖。
+這推翻了附錄 D1 中「畫面雜訊太多、鏡頭俯角不定」的部分論據：
+
+| | 走路視角 | 俯瞰模式 |
+|---|---|---|
+| 投影 | 3D 斜角，有俯仰 | 接近正交，近似平面 |
+| 背景 | 密集花毯（高雜訊） | 單色綠地 + 淡色道路（低雜訊） |
+| 大花外觀 | 立體花朵，會被遮擋 | 高對比獨立圖示 |
+| 可排除的干擾 | 難 | 蘑菇有「👤N」徽章與圓餅計時器，特徵明確 |
+
+### E1. 用途 A（高價值）：自動推導大花座標
+比自動點擊更有價值。流程：
+
+1. 切到俯瞰模式，按右下角「回到目前位置」鈕，讓人物回到**已知的畫面位置**。
+2. 截圖 →偵測花朵圖示（飽和色塊 + 下方細長綠莖；排除帶徽章的蘑菇）。
+3. **用我們自己控制的 GPS 當比例尺校準**：把模擬位置往正北移動固定距離（例如 50 m），
+   再截一張圖，比對地物像素位移量 → 得到「公尺 / 像素」與畫面北方方位。
+   這是本方案的關鍵，因為遊戲不公開地圖縮放參數，但**我們控制定位，所以可以自己造一把尺**。
+4. 每個偵測到的花朵：像素偏移 → 公尺偏移 → `GeoMath.offsetMeters(playerPos, north, east)` → 經緯度。
+5. 寫進 `WaypointStore`，成為巡邏點。
+
+準確度預期遠高於附錄 D2 的 OpenStreetMap 候選點（那是猜 Wayspot，命中率 3–6 成），
+因為這是遊戲畫面上**真實存在**的大花。
+
+### E2. 用途 B（低價值）：自動點擊領花蜜
+同一套偵測結果可以拿來 `dispatchGesture` 點擊 + 下滑。
+但報酬僅每朵花每次開花 1–3 花蜜，且遊戲需在範圍內（約 100 m）才能領。
+
+### E3. 成本與風險（**這是要不要做的決定點**）
+- 需要 `AccessibilityService`（`canTakeScreenshot` + `canPerformGestures`）或 `MediaProjection`。
+- `AccessibilityManager.getEnabledAccessibilityServiceList()` **不需任何權限**即可被任何 App 讀取，
+  是成熟且廉價的偵測向量。改定位已違反條款 §3.1，這會再加一條 §6（禁止 automation）。
+- 遊戲美術更新會讓 template 失效，需要維護。
+- HyperOS 會積極清掉無障礙服務，需額外白名單設定。
+
+### E4. 建議
+- 階段一（現行）：OpenStreetMap 候選點匯入。零額外權限、零額外風險。
+- 階段二：本方案，**預設關閉、獨立開關、明確風險說明**，由使用者自行決定。
+  若要做，先做 E1（座標推導），E2（自動點擊）可再議 — E1 只讀畫面不注入觸控，
+  風險較低且價值高得多。

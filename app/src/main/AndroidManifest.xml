@@ -102,6 +102,12 @@
             android:name=".service.PatrolService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- Floating control bar. NOT a foreground service on purpose: PatrolService already is one
+             and keeps the process alive while a patrol runs. -->
+        <service
+            android:name=".ui.OverlayService"
+            android:exported="false" />
     </application>
 
 </manifest>

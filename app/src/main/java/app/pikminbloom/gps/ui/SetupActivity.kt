@@ -133,6 +133,20 @@ class SetupActivity : AppCompatActivity() {
         )
 
         bindRow(
+            row = binding.rowOverlay,
+            title = R.string.setup_overlay_title,
+            desc = R.string.setup_overlay_desc,
+            status = if (Permissions.canDrawOverlays(this)) Status.OK else Status.TODO,
+            hint = R.string.setup_overlay_hint,
+            primaryLabel = R.string.action_open_overlay_settings,
+            primaryAction = {
+                if (!Permissions.openOverlaySettings(this)) toast(R.string.toast_no_activity)
+            },
+            secondaryLabel = R.string.action_open_settings_app_info,
+            secondaryAction = { Permissions.openAppDetails(this) },
+        )
+
+        bindRow(
             row = binding.rowGame,
             title = R.string.setup_game_title,
             desc = R.string.setup_game_desc,

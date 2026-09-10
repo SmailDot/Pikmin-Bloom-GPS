@@ -27,10 +27,14 @@ class Prefs(context: Context) {
             injectSteps = sp.getBoolean(KEY_INJECT_STEPS, d.injectSteps),
             stepFlushIntervalSec = str(KEY_STEP_FLUSH_SEC, d.stepFlushIntervalSec.toDouble()).toInt().coerceIn(20, 600),
             dailyStepCap = str(KEY_DAILY_STEP_CAP, d.dailyStepCap.toDouble()).toLong().coerceIn(0, 200_000),
+            maxCadenceSpm = str(KEY_MAX_CADENCE, d.maxCadenceSpm.toDouble()).toInt().coerceIn(0, 1000),
             accuracyMinM = str(KEY_ACC_MIN, d.accuracyMinM.toDouble()).toFloat().coerceIn(1f, 30f),
             accuracyMaxM = str(KEY_ACC_MAX, d.accuracyMaxM.toDouble()).toFloat().coerceIn(1f, 50f),
             altitudeM = str(KEY_ALTITUDE, d.altitudeM).coerceIn(-100.0, 4000.0),
             notifyOnArrival = sp.getBoolean(KEY_NOTIFY_ARRIVAL, d.notifyOnArrival),
+            vibrateOnArrival = sp.getBoolean(KEY_VIBRATE_ARRIVAL, d.vibrateOnArrival),
+            arrivalAlertMinGapSec = str(KEY_ALERT_GAP_SEC, d.arrivalAlertMinGapSec.toDouble()).toInt().coerceIn(0, 3600),
+            autoReturnAfterLaps = str(KEY_AUTO_RETURN_LAPS, d.autoReturnAfterLaps.toDouble()).toInt().coerceIn(0, 999),
             returnMode = enum(KEY_RETURN_MODE, d.returnMode),
             mockNetworkProvider = sp.getBoolean(KEY_MOCK_NETWORK, d.mockNetworkProvider),
             mockFusedProvider = sp.getBoolean(KEY_MOCK_FUSED, d.mockFusedProvider),
@@ -85,6 +89,25 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_DISCLAIMER, false)
         set(v) = sp.edit { putBoolean(KEY_DISCLAIMER, v) }
 
+    /** Show the floating control bar (ui/OverlayService) automatically while a patrol runs. */
+    var overlayEnabled: Boolean
+        get() = sp.getBoolean(KEY_OVERLAY_ENABLED, false)
+        set(v) = sp.edit { putBoolean(KEY_OVERLAY_ENABLED, v) }
+
+    /** Pinned overlays stay on screen when the patrol goes back to IDLE (long-press the handle). */
+    var overlayPinned: Boolean
+        get() = sp.getBoolean(KEY_OVERLAY_PINNED, false)
+        set(v) = sp.edit { putBoolean(KEY_OVERLAY_PINNED, v) }
+
+    /** Last position of the floating window in pixels; [OVERLAY_UNSET] means "never moved". */
+    var overlayX: Int
+        get() = sp.getInt(KEY_OVERLAY_X, OVERLAY_UNSET)
+        set(v) = sp.edit { putInt(KEY_OVERLAY_X, v) }
+
+    var overlayY: Int
+        get() = sp.getInt(KEY_OVERLAY_Y, OVERLAY_UNSET)
+        set(v) = sp.edit { putInt(KEY_OVERLAY_Y, v) }
+
     private fun str(key: String, default: Double): Double =
         sp.getString(key, null)?.trim()?.toDoubleOrNull() ?: default
 
@@ -105,10 +128,14 @@ class Prefs(context: Context) {
         const val KEY_INJECT_STEPS = "inject_steps"
         const val KEY_STEP_FLUSH_SEC = "step_flush_sec"
         const val KEY_DAILY_STEP_CAP = "daily_step_cap"
+        const val KEY_MAX_CADENCE = "max_cadence_spm"
         const val KEY_ACC_MIN = "accuracy_min_m"
         const val KEY_ACC_MAX = "accuracy_max_m"
         const val KEY_ALTITUDE = "altitude_m"
         const val KEY_NOTIFY_ARRIVAL = "notify_on_arrival"
+        const val KEY_VIBRATE_ARRIVAL = "vibrate_on_arrival"
+        const val KEY_ALERT_GAP_SEC = "alert_gap_sec"
+        const val KEY_AUTO_RETURN_LAPS = "auto_return_after_laps"
         const val KEY_RETURN_MODE = "return_mode"
         const val KEY_MOCK_NETWORK = "mock_network"
         const val KEY_MOCK_FUSED = "mock_fused"
@@ -121,5 +148,12 @@ class Prefs(context: Context) {
         const val KEY_LAST_LAT = "last_lat"
         const val KEY_LAST_LON = "last_lon"
         const val KEY_DISCLAIMER = "disclaimer_accepted"
+        const val KEY_OVERLAY_ENABLED = "overlay_enabled"
+        const val KEY_OVERLAY_PINNED = "overlay_pinned"
+        const val KEY_OVERLAY_X = "overlay_x"
+        const val KEY_OVERLAY_Y = "overlay_y"
+
+        /** Sentinel for [overlayX] / [overlayY] meaning "use the default placement". */
+        const val OVERLAY_UNSET = Int.MIN_VALUE
     }
 }

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Saved patrol routes and the newer patrol options. Separate file to keep merges simple. -->
+<resources>
+    <string name="route_picker_title">選擇巡邏路線</string>
+    <string name="route_item">%1$s（%2$d 個大花）</string>
+    <string name="route_new">新增路線</string>
+    <string name="route_manage">管理路線</string>
+    <string name="route_rename">重新命名</string>
+    <string name="route_duplicate">複製一份</string>
+    <string name="route_delete">刪除路線</string>
+    <string name="route_delete_msg">確定要刪除路線「%1$s」嗎？裡面的 %2$d 個大花會一起刪除，無法復原。</string>
+    <string name="route_copy_name">%1$s 副本</string>
+    <string name="route_name_hint">路線名稱，例如「公司附近」</string>
+    <string name="fmt_lap">%1$s 圈</string>
+
+    <!-- Patrol options added 2026-09-10 -->
+    <string name="pref_cat_alerts">提醒與省電</string>
+    <string name="pref_vibrate_title">抵達大花時震動</string>
+    <string name="pref_vibrate_summary">關閉可省電。震動馬達比模擬定位本身還耗電，路線上大花越多影響越大。關閉後仍會有通知。</string>
+    <string name="pref_alert_gap_title">提醒最短間隔（秒）</string>
+    <string name="pref_alert_gap_summary">連續經過多個大花時，至少間隔這麼久才會再震動一次。</string>
+    <string name="pref_auto_return_title">巡邏幾圈後自動回家</string>
+    <string name="pref_auto_return_summary">走完設定的圈數就自動走回真實位置並解除模擬。填 0 表示不限制，直到你自己按「回家」。</string>
+    <string name="pref_cat_plausibility">步數合理性</string>
+    <string name="pref_cadence_title">每分鐘步數上限</string>
+    <string name="pref_cadence_summary">距離除以步幅算出的步數，在高速下會不像人類。20 km/h 配 70 公分步幅約等於每分鐘 476 步，而真人快跑約 180 到 200。填 0 不限制；想保守一點可填 200。超過上限的部分不會寫入。</string>
+    <string name="fmt_spm">%1$s 步/分</string>
+</resources>

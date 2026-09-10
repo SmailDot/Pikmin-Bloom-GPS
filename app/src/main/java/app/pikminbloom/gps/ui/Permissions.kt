@@ -30,6 +30,31 @@ object Permissions {
         else ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
 
+    /** "Display over other apps" (SYSTEM_ALERT_WINDOW) — required by [OverlayService]. */
+    fun canDrawOverlays(context: Context): Boolean = try {
+        Settings.canDrawOverlays(context)
+    } catch (t: Throwable) {
+        Log.w(TAG, "canDrawOverlays failed", t); false
+    }
+
+    /**
+     * Intent for the system's overlay permission screen. Use it with an ActivityResultLauncher
+     * (there is no result, but the launcher gives us a callback to re-check on return).
+     */
+    fun overlayPermissionIntent(context: Context): Intent = Intent(
+        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+        Uri.fromParts("package", context.packageName, null),
+    )
+
+    /**
+     * Opens the overlay permission screen. Falls back to the app info page, because some HyperOS /
+     * MIUI builds hide the per-app overlay screen behind 應用程式資訊 → 權限 → 顯示在其他應用程式上層.
+     */
+    fun openOverlaySettings(context: Context): Boolean =
+        start(context, overlayPermissionIntent(context)) ||
+            start(context, Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)) ||
+            openAppDetails(context)
+
     fun isIgnoringBatteryOptimizations(context: Context): Boolean = try {
         context.getSystemService(PowerManager::class.java)
             ?.isIgnoringBatteryOptimizations(context.packageName) ?: false

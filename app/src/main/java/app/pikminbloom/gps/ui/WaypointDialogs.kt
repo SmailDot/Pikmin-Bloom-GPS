@@ -72,14 +72,19 @@ object WaypointDialogs {
                 }
                 if (!ok) return@setOnClickListener
 
+                // Remember what was just used, so the next Big Flower starts from these numbers
+                // instead of the factory defaults.
+                prefs.defaultRadiusM = radius!!
+                prefs.defaultDwellSec = dwell!!
+
                 onSave(
                     Waypoint(
                         id = existing?.id ?: UUID.randomUUID().toString(),
                         name = name,
                         lat = lat,
                         lon = lon,
-                        radiusM = radius!!,
-                        dwellSec = dwell!!,
+                        radiusM = radius,
+                        dwellSec = dwell,
                     )
                 )
                 dialog.dismiss()
@@ -161,9 +166,108 @@ object WaypointDialogs {
             }
         }
 
+        binding.btnRoute.text = store.activeRouteName().ifBlank { activity.getString(R.string.title_waypoint_list) }
+        binding.btnRoute.setOnClickListener {
+            sheet.dismiss()
+            // Re-open this sheet once the user is done picking, so switching routes feels in-place.
+            showRoutePicker(activity, store) {
+                showList(activity, store, prefs, onFocus, onStartHere, onAddRequested)
+            }
+        }
         binding.btnAdd.setOnClickListener { sheet.dismiss(); onAddRequested() }
+        binding.btnSearchNearby.setOnClickListener {
+            sheet.dismiss()
+            val host = activity as? androidx.appcompat.app.AppCompatActivity ?: return@setOnClickListener
+            // Search around wherever we currently are: the simulated position while patrolling,
+            // otherwise the saved home, the last known position, or the first waypoint.
+            val center = app.pikminbloom.gps.service.PatrolService.state.value.position
+                ?: prefs.home
+                ?: prefs.lastPosition
+                ?: store.load().firstOrNull()?.latLng
+            OverpassSearch.show(host, prefs, store, center)
+        }
         render()
         sheet.show()
+    }
+
+    /**
+     * Route switcher: pick a saved patrol, or create / rename / duplicate / delete one.
+     * [onDone] fires after any change (and after a plain dismissal) so the caller can refresh.
+     */
+    fun showRoutePicker(activity: Activity, store: WaypointStore, onDone: () -> Unit) {
+        val routes = store.routeList()
+        val activeId = store.activeRouteId.value
+        val labels = routes.map { r ->
+            activity.getString(R.string.route_item, r.name, r.waypoints.size)
+        }.toTypedArray()
+        val checkedIndex = routes.indexOfFirst { it.id == activeId }.coerceAtLeast(0)
+
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.route_picker_title)
+            .setSingleChoiceItems(labels, checkedIndex) { d, which ->
+                store.switchTo(routes[which].id)
+                d.dismiss()
+                onDone()
+            }
+            .setNeutralButton(R.string.route_manage) { _, _ -> showRouteManage(activity, store, onDone) }
+            .setPositiveButton(R.string.route_new) { _, _ -> promptRouteName(activity, null) { name -> store.createRoute(name); onDone() } }
+            .setNegativeButton(R.string.action_cancel) { _, _ -> onDone() }
+            .show()
+    }
+
+    private fun showRouteManage(activity: Activity, store: WaypointStore, onDone: () -> Unit) {
+        val routes = store.routeList()
+        val labels = routes.map { it.name }.toTypedArray()
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.route_manage)
+            .setItems(labels) { _, which ->
+                val route = routes[which]
+                MaterialAlertDialogBuilder(activity)
+                    .setTitle(route.name)
+                    .setItems(
+                        arrayOf(
+                            activity.getString(R.string.route_rename),
+                            activity.getString(R.string.route_duplicate),
+                            activity.getString(R.string.route_delete),
+                        )
+                    ) { _, action ->
+                        when (action) {
+                            0 -> promptRouteName(activity, route.name) { store.renameRoute(route.id, it); onDone() }
+                            1 -> { store.createRoute(activity.getString(R.string.route_copy_name, route.name), route.id); onDone() }
+                            2 -> MaterialAlertDialogBuilder(activity)
+                                .setTitle(R.string.route_delete)
+                                .setMessage(activity.getString(R.string.route_delete_msg, route.name, route.waypoints.size))
+                                .setPositiveButton(R.string.action_delete) { _, _ -> store.deleteRoute(route.id); onDone() }
+                                .setNegativeButton(R.string.action_cancel) { _, _ -> onDone() }
+                                .show()
+                        }
+                    }
+                    .show()
+            }
+            .setNegativeButton(R.string.action_cancel) { _, _ -> onDone() }
+            .show()
+    }
+
+    private fun promptRouteName(activity: Activity, current: String?, onName: (String) -> Unit) {
+        val input = android.widget.EditText(activity).apply {
+            setText(current ?: "")
+            setSingleLine()
+            setHint(R.string.route_name_hint)
+        }
+        val pad = (24 * activity.resources.displayMetrics.density).toInt()
+        val box = android.widget.FrameLayout(activity).apply {
+            setPadding(pad, pad / 2, pad, 0)
+            addView(input)
+        }
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(if (current == null) R.string.route_new else R.string.route_rename)
+            .setView(box)
+            .setPositiveButton(R.string.action_save) { _, _ ->
+                val name = input.text?.toString()?.trim().orEmpty()
+                if (name.isNotEmpty()) onName(name)
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
     }
 
     fun confirmDelete(activity: Activity, wp: Waypoint, onConfirmed: () -> Unit) {

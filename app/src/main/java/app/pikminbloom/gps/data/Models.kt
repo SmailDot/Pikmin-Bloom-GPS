@@ -44,10 +44,26 @@ data class PatrolConfig(
     val injectSteps: Boolean = true,
     val stepFlushIntervalSec: Int = 60,
     val dailyStepCap: Long = 50_000,
+    /**
+     * Ceiling on how many steps per minute may be written, whatever the simulated speed says.
+     * 0 disables it. Distance / stride alone produces impossible cadences at high speed: 20 km/h
+     * with a 0.7 m stride is ~476 steps per minute, where a fast human runner is 180-200.
+     */
+    val maxCadenceSpm: Int = 0,
     val accuracyMinM: Float = 3f,
     val accuracyMaxM: Float = 9f,
     val altitudeM: Double = 20.0,
     val notifyOnArrival: Boolean = true,
+    /**
+     * Buzz as well as post the arrival notification. Off by default: the vibration motor is one of
+     * the few things on the phone that costs more power than the GPS work this app already does,
+     * and a multi-flower loop would fire it constantly.
+     */
+    val vibrateOnArrival: Boolean = false,
+    /** Never alert more often than this, however many flowers are passed. */
+    val arrivalAlertMinGapSec: Int = 60,
+    /** Walk home automatically after this many completed laps. 0 disables it. */
+    val autoReturnAfterLaps: Int = 0,
     val returnMode: ReturnMode = ReturnMode.WALK,
     val mockNetworkProvider: Boolean = true,
     val mockFusedProvider: Boolean = true,

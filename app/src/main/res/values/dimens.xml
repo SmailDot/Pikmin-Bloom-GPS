@@ -13,4 +13,10 @@
     <dimen name="route_width">6dp</dimen>
     <dimen name="trail_width">8dp</dimen>
     <dimen name="circle_stroke">2dp</dimen>
+
+    <dimen name="overlay_handle">48dp</dimen>
+    <dimen name="overlay_icon">26dp</dimen>
+    <dimen name="overlay_button">32dp</dimen>
+    <dimen name="overlay_corner">18dp</dimen>
+    <dimen name="overlay_status_max">200dp</dimen>
 </resources>

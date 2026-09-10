@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     private lateinit var importLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var exportJsonLauncher: ActivityResultLauncher<String>
     private lateinit var exportGpxLauncher: ActivityResultLauncher<String>
+    private lateinit var overlayLauncher: ActivityResultLauncher<Intent>
 
     private var locationCallback: ((Boolean) -> Unit)? = null
     private var notificationCallback: ((Boolean) -> Unit)? = null
@@ -77,6 +78,9 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     private var lastBearing = 0f
     private var currentHome: LatLng? = null
     private var centeredOnRealPosition = false
+
+    /** Last phase we reacted to, so the floating bar is only started/stopped on a real transition. */
+    private var overlayPhase: PatrolPhase? = null
 
     // ------------------------------------------------------------------ lifecycle
 
@@ -144,6 +148,15 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         }
         exportGpxLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument(MIME_GPX)) { uri ->
             if (uri != null) exportTo(uri) { store.exportGpx() }
+        }
+        // The overlay permission screen has no result; we just re-check when the user comes back.
+        overlayLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (Permissions.canDrawOverlays(this)) {
+                prefs.overlayEnabled = true
+                showOverlay()
+            } else {
+                toast(getString(R.string.toast_overlay_denied))
+            }
         }
     }
 
@@ -308,6 +321,53 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         renderStatus(state)
         renderButtons(state.phase)
         renderPosition(state)
+        syncOverlay(state.phase)
+    }
+
+    /**
+     * Starts the floating control bar when a patrol begins and takes it down when it ends. The
+     * service itself never touches the UI, so this lives here; when this activity is not visible the
+     * overlay hides itself shortly after the phase goes back to IDLE.
+     */
+    private fun syncOverlay(phase: PatrolPhase) {
+        val previous = overlayPhase
+        overlayPhase = phase
+        if (previous == phase) return
+        when {
+            phase != PatrolPhase.IDLE ->
+                if (prefs.overlayEnabled && Permissions.canDrawOverlays(this)) OverlayService.start(this)
+
+            previous != null && !prefs.overlayPinned -> OverlayService.stop(this)
+        }
+    }
+
+    /** Menu toggle: show the bar right now (pinned, so it stays after the patrol) or hide it. */
+    private fun toggleOverlay() {
+        if (OverlayService.isRunning) {
+            prefs.overlayPinned = false
+            OverlayService.stop(this)
+            toast(getString(R.string.toast_overlay_hidden))
+            return
+        }
+        if (!Permissions.canDrawOverlays(this)) {
+            lifecycleScope.launch {
+                val go = ask(
+                    R.string.dlg_overlay_permission_title, R.string.dlg_overlay_permission_msg,
+                    R.string.action_open_overlay_settings,
+                )
+                if (go) {
+                    runCatching { overlayLauncher.launch(Permissions.overlayPermissionIntent(this@MainActivity)) }
+                        .onFailure { Permissions.openOverlaySettings(this@MainActivity) }
+                }
+            }
+            return
+        }
+        showOverlay()
+    }
+
+    private fun showOverlay() {
+        OverlayService.start(this, pinned = true)
+        toast(getString(R.string.toast_overlay_shown))
     }
 
     private fun renderStatus(state: PatrolState) {
@@ -400,6 +460,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         R.id.action_my_location -> { goToMyLocation(); true }
         R.id.action_waypoint_list -> { showWaypointList(); true }
+        R.id.action_overlay -> { toggleOverlay(); true }
         R.id.action_setup -> { startActivity(Intent(this, SetupActivity::class.java)); true }
         R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
         R.id.action_clear_home -> { clearHome(); true }
@@ -515,8 +576,12 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         if (PatrolService.isRunning) return
         lifecycleScope.launch {
             if (!preflight()) return@launch
-            val home = resolveHome()
-            PatrolService.start(this@MainActivity, home, startAtIndex)
+            // Home is ALWAYS a fresh fix, never a stored one. It is where the patrol walks back to
+            // and where the mock providers hand control back to the real GPS, so it has to be where
+            // the user is now; people move between sessions, and reusing this morning's home would
+            // drop the game avatar there and look like a teleport. Passing null makes PatrolService
+            // take the fix itself. (Prefs.home is still written, but only to draw the map marker.)
+            PatrolService.start(this@MainActivity, null, startAtIndex)
         }
     }
 
@@ -581,17 +646,6 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     }
 
     /** Reuses a recent home (so we do not need a fresh fix) or returns null to let the service locate. */
-    private suspend fun resolveHome(): LatLng? {
-        val saved = prefs.home ?: return null
-        if (prefs.savedHomeAgeMs >= HOME_MAX_AGE_MS) return null
-        val reuse = ask(
-            titleRes = R.string.dlg_home_title,
-            message = getString(R.string.dlg_home_msg, saved.toString(), ageText(prefs.savedHomeAgeMs)),
-            positiveRes = R.string.action_reuse_home,
-            negativeRes = R.string.action_relocate,
-        )
-        return if (reuse) saved else null
-    }
 
     private fun maybeShowDisclaimer() {
         if (prefs.disclaimerAccepted) return
@@ -655,12 +709,6 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         if (metres >= 1000.0) getString(R.string.fmt_distance_km, metres / 1000.0)
         else getString(R.string.fmt_distance_m, metres)
 
-    private fun ageText(ms: Long): String {
-        val minutes = ms / 60_000L
-        return if (minutes < 60) getString(R.string.fmt_minutes_ago, minutes)
-        else getString(R.string.fmt_hours_ago, minutes / 60)
-    }
-
     private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
 
     private fun snack(text: String, duration: Int) {
@@ -672,7 +720,6 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         private const val TRAIL_LIMIT = 2000
         private const val TRAIL_MIN_STEP_M = 1.0
         private const val REAL_FIX_TIMEOUT_MS = 15_000L
-        private const val HOME_MAX_AGE_MS = 12L * 60 * 60 * 1000
         private const val MIME_ANY = "*/*"
         private const val MIME_JSON = "application/json"
         private const val MIME_GPX = "application/gpx+xml"

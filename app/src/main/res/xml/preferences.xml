@@ -121,6 +121,16 @@
             app:title="@string/pref_notify_arrival_title" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/pref_cat_overlay">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:icon="@drawable/ic_flower"
+            app:key="overlay_enabled"
+            app:summary="@string/pref_overlay_summary"
+            app:title="@string/pref_overlay_title" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/pref_cat_about">
 
         <Preference

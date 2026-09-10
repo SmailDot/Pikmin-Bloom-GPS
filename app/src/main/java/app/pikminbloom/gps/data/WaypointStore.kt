@@ -12,20 +12,63 @@ import java.io.File
 import java.io.StringReader
 import java.util.UUID
 
-/** Big Flower list persisted as JSON in the app's private files dir. Process-wide singleton. */
+/** A named set of Big Flowers the user can switch between (「巡邏1」「巡邏2」…). */
+data class Route(
+    val id: String,
+    val name: String,
+    val waypoints: List<Waypoint>,
+)
+
+/**
+ * Big Flower routes persisted as JSON in the app's private files dir. Process-wide singleton.
+ *
+ * Every mutating call that does not name a route acts on the **active** route, so the rest of the
+ * app can keep treating this as "the waypoint list" while the user switches between saved patrols.
+ *
+ * File format v2:
+ * ```json
+ * { "version": 2, "activeRouteId": "...", "routes": [ { "id": "...", "name": "...", "waypoints": [...] } ] }
+ * ```
+ * v1 (`{"version":1,"waypoints":[...]}`) and a bare array are migrated into one route on load.
+ */
 class WaypointStore private constructor(context: Context) {
 
     private val file = File(context.applicationContext.filesDir, FILE_NAME)
-    private val _waypoints = MutableStateFlow(readFile())
+
+    private var state: Snapshot = readFile()
+
+    private val _routes = MutableStateFlow(state.routes)
+    /** Every saved route, in user order. */
+    val routes: StateFlow<List<Route>> = _routes
+
+    private val _waypoints = MutableStateFlow(state.active?.waypoints ?: emptyList())
+    /** Waypoints of the active route. Unchanged contract for existing callers. */
     val waypoints: StateFlow<List<Waypoint>> = _waypoints
+
+    private val _activeRouteId = MutableStateFlow(state.activeRouteId)
+    val activeRouteId: StateFlow<String> = _activeRouteId
+
+    private data class Snapshot(val routes: List<Route>, val activeRouteId: String) {
+        val active: Route? get() = routes.firstOrNull { it.id == activeRouteId } ?: routes.firstOrNull()
+    }
+
+    // ---------------------------------------------------------------- active route
 
     fun load(): List<Waypoint> = _waypoints.value
 
+    fun activeRoute(): Route? = state.active
+
+    fun activeRouteName(): String = state.active?.name.orEmpty()
+
     @Synchronized
     fun save(list: List<Waypoint>) {
-        _waypoints.value = list
-        runCatching { file.writeText(toJson(list)) }
-            .onFailure { Log.w(TAG, "save waypoints failed", it) }
+        val active = state.active ?: run {
+            // No routes at all yet (fresh install): create one so the list has somewhere to live.
+            val created = Route(UUID.randomUUID().toString(), DEFAULT_ROUTE_NAME, list)
+            commit(Snapshot(listOf(created), created.id))
+            return
+        }
+        commit(state.copy(routes = state.routes.map { if (it.id == active.id) it.copy(waypoints = list) else it }))
     }
 
     fun add(wp: Waypoint) = save(load() + wp)
@@ -37,18 +80,99 @@ class WaypointStore private constructor(context: Context) {
     fun move(from: Int, to: Int) {
         val list = load().toMutableList()
         if (from !in list.indices || to !in list.indices || from == to) return
-        val item = list.removeAt(from)
-        list.add(to, item)
+        list.add(to, list.removeAt(from))
         save(list)
     }
 
     fun clear() = save(emptyList())
 
-    fun exportJson(): String = toJson(load())
+    // ---------------------------------------------------------------- routes
 
-    /** Replaces the list with the JSON export format (array of {name,lat,lon,radiusM,dwellSec}). */
+    fun routeList(): List<Route> = state.routes
+
+    /** @return the new route's id. [copyFromId] duplicates that route's waypoints. */
+    @Synchronized
+    fun createRoute(name: String, copyFromId: String? = null): String {
+        val source = copyFromId?.let { id -> state.routes.firstOrNull { it.id == id } }
+        val route = Route(
+            id = UUID.randomUUID().toString(),
+            name = uniqueName(name.ifBlank { DEFAULT_ROUTE_NAME }),
+            waypoints = source?.waypoints.orEmpty(),
+        )
+        commit(Snapshot(state.routes + route, route.id))
+        return route.id
+    }
+
+    @Synchronized
+    fun renameRoute(id: String, name: String) {
+        if (name.isBlank()) return
+        commit(state.copy(routes = state.routes.map { if (it.id == id) it.copy(name = uniqueName(name, except = id)) else it }))
+    }
+
+    /** Deleting the last route leaves one empty route behind, so the app always has somewhere to add to. */
+    @Synchronized
+    fun deleteRoute(id: String) {
+        val remaining = state.routes.filterNot { it.id == id }
+        if (remaining.isEmpty()) {
+            val fresh = Route(UUID.randomUUID().toString(), DEFAULT_ROUTE_NAME, emptyList())
+            commit(Snapshot(listOf(fresh), fresh.id))
+            return
+        }
+        val nextActive = if (state.activeRouteId == id) remaining.first().id else state.activeRouteId
+        commit(Snapshot(remaining, nextActive))
+    }
+
+    @Synchronized
+    fun switchTo(id: String) {
+        if (state.routes.none { it.id == id } || state.activeRouteId == id) return
+        commit(state.copy(activeRouteId = id))
+    }
+
+    private fun uniqueName(wanted: String, except: String? = null): String {
+        val taken = state.routes.filter { it.id != except }.map { it.name }.toSet()
+        if (wanted !in taken) return wanted
+        var i = 2
+        while ("$wanted $i" in taken) i++
+        return "$wanted $i"
+    }
+
+    @Synchronized
+    private fun commit(next: Snapshot) {
+        state = next
+        _routes.value = next.routes
+        _activeRouteId.value = next.activeRouteId
+        _waypoints.value = next.active?.waypoints ?: emptyList()
+        runCatching { file.writeText(toJson(next)) }
+            .onFailure { Log.w(TAG, "save routes failed", it) }
+    }
+
+    // ---------------------------------------------------------------- import / export
+
+    fun exportJson(): String = toJson(state)
+
+    /**
+     * Imports waypoints into the active route (replacing it). Also accepts a full v2 export, in
+     * which case every route in the file is added.
+     */
     fun importJson(text: String): Int {
-        val parsed = fromJson(text)
+        val trimmed = text.trim()
+        if (trimmed.startsWith("{")) {
+            val obj = runCatching { JSONObject(trimmed) }.getOrNull()
+            val routesArr = obj?.optJSONArray("routes")
+            if (routesArr != null) {
+                val imported = ArrayList<Route>()
+                for (i in 0 until routesArr.length()) {
+                    val r = routesArr.optJSONObject(i) ?: continue
+                    val wps = parseWaypoints(r.optJSONArray("waypoints") ?: JSONArray())
+                    if (wps.isEmpty()) continue
+                    imported.add(Route(UUID.randomUUID().toString(), uniqueName(r.optString("name").ifBlank { DEFAULT_ROUTE_NAME }), wps))
+                }
+                if (imported.isEmpty()) return 0
+                commit(Snapshot(state.routes + imported, imported.first().id))
+                return imported.sumOf { it.waypoints.size }
+            }
+        }
+        val parsed = parseAnyWaypoints(trimmed)
         save(parsed)
         return parsed.size
     }
@@ -67,7 +191,7 @@ class WaypointStore private constructor(context: Context) {
         return sb.toString()
     }
 
-    /** Imports every `<wpt>` (and, if there are none, `<rtept>`/`<trkpt>`) as waypoints. */
+    /** Imports every `<wpt>` (or, if there are none, `<rtept>`/`<trkpt>`) into the active route. */
     fun importGpx(text: String, defaultRadiusM: Double, defaultDwellSec: Int): Int {
         val out = ArrayList<Waypoint>()
         val fallback = ArrayList<Waypoint>()
@@ -138,26 +262,74 @@ class WaypointStore private constructor(context: Context) {
         return result.size
     }
 
-    private fun readFile(): List<Waypoint> = try {
-        if (file.exists()) fromJson(file.readText()) else emptyList()
+    // ---------------------------------------------------------------- persistence
+
+    private fun readFile(): Snapshot = try {
+        if (file.exists()) fromJson(file.readText()) else emptySnapshot()
     } catch (t: Throwable) {
-        Log.w(TAG, "read waypoints failed", t); emptyList()
+        Log.w(TAG, "read routes failed", t); emptySnapshot()
     }
 
-    private fun toJson(list: List<Waypoint>): String {
-        val arr = JSONArray()
-        for (w in list) {
-            arr.put(JSONObject().apply {
-                put("id", w.id); put("name", w.name); put("lat", w.lat); put("lon", w.lon)
-                put("radiusM", w.radiusM); put("dwellSec", w.dwellSec)
-            })
+    private fun emptySnapshot(): Snapshot {
+        val r = Route(UUID.randomUUID().toString(), DEFAULT_ROUTE_NAME, emptyList())
+        return Snapshot(listOf(r), r.id)
+    }
+
+    private fun toJson(s: Snapshot): String {
+        val routes = JSONArray()
+        for (r in s.routes) {
+            val wps = JSONArray()
+            for (w in r.waypoints) {
+                wps.put(JSONObject().apply {
+                    put("id", w.id); put("name", w.name); put("lat", w.lat); put("lon", w.lon)
+                    put("radiusM", w.radiusM); put("dwellSec", w.dwellSec)
+                })
+            }
+            routes.put(JSONObject().put("id", r.id).put("name", r.name).put("waypoints", wps))
         }
-        return JSONObject().put("version", 1).put("waypoints", arr).toString(2)
+        return JSONObject()
+            .put("version", 2)
+            .put("activeRouteId", s.activeRouteId)
+            .put("routes", routes)
+            .toString(2)
     }
 
-    private fun fromJson(text: String): List<Waypoint> {
+    private fun fromJson(text: String): Snapshot {
         val trimmed = text.trim()
-        val arr = if (trimmed.startsWith("[")) JSONArray(trimmed) else JSONObject(trimmed).optJSONArray("waypoints") ?: JSONArray()
+        if (trimmed.startsWith("{")) {
+            val obj = JSONObject(trimmed)
+            val routesArr = obj.optJSONArray("routes")
+            if (routesArr != null) {
+                val routes = ArrayList<Route>(routesArr.length())
+                for (i in 0 until routesArr.length()) {
+                    val r = routesArr.optJSONObject(i) ?: continue
+                    routes.add(
+                        Route(
+                            id = r.optString("id").takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
+                            name = r.optString("name").takeIf { it.isNotBlank() } ?: "$DEFAULT_ROUTE_NAME ${i + 1}",
+                            waypoints = parseWaypoints(r.optJSONArray("waypoints") ?: JSONArray()),
+                        )
+                    )
+                }
+                if (routes.isEmpty()) return emptySnapshot()
+                val active = obj.optString("activeRouteId").takeIf { id -> routes.any { it.id == id } } ?: routes.first().id
+                return Snapshot(routes, active)
+            }
+        }
+        // v1 or a bare array: one route holding everything.
+        val migrated = parseAnyWaypoints(trimmed)
+        val r = Route(UUID.randomUUID().toString(), DEFAULT_ROUTE_NAME, migrated)
+        Log.i(TAG, "migrated ${migrated.size} waypoints from the old single-list format")
+        return Snapshot(listOf(r), r.id)
+    }
+
+    private fun parseAnyWaypoints(trimmed: String): List<Waypoint> {
+        val arr = if (trimmed.startsWith("[")) JSONArray(trimmed)
+        else JSONObject(trimmed).optJSONArray("waypoints") ?: JSONArray()
+        return parseWaypoints(arr)
+    }
+
+    private fun parseWaypoints(arr: JSONArray): List<Waypoint> {
         val out = ArrayList<Waypoint>(arr.length())
         for (i in 0 until arr.length()) {
             val o = arr.optJSONObject(i) ?: continue
@@ -182,6 +354,7 @@ class WaypointStore private constructor(context: Context) {
     companion object {
         private const val TAG = "PikminGPS"
         private const val FILE_NAME = "waypoints.json"
+        const val DEFAULT_ROUTE_NAME = "巡邏 1"
 
         @Volatile private var instance: WaypointStore? = null
 

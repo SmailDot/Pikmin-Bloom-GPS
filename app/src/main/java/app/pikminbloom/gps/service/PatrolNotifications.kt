@@ -60,18 +60,20 @@ class PatrolNotifications(private val ctx: Context) {
         return b.build()
     }
 
-    fun arrived(name: String) {
+    /** @param vibrate false keeps the alert silent; the vibration motor is a real battery cost. */
+    fun arrived(name: String, vibrate: Boolean) {
         notifyEvent(
             ID_ARRIVED,
             ctx.getString(R.string.svc_arrived_title, name),
             ctx.getString(R.string.svc_arrived_text),
         )
-        vibrate(longArrayOf(0, 300, 150, 300, 150, 600))
+        if (vibrate) vibrate(longArrayOf(0, 220))
     }
 
-    fun returnedHome() {
+    fun returnedHome(vibrate: Boolean = true) {
         notifyEvent(ID_HOME, ctx.getString(R.string.svc_home_title), ctx.getString(R.string.svc_home_text))
-        vibrate(longArrayOf(0, 200, 100, 200))
+        // Arriving home happens once per session, so a short double buzz is affordable.
+        if (vibrate) vibrate(longArrayOf(0, 200, 120, 200))
     }
 
     fun error(message: String) {
