@@ -1,0 +1,7 @@
+# Device screenshots of the live game: they show the account's real neighbourhood, the player's
+# Mii and friend avatars. Same reason /docs/test/ is excluded in the root .gitignore.
+#
+# The vision tests skip cleanly (with an explanatory println) when these are absent, so a fresh
+# clone still builds and the synthetic tests still run. README.md here says how to re-capture them.
+# Delete this file if you decide the set should be shared.
+*.png
