@@ -50,6 +50,14 @@ class DebugCommandReceiver : BroadcastReceiver() {
                     Waypoint(UUID.randomUUID().toString(), parts.getOrNull(2)?.trim().orEmpty().ifBlank { "大花" }, lat, lon, radius, dwell)
                 }
                 store.save(list)
+                // Optional: --es travel_mode CAR makes the active route a "trip" (drive to the first
+                // place, wander it on foot, drive back).
+                intent.getStringExtra("travel_mode")?.let { name ->
+                    runCatching { app.pikminbloom.gps.data.TravelMode.valueOf(name.uppercase()) }.getOrNull()?.let { mode ->
+                        store.setRouteTravelMode(store.activeRouteId.value, mode)
+                        Log.i(TAG, "route travel mode: $mode")
+                    }
+                }
                 Log.i(TAG, "waypoints set: ${list.size}")
             }
             "start" -> {
