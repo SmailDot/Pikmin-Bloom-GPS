@@ -6,19 +6,11 @@ package app.pikminbloom.gps.vision
  * Deliberately free of `android.*`: everything in `vision/` must compile and run under plain JUnit
  * on the JVM so the detector can be tuned against real screenshots without a device or emulator.
  *
- * The Android side (written later, in the service layer) is expected to provide a one-line factory:
- *
- * ```kotlin
- * // service layer, NOT this package:
- * fun Bitmap.toRgbImage(): RgbImage {
- *     val px = IntArray(width * height)
- *     getPixels(px, 0, width, 0, 0, width, height)   // Bitmap already hands back ARGB_8888 ints
- *     return RgbImage(width, height, px)
- * }
- * ```
- *
- * and the JVM test side does the same through `javax.imageio.ImageIO` +
- * `BufferedImage.getRGB(...)`. Both produce the identical `0xAARRGGBB` packing this class assumes.
+ * The Android factories live in `AndroidImages.kt` (`RgbImage.fromImage(image)` for the
+ * `ImageReader` frames behind a `VirtualDisplay`, honouring the padded row stride, and
+ * `RgbImage.fromBitmap(bitmap)`), the only file in this package that imports `android.*`.
+ * The JVM test side decodes PNGs through `PngCodec`. All of them produce the identical
+ * `0xAARRGGBB` packing this class assumes.
  */
 class RgbImage(val width: Int, val height: Int, val pixels: IntArray) {
 

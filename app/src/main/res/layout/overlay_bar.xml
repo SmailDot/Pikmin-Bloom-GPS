@@ -92,6 +92,18 @@
             android:src="@drawable/ic_stop"
             android:tint="@color/overlay_icon" />
 
+        <!-- Bird's-eye Big Flower scan toggle (vision/FlowerScanner). -->
+        <ImageButton
+            android:id="@+id/btnScan"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_scan"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_scan"
+            android:tint="@color/overlay_icon" />
+
         <ImageButton
             android:id="@+id/btnOpen"
             android:layout_width="@dimen/overlay_button"

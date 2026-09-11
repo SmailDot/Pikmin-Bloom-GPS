@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 俯瞰模式大花掃描（vision/ScreenCaptureService, vision/FlowerScanner）。獨立檔案以避免合併衝突。 -->
+<resources>
+    <string name="menu_scan_flowers">掃描俯瞰模式大花</string>
+
+    <!-- 螢幕擷取常駐通知 -->
+    <string name="scan_channel_name">畫面掃描</string>
+    <string name="scan_channel_desc">掃描俯瞰模式大花時的螢幕擷取常駐通知</string>
+    <string name="scan_notif_title">掃描俯瞰模式大花中</string>
+    <string name="scan_notif_text">畫面只在手機上分析，不會上傳</string>
+    <string name="scan_notif_stop">停止掃描</string>
+
+    <!-- 錯誤 -->
+    <string name="scan_err_projection_stopped">螢幕擷取已被系統停止</string>
+    <string name="scan_err_projection_denied">未取得螢幕擷取授權</string>
+    <string name="scan_err_foreground">無法啟動螢幕擷取服務：%1$s</string>
+    <string name="scan_err_display">無法建立擷取畫面：%1$s</string>
+    <string name="scan_err_capture_failed">連續無法擷取畫面，掃描已停止</string>
+
+    <!-- 等待中 -->
+    <string name="scan_wait_wrong_view">請切換到俯瞰模式</string>
+    <string name="scan_wait_no_flowers">畫面上沒有大花，請把地圖移到有大花的地方</string>
+    <string name="scan_wait_patrol">等待巡邏開始</string>
+    <string name="scan_wait_blank">遊戲畫面被遮蔽：Pikmin Bloom 偵測到螢幕擷取後會把畫面變黑。請先把遊戲從最近工作清單滑掉，再重新開啟遊戲</string>
+
+    <!-- 浮動控制列的一行狀態 -->
+    <string name="scan_status_need_projection">需要螢幕擷取授權</string>
+    <string name="scan_status_calibrating">校準中 %1$d m</string>
+    <string name="scan_status_scanning">已找到 %1$d 朵</string>
+    <string name="scan_status_done">掃描完成 %1$d 朵</string>
+    <string name="scan_status_error">掃描錯誤：%1$s</string>
+    <string name="ovl_cd_scan">掃描</string>
+
+    <!-- 主畫面流程 -->
+    <string name="dlg_scan_title">掃描俯瞰模式大花</string>
+    <string name="dlg_scan_msg">這個功能會擷取 Pikmin Bloom 的俯瞰模式畫面，辨識畫面上的大花並換算成座標，加進巡邏路線。\n\n步驟：\n1. 需要有進行中的巡邏，巡邏走動的距離就是比例尺。校準需要兩張靜止畫面，所以巡邏會自動短暫暫停幾秒（開始時一次、走約 40 公尺後一次、之後每 300 公尺一次）。\n2. 重要：請先把 Pikmin Bloom 從最近工作清單滑掉（完全關閉）。遊戲在執行中若偵測到螢幕擷取開始，會把畫面變黑；授權後再開啟遊戲則不會。\n3. 授權後開啟 Pikmin Bloom，按底部中央的地圖按鈕切到「俯瞰模式」，再按右下角的「回到目前位置」。\n4. 掃描期間狀態列會顯示螢幕錄製圖示；畫面只在手機上分析，不會上傳，也不會代替你點擊遊戲。\n5. 進度會顯示在浮動控制列，回到本畫面即可查看結果。\n\n接下來系統會詢問螢幕擷取授權，請選擇「整個螢幕」。</string>
+    <string name="dlg_scan_need_patrol_title">需要進行中的巡邏</string>
+    <string name="dlg_scan_need_patrol_msg">掃描用巡邏的走動距離當比例尺，所以要先開始巡邏。開始巡邏後再回來按一次「掃描俯瞰模式大花」。</string>
+    <string name="action_scan_start_patrol">先開始巡邏</string>
+    <string name="action_scan_start">開始掃描</string>
+    <string name="action_scan_stop">停止掃描</string>
+    <string name="action_scan_view_results">查看結果</string>
+    <string name="dlg_scan_running_title">掃描進行中</string>
+    <string name="dlg_scan_running_msg">目前狀態：%1$s</string>
+    <string name="toast_scan_started">掃描已開始</string>
+    <string name="dlg_scan_launch_title">授權完成，現在開啟遊戲</string>
+    <string name="dlg_scan_launch_msg">請確認 Pikmin Bloom 已經完全關閉（從最近工作清單滑掉），再按「開啟 Pikmin Bloom」。進入遊戲後切到俯瞰模式並按「回到目前位置」，掃描會自動進行。</string>
+    <string name="action_scan_launch_game">開啟 Pikmin Bloom</string>
+    <string name="action_scan_launch_later">稍後自己開</string>
+    <string name="toast_scan_stopped">掃描已停止</string>
+    <string name="toast_scan_denied">未取得螢幕擷取授權，無法掃描</string>
+    <string name="toast_scan_no_results">這次掃描沒有找到大花</string>
+
+    <!-- 結果對話框 -->
+    <string name="dlg_scan_results_title">掃描結果（%1$d 朵）</string>
+    <string name="scan_result_item">%1$s · 距離 %2$s · %3$s</string>
+    <string name="scan_confidence_high">有莖，位置較準</string>
+    <string name="scan_confidence_low">無莖，位置為估計</string>
+    <string name="action_scan_add_current">加入目前路線</string>
+    <string name="action_scan_new_route">建立新路線「掃描結果」</string>
+    <string name="scan_route_name">掃描結果</string>
+    <string name="toast_scan_added">已加入 %1$d 朵大花</string>
+    <string name="toast_scan_nothing_selected">沒有勾選任何大花</string>
+</resources>

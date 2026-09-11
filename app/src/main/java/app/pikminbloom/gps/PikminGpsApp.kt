@@ -61,10 +61,18 @@ class PikminGpsApp : Application() {
                 enableVibration(true)
             }
         )
+        // The screen-capture foreground service (bird's-eye Big Flower scan) needs its own quiet channel.
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_SCREEN_SCAN, getString(R.string.scan_channel_name), NotificationManager.IMPORTANCE_LOW).apply {
+                description = getString(R.string.scan_channel_desc)
+                setShowBadge(false)
+            }
+        )
     }
 
     companion object {
         const val CHANNEL_PATROL = "patrol"
         const val CHANNEL_EVENTS = "events"
+        const val CHANNEL_SCREEN_SCAN = "screen_scan"
     }
 }

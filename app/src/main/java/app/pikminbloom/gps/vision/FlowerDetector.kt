@@ -168,7 +168,7 @@ class FlowerDetector(val params: Params = Params()) {
          * pale roads, which are the same hue family) spans 63-121; the band is widened to 55-175
          * for margin and to swallow the darker tree canopies. A pixel inside this band is ground.
          */
-        val grassHueMinDeg: Double = 55.0,
+        val grassHueMinDeg: Double = 60.0,
         val grassHueMaxDeg: Double = 175.0,
         /**
          * A green pixel this saturated is not grass — measured grass tops out near S 0.53.
@@ -185,6 +185,63 @@ class FlowerDetector(val params: Params = Params()) {
         val minValue: Double = 0.42,
         /** Value ceiling — drops blown-out white UI. */
         val maxValue: Double = 0.99,
+
+        // ---- pale blooms (white daisies) --------------------------------------------------------
+        /**
+         * The white daisy species has petals that fail [minSaturation] outright (measured S
+         * 0.03-0.17, V ~0.80) and only a small warm centre that passes (H 43-77, S 0.35-0.41,
+         * a few hundred px - under [minAreaPx]). A second mask therefore collects NEAR-WHITE
+         * pixels: low saturation, high value. Grass carpet has pale pixels too (S p10 0.13,
+         * V p90 0.86) but scattered, and the erosion + the warm-centre requirement below drop it.
+         */
+        val paleMaxSat: Double = 0.18,
+        val paleMinValue: Double = 0.74,
+        /** A pale blob is a daisy only if it holds a warm centre of at least this many pixels. */
+        val paleCentreHueMinDeg: Double = 25.0,
+        val paleCentreHueMaxDeg: Double = 72.0,
+        val paleCentreMinSat: Double = 0.42,
+        val paleCentreMinPx: Int = 8,
+        val paleMinAreaPx: Int = 700,
+        val paleMaxAreaPx: Int = 2_600,
+        val paleMaxAspect: Double = 1.45,
+        /** A daisy seen from above is a fairly solid disc (measured 0.61); pale road/grass highlights are ragged (0.30-0.41). */
+        val paleMinFill: Double = 0.50,
+        /**
+         * Kernel radius of the opening applied to the pale mask. It must beat the ~2-3 px range
+         * ring but no more: a daisy has grass showing between its petals, and a larger kernel
+         * cuts it into pieces that fall under [paleMinAreaPx].
+         */
+        val paleOpenRadius: Int = 2,
+        /**
+         * Petals of a real white daisy are essentially white (blob mean S 0.05-0.06); a pale
+         * yellow-green grass highlight that passes the pixel gate averages ~0.11. Together with
+         * the warm-centre count this is what separates the two.
+         */
+        val paleMaxMeanSat: Double = 0.09,
+
+        /**
+         * A blob with no stem and a near-perfect solid disc shape is screen furniture (the red
+         * marker dot, a coloured pin), not a bloom: petals leave gaps, so measured blooms fill at
+         * most ~0.6 of their box, while a UI disc fills ~0.8.
+         */
+        val maxFillWithoutStem: Double = 0.68,
+
+        /**
+         * Yellow-ish blobs (hue [yellowHueMinDeg], [yellowHueMaxDeg]) need this much mean saturation.
+         * Widening the grass band edge to 60 (needed for the yellow daisy, petals H 39-60, S 0.60)
+         * also lets pale yellow-green grass highlights grow past the area floor; they measure
+         * S 0.31-0.35 and this is what tells the two apart.
+         */
+        val yellowHueMinDeg: Double = 30.0,
+        val yellowHueMaxDeg: Double = 62.0,
+        val yellowMinMeanSat: Double = 0.45,
+
+        /**
+         * Blobs whose box touches the left/right frame edge are dropped: a clipped object cannot be
+         * anchored, and a clipped mushroom has its badge off-screen so the badge rule cannot save
+         * us. The map moves, so a real flower at the edge is seen whole on a later frame.
+         */
+        val edgeMarginPx: Int = 12,
         /**
          * Radius of the square structuring element used to find seeds. 3 means a 7x7 all-in test,
          * which erases the 3-6 px carpet speckle *and* the small clumps two or three of them form,
@@ -383,6 +440,24 @@ class FlowerDetector(val params: Params = Params()) {
         val seeds = erode(mask, w, h, params.erodeRadius)
         val blobs = labelWithSeeds(work, mask, seeds, minArea, maxArea)
 
+        // ---- 2b. pale blooms: white daisies, which the colour mask above cannot see ----------
+        val paleMinArea = max(1, (params.paleMinAreaPx / areaScale).toInt())
+        val paleMaxArea = max(paleMinArea + 1, (params.paleMaxAreaPx / areaScale).toInt())
+        val paleMask = BooleanArray(w * h)
+        for (i in 0 until w * h) {
+            ColorMath.toHsv(work.pixels[i], hsv)
+            paleMask[i] = hsv[1] <= params.paleMaxSat && hsv[2] >= params.paleMinValue
+        }
+        // An OPENING (erode, then dilate back) rather than seeded reconstruction: the pale mask
+        // also contains each Big Flower's thin 40 m range ring, and a daisy standing on that ring
+        // would otherwise be reconstructed together with the whole ring into one oversized blob.
+        // Opening deletes anything thinner than the kernel outright and restores the daisy's size.
+        val paleSeeds = erode(paleMask, w, h, params.paleOpenRadius)
+        val paleOpened = dilate(paleSeeds, w, h, params.paleOpenRadius)
+        val paleBlobs = labelWithSeeds(work, paleOpened, paleSeeds, paleMinArea, paleMaxArea)
+            .filter { it.aspect <= params.paleMaxAspect && it.fill >= params.paleMinFill && it.meanSat <= params.paleMaxMeanSat }
+            .filter { hasWarmCentre(work, it, hsv) }
+
         // ---- rejector support masks -----------------------------------------------------------
         val badges = findBlobs(work) { hu, s, v ->
             hu >= params.badgeHueMinDeg && hu <= params.badgeHueMaxDeg &&
@@ -422,17 +497,21 @@ class FlowerDetector(val params: Params = Params()) {
         val hits = ArrayList<FlowerHit>()
         val rejects = ArrayList<Reject>()
 
-        for (b in blobs) {
+        // Pale blooms skip the colour-driven area/shape/meanSat gates (they were selected by their
+        // own rules above) but go through the same chrome / mushroom / avatar rejection.
+        val paleSet = paleBlobs.toHashSet()
+        for (b in blobs + paleBlobs) {
             val scaled = b.scaled(f)
-            if (b.areaPx < minArea || b.areaPx > maxArea) {
+            val pale = b in paleSet
+            if (!pale && (b.areaPx < minArea || b.areaPx > maxArea)) {
                 rejArea++
                 rejects += Reject(scaled, "area ${b.areaPx * f * f} outside ${params.minAreaPx}..${params.maxAreaPx}")
                 continue
             }
-            if (b.aspect > params.maxAspect || b.fill < params.minFill ||
+            if (!pale && (b.aspect > params.maxAspect || b.fill < params.minFill ||
                 max(b.width, b.height) * f > params.maxBoxSidePx ||
                 min(b.width, b.height) * f < params.minBoxSidePx ||
-                b.meanSat < params.minBlobMeanSat
+                b.meanSat < params.minBlobMeanSat)
             ) {
                 rejShape++
                 rejects += Reject(
@@ -446,6 +525,17 @@ class FlowerDetector(val params: Params = Params()) {
             if (params.excludeRegions.any { it.contains(b.centroidX, b.centroidY, w, h) }) {
                 rejChrome++
                 rejects += Reject(scaled, "UI chrome")
+                continue
+            }
+            val edge = params.edgeMarginPx / f
+            if (b.left <= edge || b.right >= w - 1 - edge) {
+                rejChrome++
+                rejects += Reject(scaled, "clipped by the frame edge")
+                continue
+            }
+            if (!pale && b.meanHueDeg >= params.yellowHueMinDeg && b.meanHueDeg < params.yellowHueMaxDeg && b.meanSat < params.yellowMinMeanSat) {
+                rejShape++
+                rejects += Reject(scaled, "pale yellow (meanSat %.2f) - grass highlight, not a bloom".format(b.meanSat))
                 continue
             }
             val badge = badges.firstOrNull {
@@ -472,7 +562,15 @@ class FlowerDetector(val params: Params = Params()) {
                 )
                 continue
             }
-            hits += toHit(work, b, f)
+            val hit = toHit(work, b, f)
+            // A solid disc with no stem is a UI marker, not a bloom (petal gaps keep real blooms
+            // well under this fill). Checked after the stem scan because the stem is the evidence.
+            if (!hit.stemFound && b.fill >= params.maxFillWithoutStem) {
+                rejShape++
+                rejects += Reject(scaled, "solid disc fill=%.2f with no stem".format(b.fill))
+                continue
+            }
+            hits += hit
         }
 
         return DetectionResult(
@@ -506,6 +604,20 @@ class FlowerDetector(val params: Params = Params()) {
      * Implemented as two separable passes (horizontal then vertical run-length), so the cost is
      * O(w*h) regardless of r rather than O(w*h*r^2).
      */
+    /** Dilation by a (2r+1)-square: the dual of [erode] (dilate = NOT erode NOT). */
+    private fun dilate(mask: BooleanArray, w: Int, h: Int, r: Int): BooleanArray {
+        if (r <= 0) return mask.copyOf()
+        val inv = BooleanArray(mask.size) { !mask[it] }
+        val er = erode(inv, w, h, r)
+        // erode() leaves an r-wide border unset (= "not inverted-set" = dilated-set); clear it so
+        // the frame edge does not become a spurious band.
+        return BooleanArray(mask.size) { i ->
+            val x = i % w
+            val y = i / w
+            if (x < r || y < r || x >= w - r || y >= h - r) false else !er[i]
+        }
+    }
+
     private fun erode(mask: BooleanArray, w: Int, h: Int, r: Int): BooleanArray {
         if (r <= 0) return mask.copyOf()
         val horiz = BooleanArray(w * h)
@@ -677,6 +789,35 @@ class FlowerDetector(val params: Params = Params()) {
      * [Params.fallbackDropFrac] of the frame height. In the capture set this fallback is the
      * common case — see the honest assessment in the class docs of the stem's detectability.
      */
+    /**
+     * A white daisy has a yellow-orange centre; a patch of pale carpet, a road highlight, a piece of
+     * white UI text or the avatar's direction cone does not. Counts warm, saturated pixels inside
+     * the blob's bounding box.
+     */
+    private fun hasWarmCentre(img: RgbImage, b: Blob, hsv: DoubleArray): Boolean {
+        var warm = 0
+        // The centre of a daisy is in the middle of its petals; warm pixels at the edge of a pale
+        // patch are just the grass around it, so only the inner region counts.
+        val innerR = 0.35 * min(b.width, b.height)
+        val innerR2 = innerR * innerR
+        for (y in b.top..b.bottom) {
+            for (x in b.left..b.right) {
+                if (!img.contains(x, y)) continue
+                val ddx = x - b.centroidX
+                val ddy = y - b.centroidY
+                if (ddx * ddx + ddy * ddy > innerR2) continue
+                ColorMath.toHsv(img.get(x, y), hsv)
+                if (hsv[0] >= params.paleCentreHueMinDeg && hsv[0] <= params.paleCentreHueMaxDeg &&
+                    hsv[1] >= params.paleCentreMinSat && hsv[2] >= params.minValue
+                ) {
+                    warm++
+                    if (warm >= params.paleCentreMinPx) return true
+                }
+            }
+        }
+        return false
+    }
+
     private fun toHit(img: RgbImage, b: Blob, scale: Int): FlowerHit {
         val hsv = DoubleArray(3)
         val maxLen = max(3, (params.stemMaxLenFrac * img.height).toInt())

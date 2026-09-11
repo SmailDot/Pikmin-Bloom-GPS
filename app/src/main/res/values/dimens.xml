@@ -18,5 +18,5 @@
     <dimen name="overlay_icon">26dp</dimen>
     <dimen name="overlay_button">32dp</dimen>
     <dimen name="overlay_corner">18dp</dimen>
-    <dimen name="overlay_status_max">200dp</dimen>
+    <dimen name="overlay_status_max">168dp</dimen>
 </resources>

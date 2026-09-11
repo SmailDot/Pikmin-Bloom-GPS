@@ -1,5 +1,6 @@
 package app.pikminbloom.gps.vision
 
+
 import app.pikminbloom.gps.geo.GeoMath
 import app.pikminbloom.gps.geo.LatLng
 import kotlin.math.abs
@@ -148,21 +149,29 @@ object MapCalibration {
      * icon itself does the moving. Both work; what breaks calibration is a camera that drifts
      * while the player pixel is assumed fixed, which is why recentering matters.
      */
+    /**
+     *  minMatches how many mutually consistent flower pairs the winning translation needs.
+     *        [MIN_MATCHES] is the safe default. Callers may pass 1 or 2 for SPARSE scenes (a single
+     *        Big Flower in view is common); such a result is only as good as that one match, so
+     *        treat it as provisional and confirm it against a second, independent frame pair.
+     */
     fun calibrateDetailed(
         frameA: List<FlowerHit>,
         frameB: List<FlowerHit>,
         trueMovement: MetreOffset,
         playerPixelA: PixelPoint? = null,
         playerPixelB: PixelPoint? = null,
+        minMatches: Int = MIN_MATCHES,
     ): CalibrationAttempt {
+        val need = minMatches.coerceIn(1, MIN_MATCHES)
         val distanceM = trueMovement.magnitudeM
         if (distanceM < 1e-6) {
             return CalibrationAttempt(null, emptyList(), null, 0.0, "trueMovement is zero")
         }
-        if (frameA.size < MIN_MATCHES || frameB.size < MIN_MATCHES) {
+        if (frameA.size < need || frameB.size < need) {
             return CalibrationAttempt(
                 null, emptyList(), null, 0.0,
-                "too few detections: ${frameA.size} in A, ${frameB.size} in B, need $MIN_MATCHES",
+                "too few detections: ${frameA.size} in A, ${frameB.size} in B, need $need",
             )
         }
 
@@ -178,7 +187,7 @@ object MapCalibration {
                 }
             }
         }
-        if (candidates.size < MIN_MATCHES) {
+        if (candidates.size < need) {
             return CalibrationAttempt(
                 null, emptyList(), null, 0.0,
                 "only ${candidates.size} colour-compatible pairs",
@@ -206,10 +215,10 @@ object MapCalibration {
             if (support.size > bestSupport.size) bestSupport = support.values.toList()
         }
 
-        if (bestSupport.size < MIN_MATCHES) {
+        if (bestSupport.size < need) {
             return CalibrationAttempt(
                 null, bestSupport, null, 0.0,
-                "best translation only had ${bestSupport.size} consistent matches, need $MIN_MATCHES",
+                "best translation only had ${bestSupport.size} consistent matches, need $need",
             )
         }
 

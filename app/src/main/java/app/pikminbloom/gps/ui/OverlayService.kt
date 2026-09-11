@@ -31,6 +31,8 @@ import app.pikminbloom.gps.databinding.OverlayBarBinding
 import app.pikminbloom.gps.service.PatrolEvent
 import app.pikminbloom.gps.service.PatrolNotifications
 import app.pikminbloom.gps.service.PatrolService
+import app.pikminbloom.gps.vision.FlowerScanner
+import app.pikminbloom.gps.vision.ScreenCaptureService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -207,7 +209,23 @@ class OverlayService : Service() {
         }
         b.btnHome.setOnClickListener { PatrolService.returnHome(this) }
         b.btnStop.setOnClickListener { PatrolService.stop(this) }
+        b.btnScan.setOnClickListener { onScanClicked() }
         b.btnOpen.setOnClickListener { openMainActivity() }
+    }
+
+    /**
+     * 掃描 toggle. The projection consent can only be obtained by an Activity, so without one the
+     * button hands over to MainActivity, which runs the explanation + consent flow and comes back.
+     */
+    private fun onScanClicked() {
+        when {
+            FlowerScanner.isRunning -> {
+                FlowerScanner.stop(this)
+                toast(R.string.toast_scan_stopped)
+            }
+            ScreenCaptureService.isRunning.value -> FlowerScanner.start(this)
+            else -> openMainActivity(startScan = true)
+        }
     }
 
     /** Drag with a slop threshold so a tap still expands/collapses; long press toggles the pin. */
@@ -291,10 +309,11 @@ class OverlayService : Service() {
         toast(if (pinned) R.string.toast_overlay_pinned else R.string.toast_overlay_unpinned)
     }
 
-    private fun openMainActivity() {
+    private fun openMainActivity(startScan: Boolean = false) {
         // Allowed from the background because we hold SYSTEM_ALERT_WINDOW.
         val intent = Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        if (startScan) intent.putExtra(MainActivity.EXTRA_START_SCAN, true)
         runCatching { startActivity(intent) }.onFailure { Log.w(TAG, "cannot open MainActivity", it) }
         setExpanded(false)
     }
@@ -322,7 +341,25 @@ class OverlayService : Service() {
                 }
             }
         }
+        scope.launch {
+            FlowerScanner.state.collect { scan ->
+                when (scan) {
+                    // Terminal states are announced once, then the line goes back to patrol status.
+                    is FlowerScanner.ScanState.Done -> flash(getString(R.string.scan_status_done, scan.found.size))
+                    is FlowerScanner.ScanState.Error -> flash(getString(R.string.scan_status_error, scan.message))
+                    is FlowerScanner.ScanState.Scanning ->
+                        if (scan.found.size > lastAnnouncedFound) {
+                            lastAnnouncedFound = scan.found.size
+                            setExpanded(true)
+                        }
+                    else -> Unit
+                }
+                render(PatrolService.state.value)
+            }
+        }
     }
+
+    private var lastAnnouncedFound = 0
 
     /**
      * A single-waypoint LOOP patrol re-arrives at the same flower on every tick, so only announce
@@ -374,7 +411,10 @@ class OverlayService : Service() {
 
         if (!expanded) return
 
-        b.status.text = flashText?.takeIf { SystemClock.uptimeMillis() < flashUntilMs } ?: statusText(state)
+        val scan = FlowerScanner.state.value
+        b.status.text = flashText?.takeIf { SystemClock.uptimeMillis() < flashUntilMs }
+            ?: scanStatusText(scan)?.let { "$it${getString(R.string.ovl_separator)}${getString(phaseLabel(state.phase))}" }
+            ?: statusText(state)
 
         val paused = state.phase == PatrolPhase.PAUSED
         val moving = state.phase == PatrolPhase.WALKING || state.phase == PatrolPhase.DWELLING
@@ -384,6 +424,22 @@ class OverlayService : Service() {
         enable(b.btnToggle, moving || paused)
         enable(b.btnHome, moving || paused)
         enable(b.btnStop, state.phase != PatrolPhase.IDLE && state.phase != PatrolPhase.STOPPING)
+        // The scan button reads as "on" while a scan runs; it is always tappable because without a
+        // projection it simply opens the app to ask for one.
+        val scanning = FlowerScanner.isRunning
+        b.btnScan.imageTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(this, if (scanning) R.color.overlay_phase_paused else R.color.overlay_icon),
+        )
+        b.btnScan.alpha = if (scanning || scan.isActive) 1f else 0.7f
+    }
+
+    /** The scan's one-liner while a scan is in progress (校準中 12 m / 已找到 3 朵 / 請切到俯瞰模式), else null. */
+    private fun scanStatusText(scan: FlowerScanner.ScanState): String? = when (scan) {
+        is FlowerScanner.ScanState.WaitingForBirdsEye -> scan.reason
+        is FlowerScanner.ScanState.Calibrating -> getString(R.string.scan_status_calibrating, scan.metresSoFar.toInt())
+        is FlowerScanner.ScanState.Scanning -> getString(R.string.scan_status_scanning, scan.found.size)
+        FlowerScanner.ScanState.NeedProjection -> getString(R.string.scan_status_need_projection)
+        else -> null
     }
 
     /** One short line: 階段 · 目標 + 距離 · 本次步數. It sits on top of a game, so keep it tiny. */

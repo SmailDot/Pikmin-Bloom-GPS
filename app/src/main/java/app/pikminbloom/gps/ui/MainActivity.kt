@@ -1,7 +1,10 @@
 package app.pikminbloom.gps.ui
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
+import android.media.projection.MediaProjectionConfig
+import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -36,12 +39,18 @@ import app.pikminbloom.gps.service.PatrolCheckpoint
 import app.pikminbloom.gps.service.PatrolEvent
 import app.pikminbloom.gps.service.PatrolService
 import app.pikminbloom.gps.steps.StepInjector
+import app.pikminbloom.gps.vision.FlowerScanPlan
+import app.pikminbloom.gps.vision.FlowerScanner
+import app.pikminbloom.gps.vision.ScreenCaptureService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import java.util.UUID
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.util.GeoPoint
@@ -69,6 +78,14 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     private lateinit var exportJsonLauncher: ActivityResultLauncher<String>
     private lateinit var exportGpxLauncher: ActivityResultLauncher<String>
     private lateinit var overlayLauncher: ActivityResultLauncher<Intent>
+    private lateinit var scanLauncher: ActivityResultLauncher<Intent>
+
+    /** Set by the 「先開始巡邏」 branch of the scan flow: continue to the consent once the walk begins. */
+    private var scanAfterPatrolStart = false
+
+    /** Set when the overlay's 掃描 button opened us (EXTRA_START_SCAN); handled in onResume. */
+    private var pendingScanRequest = false
+    private var scanResultsDialog: androidx.appcompat.app.AlertDialog? = null
 
     private var locationCallback: ((Boolean) -> Unit)? = null
     private var notificationCallback: ((Boolean) -> Unit)? = null
@@ -106,6 +123,20 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         collectFlows()
 
         maybeShowDisclaimer()
+        handleScanIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleScanIntent(intent)
+    }
+
+    private fun handleScanIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_START_SCAN, false) == true) {
+            intent.removeExtra(EXTRA_START_SCAN)
+            pendingScanRequest = true
+        }
     }
 
     override fun onResume() {
@@ -115,6 +146,12 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         rebuildOverlays()
         render(PatrolService.state.value)
         maybeOfferResume()
+        if (pendingScanRequest) {
+            pendingScanRequest = false
+            startScanFlow()
+        } else {
+            maybeShowScanResults()
+        }
     }
 
     private var resumeDialogShown = false
@@ -217,6 +254,16 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
                 toast(getString(R.string.toast_overlay_denied))
             }
         }
+        // MediaProjection consent for the bird's-eye scan. The token in `data` is single-use and
+        // short-lived, so the capture service is started right here with it.
+        scanLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data = result.data
+            if (result.resultCode == Activity.RESULT_OK && data != null) {
+                onProjectionGranted(result.resultCode, data)
+            } else {
+                toast(getString(R.string.toast_scan_denied))
+            }
+        }
     }
 
     private fun applyInsets() {
@@ -283,6 +330,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
                 }
                 launch { PatrolService.state.collect { render(it) } }
                 launch { PatrolService.events.collect { onEvent(it) } }
+                launch { FlowerScanner.state.collect { renderScan(it) } }
             }
         }
     }
@@ -381,6 +429,202 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         renderButtons(state.phase)
         renderPosition(state)
         syncOverlay(state.phase)
+        continueScanAfterStart(state.phase)
+    }
+
+    // ------------------------------------------------------------------ bird's-eye scan
+
+    /**
+     * Menu entry 「掃描俯瞰模式大花」. The scan needs a patrol in progress (its walk is the ruler
+     * that calibrates the map scale) and a MediaProjection consent, which only an Activity can ask
+     * for — so this is the one place the whole flow starts, and the overlay button routes here.
+     */
+    private fun startScanFlow() {
+        val scan = FlowerScanner.state.value
+        if (FlowerScanner.isRunning) {
+            val b = MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.dlg_scan_running_title)
+                .setMessage(getString(R.string.dlg_scan_running_msg, scanStatusLine(scan)))
+                .setNegativeButton(R.string.action_scan_stop) { _, _ ->
+                    FlowerScanner.stop(this)
+                    toast(getString(R.string.toast_scan_stopped))
+                }
+                .setNeutralButton(R.string.action_cancel, null)
+            if (FlowerScanner.found.isNotEmpty()) {
+                b.setPositiveButton(R.string.action_scan_view_results) { _, _ -> showScanResults() }
+            }
+            b.show()
+            return
+        }
+        if (scan is FlowerScanner.ScanState.Done && scan.found.isNotEmpty()) {
+            showScanResults()
+            return
+        }
+        val phase = PatrolService.state.value.phase
+        if (phase == PatrolPhase.IDLE || phase == PatrolPhase.STOPPING) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.dlg_scan_need_patrol_title)
+                .setMessage(R.string.dlg_scan_need_patrol_msg)
+                .setPositiveButton(R.string.action_scan_start_patrol) { _, _ ->
+                    scanAfterPatrolStart = true
+                    startPatrol(0)
+                }
+                .setNegativeButton(R.string.action_cancel, null)
+                .show()
+            return
+        }
+        showScanExplanation()
+    }
+
+    /** The 「先開始巡邏」 branch: once the walk is under way, pick the flow up at the explanation. */
+    private fun continueScanAfterStart(phase: PatrolPhase) {
+        if (!scanAfterPatrolStart) return
+        when (phase) {
+            PatrolPhase.WALKING, PatrolPhase.DWELLING, PatrolPhase.PAUSED -> {
+                scanAfterPatrolStart = false
+                if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) showScanExplanation()
+            }
+            PatrolPhase.IDLE -> scanAfterPatrolStart = false   // the start failed
+            else -> Unit
+        }
+    }
+
+    private fun showScanExplanation() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dlg_scan_title)
+            .setMessage(R.string.dlg_scan_msg)
+            .setPositiveButton(R.string.action_scan_start) { _, _ -> requestProjection() }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    private fun requestProjection() {
+        val pm = getSystemService(MediaProjectionManager::class.java)
+        val intent = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // Whole display only: a "single app" capture would show us the game and nothing
+                // else, which is fine, but the option confuses the flow and defaults differently
+                // across OEM builds.
+                pm.createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())
+            } else {
+                pm.createScreenCaptureIntent()
+            }
+        } catch (t: Throwable) {
+            android.util.Log.w(PatrolService.TAG, "createScreenCaptureIntent failed", t)
+            toast(getString(R.string.toast_scan_denied))
+            return
+        }
+        runCatching { scanLauncher.launch(intent) }
+            .onFailure {
+                android.util.Log.w(PatrolService.TAG, "projection consent launch failed", it)
+                toast(getString(R.string.toast_scan_denied))
+            }
+    }
+
+    private fun onProjectionGranted(resultCode: Int, data: Intent) {
+        ScreenCaptureService.start(this, resultCode, data)
+        // The service goes foreground and creates its virtual display asynchronously.
+        lifecycleScope.launch {
+            val ok = withTimeoutOrNull(SCAN_START_TIMEOUT_MS) { ScreenCaptureService.isRunning.first { it } } != null
+            if (!ok) {
+                toast(ScreenCaptureService.lastError ?: getString(R.string.toast_scan_denied))
+                return@launch
+            }
+            FlowerScanner.start(this@MainActivity)
+            toast(getString(R.string.toast_scan_started))
+            offerToLaunchGame()
+        }
+    }
+
+    /**
+     * Order matters: Pikmin Bloom blanks its own surface (black in every capture) when it notices
+     * a capture display appearing while it is running, but not when it is launched after the
+     * projection already exists. So the game is opened from here, after the capture has started.
+     */
+    private fun offerToLaunchGame() {
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        val b = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dlg_scan_launch_title)
+            .setMessage(R.string.dlg_scan_launch_msg)
+            .setNegativeButton(R.string.action_scan_launch_later, null)
+        if (Permissions.isInstalled(this, PIKMIN_PACKAGE)) {
+            b.setPositiveButton(R.string.action_scan_launch_game) { _, _ -> Permissions.openApp(this, PIKMIN_PACKAGE) }
+        }
+        b.show()
+    }
+
+    private fun renderScan(scan: FlowerScanner.ScanState) {
+        val found = scan.foundFlowers
+        overlays.updateScanned(found.map { it.waypoint.latLng }, found.map { it.waypoint.name })
+    }
+
+    /** Results dialog, shown on resume whenever the scan has found more than the user has seen. */
+    private fun maybeShowScanResults() {
+        val found = FlowerScanner.found
+        if (found.isEmpty() || found.size <= FlowerScanner.reviewedCount) return
+        if (scanResultsDialog?.isShowing == true) return
+        showScanResults()
+    }
+
+    private fun showScanResults() {
+        val found = FlowerScanner.found
+        if (found.isEmpty()) {
+            toast(getString(R.string.toast_scan_no_results))
+            return
+        }
+        FlowerScanner.reviewedCount = found.size
+        val labels = found.map { f ->
+            getString(
+                R.string.scan_result_item,
+                f.waypoint.name,
+                distanceText(f.rangeM),
+                getString(if (f.stemFound) R.string.scan_confidence_high else R.string.scan_confidence_low),
+            )
+        }.toTypedArray()
+        val checked = BooleanArray(found.size) { true }
+        scanResultsDialog?.dismiss()
+        scanResultsDialog = MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.dlg_scan_results_title, found.size))
+            .setMultiChoiceItems(labels, checked) { _, index, isChecked -> checked[index] = isChecked }
+            .setPositiveButton(R.string.action_scan_add_current) { _, _ -> addScanned(found, checked, newRoute = false) }
+            .setNeutralButton(R.string.action_scan_new_route) { _, _ -> addScanned(found, checked, newRoute = true) }
+            .setNegativeButton(R.string.action_cancel, null)
+            .setOnDismissListener { scanResultsDialog = null }
+            .show()
+    }
+
+    private fun addScanned(found: List<FlowerScanPlan.PlannedFlower>, checked: BooleanArray, newRoute: Boolean) {
+        val selected = found.filterIndexed { i, _ -> checked.getOrElse(i) { false } }.map { it.waypoint }
+        if (selected.isEmpty()) {
+            toast(getString(R.string.toast_scan_nothing_selected))
+            return
+        }
+        if (newRoute) store.createRoute(getString(R.string.scan_route_name))
+        val existing = store.load()
+        val added = ArrayList<Waypoint>()
+        for (wp in selected) {
+            val dup = (existing + added).any { GeoMath.distanceM(it.latLng, wp.latLng) <= SCAN_DEDUPE_M }
+            if (!dup) {
+                added += wp.copy(
+                    id = UUID.randomUUID().toString(),
+                    radiusM = prefs.defaultRadiusM,
+                    dwellSec = prefs.defaultDwellSec,
+                )
+            }
+        }
+        store.save(existing + added)
+        toast(getString(R.string.toast_scan_added, added.size))
+        if (!FlowerScanner.isRunning) FlowerScanner.discardResults()
+    }
+
+    private fun scanStatusLine(scan: FlowerScanner.ScanState): String = when (scan) {
+        FlowerScanner.ScanState.Idle -> getString(R.string.ovl_stopped)
+        FlowerScanner.ScanState.NeedProjection -> getString(R.string.scan_status_need_projection)
+        is FlowerScanner.ScanState.WaitingForBirdsEye -> scan.reason
+        is FlowerScanner.ScanState.Calibrating -> getString(R.string.scan_status_calibrating, scan.metresSoFar.toInt())
+        is FlowerScanner.ScanState.Scanning -> getString(R.string.scan_status_scanning, scan.found.size)
+        is FlowerScanner.ScanState.Done -> getString(R.string.scan_status_done, scan.found.size)
+        is FlowerScanner.ScanState.Error -> getString(R.string.scan_status_error, scan.message)
     }
 
     /**
@@ -522,6 +766,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         R.id.action_my_location -> { goToMyLocation(); true }
         R.id.action_waypoint_list -> { showWaypointList(); true }
         R.id.action_overlay -> { toggleOverlay(); true }
+        R.id.action_scan_flowers -> { startScanFlow(); true }
         R.id.action_setup -> { startActivity(Intent(this, SetupActivity::class.java)); true }
         R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
         R.id.action_clear_home -> { clearHome(); true }
@@ -793,6 +1038,12 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         private const val MIME_GPX = "application/gpx+xml"
         private const val GPX_MARKER = "<gpx"
         private const val NOTIFICATION_PERMISSION = "android.permission.POST_NOTIFICATIONS"
+        private const val SCAN_START_TIMEOUT_MS = 5_000L
+        private const val SCAN_DEDUPE_M = 20.0
+        private const val PIKMIN_PACKAGE = "com.nianticlabs.pikmin"
+
+        /** Intent extra from the overlay's 掃描 button: run the scan flow on resume. */
+        const val EXTRA_START_SCAN = "start_scan"
 
         /** Taipei 101, used only when nothing at all is known yet. */
         private val FALLBACK_CENTER = LatLng(25.0330, 121.5654)

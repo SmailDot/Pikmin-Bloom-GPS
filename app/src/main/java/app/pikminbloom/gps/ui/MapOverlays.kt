@@ -72,6 +72,11 @@ class MapOverlays(
     private val circles = ArrayList<Polygon>()
     private val iconCache = HashMap<Int, Drawable>()
 
+    /** Big Flowers found by the bird's-eye scan (vision/FlowerScanner), not yet in any route. */
+    private val scannedMarkers = ArrayList<Marker>()
+    private val scannedColor = ContextCompat.getColor(context, R.color.scan_marker)
+    private var scannedIcon: Drawable? = null
+
     private var hasHome = false
     private var hasPosition = false
 
@@ -145,6 +150,34 @@ class MapOverlays(
         }
     }
 
+    /**
+     * Flowers found by the bird's-eye scan, drawn in a distinct colour so they are not mistaken for
+     * route waypoints. Pass an empty list to clear them.
+     */
+    fun updateScanned(flowers: List<LatLng>, names: List<String> = emptyList()) {
+        val changed = flowers.size != scannedMarkers.size ||
+            flowers.withIndex().any { (i, p) ->
+                val m = scannedMarkers[i]
+                m.position.latitude != p.lat || m.position.longitude != p.lon
+            }
+        if (!changed) return
+        scannedMarkers.clear()
+        val icon = scannedIcon ?: flowerIcon(scannedColor).also { scannedIcon = it }
+        flowers.forEachIndexed { i, p ->
+            scannedMarkers.add(
+                Marker(map).apply {
+                    setPosition(GeoPoint(p.lat, p.lon))
+                    setTitle(names.getOrNull(i))
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                    setInfoWindow(NO_MARKER_INFO_WINDOW)
+                    setIcon(icon)
+                    setOnMarkerClickListener { _, _ -> true }
+                }
+            )
+        }
+        restack()
+    }
+
     /** Rebuilds `map.overlays` bottom-up so markers stay tappable above the circles. */
     private fun restack() {
         val overlays = map.overlays
@@ -154,9 +187,16 @@ class MapOverlays(
         overlays.add(routeLine)
         overlays.add(trailLine)
         if (hasHome) overlays.add(homeMarker)
+        overlays.addAll(scannedMarkers)
         overlays.addAll(waypointMarkers)
         if (hasPosition) overlays.add(positionMarker)
         map.invalidate()
+    }
+
+    private fun flowerIcon(color: Int): Drawable {
+        val d = AppCompatResources.getDrawable(context, R.drawable.ic_flower)!!.mutate()
+        DrawableCompat.setTint(d, color)
+        return d
     }
 
     private fun homeIcon(): Drawable {

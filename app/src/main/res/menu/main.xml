@@ -21,6 +21,12 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_scan_flowers"
+        android:icon="@drawable/ic_scan"
+        android:title="@string/menu_scan_flowers"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_setup"
         android:icon="@drawable/ic_check"
         android:title="@string/menu_setup"

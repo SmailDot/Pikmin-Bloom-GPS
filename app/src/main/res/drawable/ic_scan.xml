@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Viewfinder corners with a centre dot: the bird's-eye scan (overlay button, notification). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+    <path android:fillColor="@android:color/white" android:pathData="M5,5h4V3H3v6h2V5zM5,15H3v6h6v-2H5V15zM19,19h-4v2h6v-6h-2V19zM15,3v2h4v4h2V3H15z" />
+    <path android:fillColor="@android:color/white" android:pathData="M12,8c-2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4 -1.79,-4 -4,-4z" />
+</vector>
