@@ -19,6 +19,7 @@ import app.pikminbloom.gps.data.PatrolPhase
 import app.pikminbloom.gps.data.PatrolState
 import app.pikminbloom.gps.data.Prefs
 import app.pikminbloom.gps.data.ReturnMode
+import app.pikminbloom.gps.data.TravelMode
 import app.pikminbloom.gps.data.Waypoint
 import app.pikminbloom.gps.data.WaypointStore
 import app.pikminbloom.gps.geo.GeoMath
@@ -265,7 +266,7 @@ class PatrolService : LifecycleService() {
 
                 val goHome = thenReturnHome || cp.phase == PatrolPhase.RETURNING_HOME || waypoints.isEmpty()
                 if (goHome) {
-                    plan = PatrolPlanner.planReturnHome(resumeAt, cp.home)
+                    plan = PatrolPlanner.planReturnHome(resumeAt, cp.home, routeTravelMode.takeIf { it != TravelMode.WALK })
                     sim.load(plan)
                     settleTicks = 0
                 } else {
@@ -348,12 +349,36 @@ class PatrolService : LifecycleService() {
         false
     }
 
+    /** The active route's travel mode; WALK for an ordinary patrol. */
+    private val routeTravelMode: TravelMode
+        get() = store.activeRoute()?.travelMode ?: TravelMode.WALK
+
     private fun loadLap(from: LatLng, startIndex: Int = 0) {
         var order = PatrolPlanner.orderFor(lap, waypoints.size, config.loopMode)
         if (lap == 0 && startIndex > 0) order = order.drop(startIndex)
-        plan = PatrolPlanner.planLap(from, waypoints, config, order, lap)
+
+        val mode = routeTravelMode
+        val first = order.firstOrNull()?.let { waypoints.getOrNull(it) }
+        plan = if (lap == 0 && mode != TravelMode.WALK && first != null) {
+            // A trip: cover the (possibly long) leg to the first place at vehicle speed - no steps,
+            // no planting - then wander it on foot for its dwell time regardless of the global
+            // orbit setting, because that walk is the whole point of going there. Any further
+            // waypoints are walked as usual from where the wander ends.
+            val trip = PatrolPlanner.planTripTo(
+                from, first.latLng, config, mode,
+                wanderRadiusM = first.radiusM,
+                wanderSec = first.dwellSec.coerceAtLeast(60),
+            )
+            val rest = order.drop(1)
+            if (rest.isEmpty()) trip else {
+                val tail = PatrolPlanner.planLap(trip.end ?: first.latLng, waypoints, config, rest, lap)
+                PatrolPlan.of(trip.segments + tail.segments)
+            }
+        } else {
+            PatrolPlanner.planLap(from, waypoints, config, order, lap)
+        }
         sim.load(plan)
-        Log.i(TAG, "lap $lap loaded: ${plan.segments.size} segments, ${"%.0f".format(plan.totalLengthM)} m")
+        Log.i(TAG, "lap $lap loaded: ${plan.segments.size} segments, ${"%.0f".format(plan.totalLengthM)} m, mode=$mode")
     }
 
     // ------------------------------------------------------------------ tick loop (engine thread)
@@ -574,8 +599,11 @@ class PatrolService : LifecycleService() {
         val h = home ?: run { requestStop(); return }
         val from = sim.current().position
         settleTicks = 0
+        // A trip that was driven out is driven back: walking 20 km home would take hours, and the
+        // route already declares how such legs are covered. Ordinary patrols still walk.
+        val mode = routeTravelMode.takeIf { it != TravelMode.WALK }
         if (config.returnMode == ReturnMode.WALK) {
-            plan = PatrolPlanner.planReturnHome(from, h)
+            plan = PatrolPlanner.planReturnHome(from, h, mode)
             sim.load(plan)
         }
         _state.update {
@@ -583,7 +611,7 @@ class PatrolService : LifecycleService() {
                 distanceToTargetM = GeoMath.distanceM(from, h))
         }
         lastNotificationMs = 0
-        Log.i(TAG, "returning home (${config.returnMode}) from $from to $h, ${"%.0f".format(GeoMath.distanceM(from, h))} m")
+        Log.i(TAG, "returning home (${config.returnMode}, ${mode ?: TravelMode.WALK}) from $from to $h, ${"%.0f".format(GeoMath.distanceM(from, h))} m")
     }
 
     private fun requestStop() {

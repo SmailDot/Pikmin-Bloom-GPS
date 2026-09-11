@@ -306,3 +306,27 @@ Exported `BroadcastReceiver` with action `app.pikminbloom.gps.DEBUG_CMD`, extras
 使用者回報先前的測試座標（往北 100 m）是郊區空地，畫面上沒有花朵，
 那種截圖無法建立 ground truth。應在使用者實際遊玩的位置附近小範圍移動
 （校準只需要 50 m 位移，同一批花朵仍會留在畫面上）。
+
+## F. 斷點續走（2026-09-11，實際使用回報）
+
+**症狀：** 手機過熱時 HyperOS 殺掉本 App。test provider 不會隨程序消失，遊戲角色停在被殺的位置。
+重開 App 按開始：舊流程先清掉殘留 provider（暴露真實 GPS）、再抓真實位置當家、從頭走路線。
+遊戲看到「從中斷點瞬移回家、再沿路線走出去」，是本 App 能做出的最容易被偵測的動作。
+`PikminGpsApp.onCreate` 的殘留清理讓它更糟：使用者還沒按任何鍵，角色就已經跳回真實位置。
+
+**解法：** `service/PatrolCheckpoint.kt`
+- 巡邏中每 5 秒在 engine thread 原子寫入（temp + rename）：位置、家、路線 id、圈數、目標大花索引、階段、步數帳目。
+- 所有正常結束路徑（stop / 回家完成 / 啟動失敗）在 `teardown()` 刪除。
+- App 啟動時若存在可續走的存檔（12 小時內）：**不清理** provider，讓遊戲繼續停在原地。
+- `MainActivity.onResume` 跳出對話框：
+  - 從中斷點繼續：`mock.start(keepExisting = true)`（addTestProvider 原地取代，無空窗），
+    立刻推送系統仍持有的最後一筆 mock fix（`lastParkedMockFix()`，與遊戲畫面完全一致），
+    用存檔的家、剩餘的大花從該點繼續規劃。
+  - 從中斷點走回家：同上，但直接規劃回家路徑。
+  - 放棄：刪除存檔、移除 provider，遊戲看到一次瞬移（對話框明講）。
+- 有未處理存檔時 `handleStart` 一律拒絕，主畫面的「開始」會導回選擇對話框，避免誤觸。
+- 家沿用存檔的家而非重新定位：被殺通常發生在幾分鐘內，使用者沒移動；而且殘留 provider 還在遮蔽真實 GPS，
+  先移除再定位正是要避免的瞬移。若使用者真的移動了，選「放棄」重新開始即可。
+
+**實測（run-as kill -9）：** 殺後遊戲停在 22.759428,120.337840；續走從 22.759428,120.337840 接回，
+零位移，接著走向下一個目標。

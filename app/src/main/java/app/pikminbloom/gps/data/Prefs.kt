@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import app.pikminbloom.gps.geo.LatLng
+import app.pikminbloom.gps.vision.Calibration
 
 /**
  * Settings + small persisted state. Keys match `res/xml/preferences.xml`; numeric preferences are
@@ -108,6 +109,50 @@ class Prefs(context: Context) {
         get() = sp.getInt(KEY_OVERLAY_Y, OVERLAY_UNSET)
         set(v) = sp.edit { putInt(KEY_OVERLAY_Y, v) }
 
+    /**
+     * The last successful bird's-eye scan calibration (vision/FlowerScanner). A second scan at the
+     * same map zoom can adopt it after a short check instead of walking the full 40 m baseline.
+     */
+    var scanCalibration: Calibration?
+        get() {
+            if (!sp.contains(KEY_SCAN_CAL_MPP)) return null
+            val mpp = java.lang.Double.longBitsToDouble(sp.getLong(KEY_SCAN_CAL_MPP, 0))
+            val north = java.lang.Double.longBitsToDouble(sp.getLong(KEY_SCAN_CAL_NORTH, 0))
+            return Calibration(mpp, north).takeIf { it.isPlausible() }
+        }
+        set(v) = sp.edit {
+            if (v == null) {
+                remove(KEY_SCAN_CAL_MPP); remove(KEY_SCAN_CAL_NORTH); remove(KEY_SCAN_CAL_SAVED_AT)
+            } else {
+                putLong(KEY_SCAN_CAL_MPP, java.lang.Double.doubleToRawLongBits(v.metresPerPixel))
+                putLong(KEY_SCAN_CAL_NORTH, java.lang.Double.doubleToRawLongBits(v.screenNorthDeg))
+                putLong(KEY_SCAN_CAL_SAVED_AT, System.currentTimeMillis())
+            }
+        }
+
+    val scanCalibrationSavedAtMs: Long get() = sp.getLong(KEY_SCAN_CAL_SAVED_AT, 0L)
+
+    // ------------------------------------------------------------------ decor hunt (ui/DecorHunt)
+
+    /** The [Decor] picked last time, preselected in the picker. */
+    var lastDecor: Decor?
+        get() = sp.getString(KEY_LAST_DECOR, null)?.let { Decor.byName(it) }
+        set(v) = sp.edit { if (v == null) remove(KEY_LAST_DECOR) else putString(KEY_LAST_DECOR, v.name) }
+
+    /** How the user last chose to cover the leg to a decor place. */
+    var tripTravelMode: TravelMode
+        get() = enum(KEY_TRIP_TRAVEL_MODE, TravelMode.WALK)
+        set(v) = sp.edit { putString(KEY_TRIP_TRAVEL_MODE, v.name) }
+
+    /** Wander radius around the destination as typed (not clamped to the waypoint limit). */
+    var tripWanderRadiusM: Double
+        get() = sp.getFloat(KEY_TRIP_WANDER_RADIUS, DEFAULT_TRIP_WANDER_RADIUS_M.toFloat()).toDouble().coerceIn(1.0, 500.0)
+        set(v) = sp.edit { putFloat(KEY_TRIP_WANDER_RADIUS, v.toFloat()) }
+
+    var tripWanderMin: Int
+        get() = sp.getInt(KEY_TRIP_WANDER_MIN, DEFAULT_TRIP_WANDER_MIN).coerceIn(0, 30)
+        set(v) = sp.edit { putInt(KEY_TRIP_WANDER_MIN, v) }
+
     private fun str(key: String, default: Double): Double =
         sp.getString(key, null)?.trim()?.toDoubleOrNull() ?: default
 
@@ -152,8 +197,19 @@ class Prefs(context: Context) {
         const val KEY_OVERLAY_PINNED = "overlay_pinned"
         const val KEY_OVERLAY_X = "overlay_x"
         const val KEY_OVERLAY_Y = "overlay_y"
+        const val KEY_SCAN_CAL_MPP = "scan_cal_metres_per_pixel"
+        const val KEY_SCAN_CAL_NORTH = "scan_cal_screen_north_deg"
+        const val KEY_SCAN_CAL_SAVED_AT = "scan_cal_saved_at"
+        const val KEY_LAST_DECOR = "last_decor"
+        const val KEY_TRIP_TRAVEL_MODE = "trip_travel_mode"
+        const val KEY_TRIP_WANDER_RADIUS = "trip_wander_radius_m"
+        const val KEY_TRIP_WANDER_MIN = "trip_wander_min"
 
         /** Sentinel for [overlayX] / [overlayY] meaning "use the default placement". */
         const val OVERLAY_UNSET = Int.MIN_VALUE
+
+        /** Matches the defaults of `PatrolPlanner.planTripTo` (60 m, 15 min). */
+        const val DEFAULT_TRIP_WANDER_RADIUS_M = 60.0
+        const val DEFAULT_TRIP_WANDER_MIN = 15
     }
 }

@@ -17,6 +17,12 @@ data class Route(
     val id: String,
     val name: String,
     val waypoints: List<Waypoint>,
+    /**
+     * How to cover the leg from home to the FIRST waypoint (and back). WALK for an ordinary Big
+     * Flower patrol; a vehicle mode for a decor trip whose destination is kilometres away, in
+     * which case the walking (steps, planting) happens only inside that waypoint's circle.
+     */
+    val travelMode: TravelMode = TravelMode.WALK,
 )
 
 /**
@@ -92,12 +98,13 @@ class WaypointStore private constructor(context: Context) {
 
     /** @return the new route's id. [copyFromId] duplicates that route's waypoints. */
     @Synchronized
-    fun createRoute(name: String, copyFromId: String? = null): String {
+    fun createRoute(name: String, copyFromId: String? = null, travelMode: TravelMode = TravelMode.WALK): String {
         val source = copyFromId?.let { id -> state.routes.firstOrNull { it.id == id } }
         val route = Route(
             id = UUID.randomUUID().toString(),
             name = uniqueName(name.ifBlank { DEFAULT_ROUTE_NAME }),
             waypoints = source?.waypoints.orEmpty(),
+            travelMode = if (source != null) source.travelMode else travelMode,
         )
         commit(Snapshot(state.routes + route, route.id))
         return route.id
@@ -120,6 +127,11 @@ class WaypointStore private constructor(context: Context) {
         }
         val nextActive = if (state.activeRouteId == id) remaining.first().id else state.activeRouteId
         commit(Snapshot(remaining, nextActive))
+    }
+
+    @Synchronized
+    fun setRouteTravelMode(id: String, mode: TravelMode) {
+        commit(state.copy(routes = state.routes.map { if (it.id == id) it.copy(travelMode = mode) else it }))
     }
 
     @Synchronized
@@ -285,7 +297,7 @@ class WaypointStore private constructor(context: Context) {
                     put("radiusM", w.radiusM); put("dwellSec", w.dwellSec)
                 })
             }
-            routes.put(JSONObject().put("id", r.id).put("name", r.name).put("waypoints", wps))
+            routes.put(JSONObject().put("id", r.id).put("name", r.name).put("travelMode", r.travelMode.name).put("waypoints", wps))
         }
         return JSONObject()
             .put("version", 2)
@@ -308,6 +320,7 @@ class WaypointStore private constructor(context: Context) {
                             id = r.optString("id").takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
                             name = r.optString("name").takeIf { it.isNotBlank() } ?: "$DEFAULT_ROUTE_NAME ${i + 1}",
                             waypoints = parseWaypoints(r.optJSONArray("waypoints") ?: JSONArray()),
+                            travelMode = runCatching { TravelMode.valueOf(r.optString("travelMode")) }.getOrDefault(TravelMode.WALK),
                         )
                     )
                 }

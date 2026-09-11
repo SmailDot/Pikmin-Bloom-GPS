@@ -7,6 +7,8 @@
     <color name="route_line">#CC1E88E5</color>
     <color name="orbit_circle">#334CAF50</color>
     <color name="home_marker">#FFE53935</color>
+    <!-- Big Flowers found by the bird's-eye scan, before they become route waypoints. -->
+    <color name="scan_marker">#FFFF8F00</color>
 
     <!-- Floating control bar (ui/OverlayService). An overlay window has no activity theme, so these
          must be explicit and identical in light and dark mode. -->

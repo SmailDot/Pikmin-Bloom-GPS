@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the decor hunt (ui/DecorHunt.kt): pick a Pikmin Bloom decor, find real-world places
+     of that category on OpenStreetMap, judge purity, and turn one into a waypoint / route. -->
+<resources>
+    <string name="decor_hunt_short">找飾品</string>
+    <string name="decor_hunt_title">找飾品</string>
+    <string name="decor_need_center">還不知道要從哪裡找起。請先讓 App 取得一次你的位置，或在地圖上長按新增一個大花。</string>
+
+    <!-- picker -->
+    <string name="decor_pick_title">要找哪種飾品？</string>
+    <string name="decor_pick_filter_hint">篩選飾品或地點</string>
+    <string name="decor_pick_empty">沒有符合的飾品</string>
+    <string name="decor_pick_next">下一步</string>
+    <string name="decor_pick_none_selected">請先點選一種飾品</string>
+
+    <!-- radius -->
+    <string name="decor_radius_title">%1$s：搜尋範圍</string>
+    <string name="decor_radius_item">半徑 %1$d 公里</string>
+    <string name="decor_radius_search">開始搜尋</string>
+
+    <!-- search -->
+    <string name="decor_searching">在 OpenStreetMap 尋找「%1$s」中…</string>
+    <string name="decor_failed_title">搜尋失敗</string>
+    <string name="decor_failed_msg">無法連線到 OpenStreetMap 查詢服務：%1$s\n\n請確認網路連線，或稍後再試（公用服務有流量限制）。</string>
+    <string name="decor_none">半徑 %1$d 公里內沒有找到「%2$s」。試試更大的範圍。</string>
+
+    <!-- results -->
+    <string name="decor_results_title">%1$s：%2$d 個地點</string>
+    <string name="decor_results_explain">純點＝120 公尺內沒有其他飾品類別，走過去只會拿到這種飾品。前 5 筆會自動檢查，其餘可按「檢查更多」。</string>
+    <string name="decor_results_check_more">檢查更多</string>
+    <string name="decor_results_all_checked">全部檢查完畢</string>
+    <string name="decor_purity_unchecked">未檢查</string>
+    <string name="decor_purity_failed">無法檢查</string>
+
+    <!-- confirm -->
+    <string name="decor_confirm_title">前往「%1$s」</string>
+    <string name="decor_confirm_summary">飾品：%1$s\n地點：%2$s\n距離：%3$s\n純度：%4$s</string>
+    <string name="decor_confirm_travel_label">前往方式</string>
+    <string name="decor_confirm_travel_note">腳踏車以上的交通工具不寫步數、途中不種花；抵達後才以步行速度繞行。</string>
+    <string name="decor_confirm_radius_hint">抵達後繞行半徑（公尺）</string>
+    <string name="decor_confirm_radius_helper">清單上限 8–40 公尺，超過會縮到 40。</string>
+    <string name="decor_confirm_radius_clamped">超過 40，加入時會縮到 40 公尺。</string>
+    <string name="decor_confirm_minutes_hint">抵達後繞行時間（分鐘，0–30）</string>
+    <string name="decor_confirm_minutes_note">僅在設定「抵達後在大花圈內繞行」開啟時生效。</string>
+    <string name="decor_confirm_add">加入清單</string>
+    <string name="decor_confirm_new_route">建立專用路線</string>
+    <string name="decor_confirm_new_route_hint">另建名為「%1$s」的路線並切換過去，目前路線不受影響。</string>
+    <string name="decor_confirm_err_radius">請輸入 1–500 的數字</string>
+    <string name="decor_confirm_err_minutes">請輸入 0–30 的整數</string>
+    <string name="decor_added_to_list">已加入「%1$s」到路線「%2$s」</string>
+    <string name="decor_route_created">已建立路線「%1$s」並切換過去。回到主畫面按「開始巡邏」即可出發。</string>
+</resources>

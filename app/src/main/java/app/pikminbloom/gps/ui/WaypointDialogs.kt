@@ -186,6 +186,15 @@ object WaypointDialogs {
                 ?: store.load().firstOrNull()?.latLng
             OverpassSearch.show(host, prefs, store, center)
         }
+        binding.btnDecorHunt.setOnClickListener {
+            sheet.dismiss()
+            val host = activity as? androidx.appcompat.app.AppCompatActivity ?: return@setOnClickListener
+            val center = app.pikminbloom.gps.service.PatrolService.state.value.position
+                ?: prefs.home
+                ?: prefs.lastPosition
+                ?: store.load().firstOrNull()?.latLng
+            DecorHunt.show(host, prefs, store, center)
+        }
         render()
         sheet.show()
     }
