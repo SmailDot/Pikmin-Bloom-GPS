@@ -32,6 +32,13 @@ class PikminGpsApp : Application() {
      */
     private fun cleanupStaleMockProviders() {
         if (PatrolService.isRunning) return
+        // A checkpoint means the last patrol died mid-way and the game is still parked at its last
+        // mocked position. Leave the providers alone so it STAYS parked; MainActivity offers to
+        // resume from that exact spot. Cleaning up here would be the teleport we are avoiding.
+        if (app.pikminbloom.gps.service.PatrolCheckpoint.resumable(this) != null) {
+            Log.i("PikminGPS", "checkpoint present: keeping stale mock providers for a resume")
+            return
+        }
         try {
             val mock = MockLocationController(this)
             if (mock.isMockAppSelected()) mock.stop()

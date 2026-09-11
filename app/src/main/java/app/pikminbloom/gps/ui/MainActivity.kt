@@ -32,6 +32,7 @@ import app.pikminbloom.gps.geo.GeoMath
 import app.pikminbloom.gps.geo.LatLng
 import app.pikminbloom.gps.mock.MockLocationController
 import app.pikminbloom.gps.route.PatrolPlanner
+import app.pikminbloom.gps.service.PatrolCheckpoint
 import app.pikminbloom.gps.service.PatrolEvent
 import app.pikminbloom.gps.service.PatrolService
 import app.pikminbloom.gps.steps.StepInjector
@@ -113,6 +114,64 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         currentHome = PatrolService.state.value.home ?: prefs.home
         rebuildOverlays()
         render(PatrolService.state.value)
+        maybeOfferResume()
+    }
+
+    private var resumeDialogShown = false
+
+    /**
+     * The previous patrol died without a clean stop (thermal kill, crash). The game is still
+     * parked at the checkpoint position and the stale providers are deliberately left in place,
+     * so whatever the user picks here can start from that exact spot with nothing jumping.
+     */
+    private fun maybeOfferResume() {
+        if (resumeDialogShown || PatrolService.isRunning) return
+        val cp = PatrolCheckpoint.resumable(this) ?: return
+        resumeDialogShown = true
+        val wpName = store.routeList().firstOrNull { it.id == cp.routeId }?.name ?: store.activeRouteName()
+        val msg = getString(
+            R.string.dlg_resume_msg,
+            ageText(cp.ageMs),
+            wpName,
+            distanceText(cp.distanceWalkedM),
+            distanceText(GeoMath.distanceM(cp.position, cp.home)),
+        )
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dlg_resume_title)
+            .setMessage(msg)
+            .setCancelable(false)
+            .setPositiveButton(R.string.action_resume_patrol) { _, _ ->
+                lifecycleScope.launch {
+                    if (preflight()) PatrolService.resumeFromCheckpoint(this@MainActivity, thenReturnHome = false)
+                    else resumeDialogShown = false
+                }
+            }
+            .setNeutralButton(R.string.action_resume_go_home) { _, _ ->
+                lifecycleScope.launch {
+                    if (preflight()) PatrolService.resumeFromCheckpoint(this@MainActivity, thenReturnHome = true)
+                    else resumeDialogShown = false
+                }
+            }
+            .setNegativeButton(R.string.action_discard_checkpoint) { _, _ ->
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.dlg_discard_title)
+                    .setMessage(R.string.dlg_discard_msg)
+                    .setPositiveButton(R.string.action_discard_checkpoint) { _, _ ->
+                        PatrolCheckpoint.clear(this)
+                        // Now the stale providers really are stale: hand the game back to real GPS.
+                        mock.stop()
+                        toast(getString(R.string.toast_checkpoint_discarded))
+                    }
+                    .setNegativeButton(R.string.action_cancel) { _, _ -> resumeDialogShown = false }
+                    .show()
+            }
+            .show()
+    }
+
+    private fun ageText(ms: Long): String {
+        val minutes = ms / 60_000L
+        return if (minutes < 60) getString(R.string.fmt_minutes_ago, minutes)
+        else getString(R.string.fmt_hours_ago, minutes / 60)
     }
 
     override fun onPause() {
@@ -446,6 +505,8 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
                 snack(getString(R.string.snack_arrived, event.name), Snackbar.LENGTH_SHORT)
             is PatrolEvent.ReturnedHome ->
                 snack(getString(R.string.snack_returned_home), Snackbar.LENGTH_LONG)
+            is PatrolEvent.Resumed ->
+                snack(getString(R.string.snack_resumed, ageText(event.checkpointAgeMs)), Snackbar.LENGTH_LONG)
             else -> Unit
         }
     }
@@ -574,6 +635,13 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
 
     private fun startPatrol(startAtIndex: Int) {
         if (PatrolService.isRunning) return
+        // An unhandled checkpoint means the game is still parked at a crash point; a fresh start
+        // would teleport it home. Route the user back to the resume choice instead.
+        if (PatrolCheckpoint.resumable(this) != null) {
+            resumeDialogShown = false
+            maybeOfferResume()
+            return
+        }
         lifecycleScope.launch {
             if (!preflight()) return@launch
             // Home is ALWAYS a fresh fix, never a stored one. It is where the patrol walks back to

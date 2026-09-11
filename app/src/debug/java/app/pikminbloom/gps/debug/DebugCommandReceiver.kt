@@ -57,6 +57,13 @@ class DebugCommandReceiver : BroadcastReceiver() {
                 PatrolService.start(context, h, intent.getIntExtra("start_index", 0))
                 Log.i(TAG, "start requested, home=$h")
             }
+            "resume_checkpoint" -> {
+                val goHome = intent.getBooleanExtra("go_home", false)
+                val cp = app.pikminbloom.gps.service.PatrolCheckpoint.resumable(context)
+                Log.i(TAG, "checkpoint: ${cp?.toJson() ?: "none"}")
+                PatrolService.resumeFromCheckpoint(context, goHome)
+            }
+            "checkpoint" -> Log.i(TAG, "CHECKPOINT ${app.pikminbloom.gps.service.PatrolCheckpoint.load(context)?.toJson() ?: "none"}")
             "pause" -> PatrolService.pause(context)
             "resume" -> PatrolService.resume(context)
             "return_home" -> PatrolService.returnHome(context)

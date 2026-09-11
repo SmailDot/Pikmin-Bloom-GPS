@@ -22,5 +22,7 @@
     <string name="svc_err_no_home">無法取得真實位置（請關閉其他模擬定位 App，並確認 GPS 已開啟）</string>
     <string name="svc_err_no_waypoints">尚未加入任何大花</string>
     <string name="svc_err_background_start">請先開啟 App 主畫面再按「開始巡邏」。Android 不允許在背景啟動定位服務。</string>
+    <string name="svc_err_no_checkpoint">找不到可以繼續的巡邏紀錄</string>
+    <string name="svc_err_checkpoint_pending">上次巡邏尚未處理：請先在主畫面選擇「從中斷點繼續」或「放棄」</string>
     <string name="svc_target_home">家</string>
 </resources>

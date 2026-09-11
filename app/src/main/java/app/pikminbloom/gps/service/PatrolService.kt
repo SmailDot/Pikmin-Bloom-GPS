@@ -87,6 +87,7 @@ class PatrolService : LifecycleService() {
     private var stepsWrittenToday = 0L
     private var settleTicks = 0
     private var lastArrivalAlertMs = 0L
+    private var lastCheckpointMs = 0L
 
     /** Set (on the engine thread) to make the tick loop exit and run the matching finish sequence. */
     private sealed class Finish {
@@ -111,6 +112,10 @@ class PatrolService : LifecycleService() {
         val action = intent?.action
         if (action == ACTION_START) {
             handleStart(intent)
+            return START_NOT_STICKY
+        }
+        if (action == ACTION_RESUME_CHECKPOINT) {
+            handleResumeCheckpoint(intent.getBooleanExtra(EXTRA_THEN_RETURN_HOME, false))
             return START_NOT_STICKY
         }
         if (state.value.phase == PatrolPhase.IDLE) {
@@ -148,6 +153,11 @@ class PatrolService : LifecycleService() {
         _state.value = PatrolState(phase = PatrolPhase.STARTING, mockAppSelected = mock.isMockAppSelected())
         stopRequested = false
         pendingFinish = null
+
+        // A fresh start removes the stale providers and takes a real fix, which is exactly the
+        // crash-point -> real-position teleport a checkpoint exists to prevent. Refuse until the
+        // user has chosen resume / go home / discard in the UI.
+        if (PatrolCheckpoint.resumable(this) != null) { failNow(getString(R.string.svc_err_checkpoint_pending)); return }
 
         config = prefs.config()
         waypoints = store.load()
@@ -197,6 +207,127 @@ class PatrolService : LifecycleService() {
                 failNow(t.message ?: "start failed")
             }
         }
+    }
+
+    // ------------------------------------------------------------------ resume after a process death
+
+    /**
+     * Picks a patrol up from its [PatrolCheckpoint] after the process was killed (thermal, OOM,
+     * crash). The game is still parked at the checkpoint position, so the first thing done after
+     * installing the providers is to push that exact position again: nothing on screen moves.
+     *
+     * Home is the checkpoint's home, not a fresh fix. A fresh fix is impossible here anyway (the
+     * stale providers are still masking the real GPS and removing them first is the teleport we
+     * are avoiding), and a kill happens minutes into a session, not hours, so the user has not
+     * moved. If they have, they can discard the checkpoint and start fresh instead.
+     */
+    private fun handleResumeCheckpoint(thenReturnHome: Boolean) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            _events.tryEmit(PatrolEvent.Error(getString(R.string.svc_err_no_location_permission)))
+            stopSelf(); return
+        }
+        if (!goForeground()) return
+        if (state.value.phase != PatrolPhase.IDLE) { Log.i(TAG, "resume ignored: already ${state.value.phase}"); return }
+        val cp = PatrolCheckpoint.resumable(this) ?: run { failNow(getString(R.string.svc_err_no_checkpoint)); return }
+
+        _state.value = PatrolState(phase = PatrolPhase.STARTING, mockAppSelected = mock.isMockAppSelected())
+        stopRequested = false
+        pendingFinish = null
+        config = prefs.config()
+        if (cp.routeId.isNotBlank()) store.switchTo(cp.routeId)
+        waypoints = store.load()
+        if (!mock.isMockAppSelected()) { failNow(getString(R.string.svc_err_not_mock_app)); return }
+        acquireWakeLock()
+
+        lifecycleScope.launch(engine) {
+            try {
+                // The checkpoint is up to a few seconds behind where the last fix actually left the
+                // player. If the system still holds that fix, resume from it and nothing moves at all.
+                val parked = mock.lastParkedMockFix()
+                    ?.takeIf { GeoMath.distanceM(it, cp.position) <= 100.0 }
+                val resumeAt = parked ?: cp.position
+                if (parked != null) Log.i(TAG, "resuming from the parked fix $parked (checkpoint was ${cp.position})")
+
+                // Replace the stale providers in place and immediately re-assert the parked position.
+                mock.start(config, keepExisting = true)
+                mock.pushRaw(resumeAt, accuracyM = 5f, altitudeM = config.altitudeM)
+
+                home = cp.home
+                prefs.home = cp.home
+                sim = WalkSimulator(config)
+                lap = cp.lap
+                stepsAccrued = cp.stepsAccrued
+                stepsFlushed = cp.stepsFlushed
+                distanceSinceFlush = cp.distanceSinceFlush
+                flushWindowStart = Instant.ofEpochMilli(cp.flushWindowStartMs)
+                stepsWrittenToday = cp.stepsWrittenToday
+                lastArrivalAlertMs = 0L
+
+                val goHome = thenReturnHome || cp.phase == PatrolPhase.RETURNING_HOME || waypoints.isEmpty()
+                if (goHome) {
+                    plan = PatrolPlanner.planReturnHome(resumeAt, cp.home)
+                    sim.load(plan)
+                    settleTicks = 0
+                } else {
+                    // Continue with the remaining waypoints of the interrupted lap, from where we are.
+                    val order = PatrolPlanner.orderFor(lap, waypoints.size, config.loopMode)
+                    val pos = order.indexOf(cp.targetWaypointIndex.coerceIn(0, waypoints.size - 1))
+                    val remaining = if (pos >= 0) order.drop(pos) else order
+                    plan = PatrolPlanner.planLap(resumeAt, waypoints, config, remaining.ifEmpty { order }, lap)
+                    sim.load(plan)
+                }
+
+                _state.update {
+                    it.copy(
+                        phase = if (goHome) PatrolPhase.RETURNING_HOME else phaseFor(plan.segments.firstOrNull()?.kind ?: SegmentKind.TRAVEL),
+                        home = cp.home, position = resumeAt, startedAtMs = cp.startedAtMs,
+                        distanceWalkedM = cp.distanceWalkedM, sessionSteps = floor(stepsAccrued).toLong(),
+                        stepsWrittenToday = stepsWrittenToday, lapsCompleted = cp.lapsCompleted,
+                        mockAppSelected = true, healthConnectReady = steps.isAvailable, lastError = null,
+                        currentWaypointIndex = if (goHome) -1 else cp.targetWaypointIndex,
+                        currentWaypointName = if (goHome) getString(R.string.svc_target_home) else waypoints.getOrNull(cp.targetWaypointIndex)?.name,
+                        distanceToTargetM = if (goHome) GeoMath.distanceM(resumeAt, cp.home) else 0.0,
+                    )
+                }
+                Log.i(TAG, "resumed from checkpoint (${cp.ageMs / 1000}s old) at $resumeAt, goHome=$goHome")
+                _events.tryEmit(PatrolEvent.Resumed(cp.ageMs))
+                lastNotificationMs = 0
+                startTicking()
+            } catch (e: MockNotAllowedException) {
+                failNow(e.message ?: getString(R.string.svc_err_not_mock_app))
+            } catch (t: Throwable) {
+                Log.e(TAG, "resume failed", t)
+                failNow(t.message ?: "resume failed")
+            }
+        }
+    }
+
+    /** Snapshot of everything a resume needs. Engine thread only. */
+    private fun writeCheckpoint() {
+        val s = state.value
+        val h = home ?: return
+        val p = s.position ?: return
+        if (s.phase == PatrolPhase.IDLE || s.phase == PatrolPhase.STOPPING || s.phase == PatrolPhase.STARTING) return
+        PatrolCheckpoint.save(
+            this,
+            PatrolCheckpoint(
+                savedAtMs = System.currentTimeMillis(),
+                startedAtMs = s.startedAtMs,
+                home = h,
+                position = p,
+                routeId = store.activeRouteId.value,
+                lap = lap,
+                targetWaypointIndex = s.currentWaypointIndex.coerceAtLeast(0),
+                phase = s.phase,
+                distanceWalkedM = s.distanceWalkedM,
+                stepsAccrued = stepsAccrued,
+                stepsFlushed = stepsFlushed,
+                flushWindowStartMs = flushWindowStart.toEpochMilli(),
+                distanceSinceFlush = distanceSinceFlush,
+                stepsWrittenToday = stepsWrittenToday,
+                lapsCompleted = s.lapsCompleted,
+            ),
+        )
     }
 
     private fun goForeground(): Boolean = try {
@@ -289,6 +420,12 @@ class PatrolService : LifecycleService() {
 
         if (pendingFinish == null) maybeFlushSteps(force = false)
         maybeUpdateNotification()
+
+        // Cheap insurance against a thermal kill: a few hundred bytes every few seconds.
+        if (nowMs - lastCheckpointMs >= CHECKPOINT_INTERVAL_MS) {
+            lastCheckpointMs = nowMs
+            writeCheckpoint()
+        }
     }
 
     private suspend fun runFinish(finish: Finish) {
@@ -475,6 +612,9 @@ class PatrolService : LifecycleService() {
 
     private fun teardown(keepError: String? = null) {
         releaseWakeLock()
+        // Every path through here is a clean exit: the game is (or is about to be) on real GPS,
+        // so there is nothing to resume from.
+        PatrolCheckpoint.clear(this)
         val last = state.value
         prefs.lastPosition = last.position
         _state.value = PatrolState(
@@ -536,6 +676,8 @@ class PatrolService : LifecycleService() {
         const val ACTION_RETURN_HOME = "$PKG.action.RETURN_HOME"
         const val ACTION_STOP = "$PKG.action.STOP"
         const val ACTION_SKIP_WAYPOINT = "$PKG.action.SKIP_WAYPOINT"
+        const val ACTION_RESUME_CHECKPOINT = "$PKG.action.RESUME_CHECKPOINT"
+        const val EXTRA_THEN_RETURN_HOME = "then_return_home"
         const val EXTRA_HOME_LAT = "home_lat"
         const val EXTRA_HOME_LON = "home_lon"
         const val EXTRA_START_AT_INDEX = "start_at_index"
@@ -545,6 +687,7 @@ class PatrolService : LifecycleService() {
 
         /** Shorter than this and a lap has no walking in it, so repeating it would just spin. */
         private const val MIN_LAP_M = 5.0
+        private const val CHECKPOINT_INTERVAL_MS = 5_000L
 
         private val _state = MutableStateFlow(PatrolState())
         val state: StateFlow<PatrolState> = _state
@@ -568,6 +711,12 @@ class PatrolService : LifecycleService() {
             // onStartCommand stops itself immediately, which also discharges the start obligation.
             runCatching { ContextCompat.startForegroundService(context, intent(context, action)) }
                 .onFailure { Log.w(TAG, "send $action failed: ${it.message}") }
+        }
+
+        /** Continue an interrupted patrol from its checkpoint; must be called from a visible activity. */
+        fun resumeFromCheckpoint(context: Context, thenReturnHome: Boolean) {
+            val i = intent(context, ACTION_RESUME_CHECKPOINT).putExtra(EXTRA_THEN_RETURN_HOME, thenReturnHome)
+            ContextCompat.startForegroundService(context, i)
         }
 
         fun pause(context: Context) = send(context, ACTION_PAUSE)

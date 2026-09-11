@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Crash / thermal-kill recovery (service/PatrolCheckpoint + MainActivity.maybeOfferResume). -->
+<resources>
+    <string name="dlg_resume_title">上次巡邏沒有正常結束</string>
+    <string name="dlg_resume_msg">App 在 %1$s被系統關閉（通常是過熱），遊戲角色目前還停在中斷的位置。\n\n路線：%2$s\n已走：%3$s\n距離家：%4$s\n\n「從中斷點繼續」會直接接回那個位置往下走，遊戲不會看到任何跳躍。\n「從中斷點走回家」會先接回位置，再走回上次出發的家。\n「放棄」會立刻把定位交還給真實 GPS，遊戲會看到一次瞬移。</string>
+    <string name="action_resume_patrol">從中斷點繼續</string>
+    <string name="action_resume_go_home">從中斷點走回家</string>
+    <string name="action_discard_checkpoint">放棄</string>
+    <string name="dlg_discard_title">確定放棄？</string>
+    <string name="dlg_discard_msg">放棄後遊戲會立刻從中斷點跳回你的真實位置。如果兩地距離很遠，這是最容易被判定異常的動作。建議改選「從中斷點走回家」。</string>
+    <string name="toast_checkpoint_discarded">已放棄上次的巡邏，定位已交還給真實 GPS</string>
+    <string name="snack_resumed">已從 %1$s的中斷點接回，繼續巡邏</string>
+</resources>

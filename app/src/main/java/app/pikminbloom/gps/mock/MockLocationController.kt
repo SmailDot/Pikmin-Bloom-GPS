@@ -95,13 +95,22 @@ class MockLocationController(context: Context) {
      * Installs the test providers. Throws [MockNotAllowedException] when the platform refuses us
      * (app not selected in Developer options) or when no provider could be installed at all.
      */
-    fun start(config: PatrolConfig) {
+    /**
+     * @param keepExisting true when RESUMING after a process death: the previous process's test
+     *        providers are still registered and the game is still showing their last fix. Removing
+     *        them first would expose the real GPS for a moment (a visible teleport), so instead
+     *        they are replaced in place (addTestProvider replaces a same-named provider on
+     *        Android 11+) and the caller pushes the checkpoint position immediately afterwards.
+     */
+    fun start(config: PatrolConfig, keepExisting: Boolean = false) {
         val manager = lm ?: throw MockNotAllowedException("LocationManager unavailable")
         activeProviders.clear()
         lastFlpError = null
-        // Belt and braces: a crashed previous run may have left providers behind. Only meaningful
-        // while we are the selected mock app (the call is a no-op / SecurityException otherwise).
-        for (provider in ALL_PROVIDERS) runCatching { manager.removeTestProvider(provider) }
+        if (!keepExisting) {
+            // Belt and braces: a crashed previous run may have left providers behind. Only
+            // meaningful while we are the selected mock app (no-op / SecurityException otherwise).
+            for (provider in ALL_PROVIDERS) runCatching { manager.removeTestProvider(provider) }
+        }
 
         val wanted = buildList {
             add(LocationManager.GPS_PROVIDER)
@@ -114,8 +123,9 @@ class MockLocationController(context: Context) {
         var security: SecurityException? = null
         for (provider in wanted) {
             try {
-                // A previous run may have left the provider installed.
-                runCatching { manager.removeTestProvider(provider) }
+                // A previous run may have left the provider installed. When resuming we rely on
+                // addTestProvider replacing it in place instead, to avoid a gap.
+                if (!keepExisting) runCatching { manager.removeTestProvider(provider) }
                 addTestProvider(manager, provider)
                 manager.setTestProviderEnabled(provider, true)
                 activeProviders.add(provider)
@@ -326,6 +336,22 @@ class MockLocationController(context: Context) {
                 Log.w(TAG, "getLastKnownLocation($provider) failed: ${t.message}"); null
             }
             if (loc != null && !loc.isMockFix()) return loc.toLatLng()
+        }
+        return null
+    }
+
+    /**
+     * The last fix the system is still serving from a (possibly stale, previous-process) test
+     * provider - i.e. where the game currently sees the player parked after a crash. Null when the
+     * last known fix is real or missing.
+     */
+    @SuppressLint("MissingPermission")
+    fun lastParkedMockFix(): LatLng? {
+        val manager = lm ?: return null
+        if (!hasLocationPermission()) return null
+        for (provider in listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)) {
+            val loc = runCatching { manager.getLastKnownLocation(provider) }.getOrNull() ?: continue
+            if (loc.isMockFix()) return loc.toLatLng()
         }
         return null
     }
