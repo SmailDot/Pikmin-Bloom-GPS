@@ -3,7 +3,27 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+// Release signing lives OUTSIDE the repository (../keystore/keystore.properties). Without it the
+// release build type falls back to the debug key so `assembleRelease` still works for anyone who
+// clones the project; only builds meant for other people's phones need the real key.
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file('../keystore/keystore.properties')
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+
 android {
+    signingConfigs {
+        if (keystoreProps['storeFile']) {
+            release {
+                storeFile file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
     namespace 'app.pikminbloom.gps'
     compileSdk 37
 
@@ -12,7 +32,7 @@ android {
         minSdk 28
         targetSdk 36
         versionCode 1
-        versionName "1.0.0"
+        versionName "1.1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -21,6 +41,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig keystoreProps['storeFile'] ? signingConfigs.release : signingConfigs.debug
         }
         debug {
             minifyEnabled false

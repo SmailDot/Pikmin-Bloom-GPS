@@ -24,3 +24,6 @@ local.properties
 
 # Device test screenshots contain the real location and game account; keep them local.
 /docs/test/
+
+# Release signing key lives one directory up; never inside the repo
+/keystore/
