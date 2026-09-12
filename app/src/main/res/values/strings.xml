@@ -13,7 +13,6 @@
     <string name="menu_setup">初始設定</string>
     <string name="menu_settings">設定</string>
     <string name="menu_my_location">我的位置</string>
-    <string name="menu_clear_home">清除家的位置</string>
     <string name="menu_import">匯入</string>
     <string name="menu_export_json">匯出 JSON</string>
     <string name="menu_export_gpx">匯出 GPX</string>
@@ -98,18 +97,13 @@
     <string name="dlg_hc_unavailable_msg">Health Connect 不可用，將不寫入步數。仍要開始巡邏嗎？</string>
     <string name="dlg_hc_permission_title">需要 Health Connect 權限</string>
     <string name="dlg_hc_permission_msg">需要步數與距離的讀寫權限，Pikmin Bloom 才能讀到巡邏走出來的步數。</string>
-    <string name="dlg_home_title">出發點（家）</string>
-    <string name="dlg_home_msg">找到上次記錄的家：%1$s（%2$s）。要沿用嗎？\n選「重新定位」會重新抓一次真實 GPS。</string>
 
     <string name="action_grant">授予權限</string>
     <string name="action_continue">繼續</string>
     <string name="action_continue_without_steps">不寫步數繼續</string>
     <string name="action_open_developer_options">開啟開發者選項</string>
-    <string name="action_reuse_home">使用上次的家</string>
-    <string name="action_relocate">重新定位</string>
 
     <string name="toast_location_denied">沒有定位權限，無法開始巡邏</string>
-    <string name="toast_home_cleared">已清除家的位置</string>
     <string name="toast_locating">正在定位…</string>
     <string name="toast_location_unavailable">無法取得目前的真實位置</string>
 

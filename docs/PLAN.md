@@ -330,3 +330,29 @@ Exported `BroadcastReceiver` with action `app.pikminbloom.gps.DEBUG_CMD`, extras
 
 **實測（run-as kill -9）：** 殺後遊戲停在 22.759428,120.337840；續走從 22.759428,120.337840 接回，
 零位移，接著走向下一個目標。
+
+## G. 巡邏中即時控制（2026-09-12，使用者回報 5 個問題 + 搖桿）
+
+回報的症狀與原因：
+
+| # | 症狀 | 原因 | 修法 |
+|---|------|------|------|
+| 1 | 走路中調速度沒反應 | `PatrolService` 只在 start 時讀一次 `prefs.config()`；`WalkSimulator` 建構時把速度抄進私有欄位 | 服務註冊 `OnSharedPreferenceChangeListener`（強參考），任何 `Prefs.config()` 會讀的 key 變動就在 engine thread 重讀並呼叫 `sim.updateConfig()`，下一個 tick 生效 |
+| 2 | 走路中刪掉／新增大花沒反應 | `waypoints` 欄位只在 start 時抄一份；`loadLap` 用的是舊清單 | 服務 collect `WaypointStore.waypoints`；有變動就 `replanRemaining()`：以「本圈已到過的 id」(`doneThisLap`) 過濾新順序、從目前位置重新規劃。正在繞圈或在交通工具腿上時先記 `replanPending`，等該腿走完再套用。目前這朵若沒被改動，`sim.remainingLegsOfCurrentWaypoint()` 把剩下的腿原樣保留（第一段縮短成從現在位置開始），畫面上完全無感 |
+| 3 | 想自訂家（人在台灣、想待在日本） | 家一律是當下真實位置（C 節的需求） | `Prefs.customHome`（家的位置… 選單：地圖中心／輸入座標／改回真實位置）。有自訂家時 start 不定位直接從那裡出發；回家走回自訂家後進入新階段 **PARKED**：mock 維持、每秒重推同一點，通知與主畫面明講「按停止才回真實 GPS」。「再巡一圈」從家再載一圈；「停止」才 `mock.stop()`。沒設自訂家時行為完全不變 |
+| 4 | 看不到交通工具 | `TravelMode` 只有飾品之旅在用 | `PatrolService.travelOverride`（StateFlow）：主畫面「移動方式」按鈕、浮動列車子圖示循環（步行→腳踏車→汽機車→高速公路→飛機）。`WalkSimulator.travelOverride` 套在所有沒有自帶 travelMode 的腿上；交通工具不計步。**抵達下一朵大花時自動切回步行**（車是拿來到達的，忘了關會整圈不種花）。大花標記／清單的「從這裡開始」在巡邏中變成「立刻前往這朵」= `ACTION_GO_TO`，把它插到最前面重新規劃 |
+| 5 | 自動領花蜜 | 未實作（見 D1／E2） | 維持不做；可行路徑是 AccessibilityService `dispatchGesture`（不需要節點樹），但點花→點名字→下拉→關閉的座標要在實機上量，需要附近有開花的大花 |
+| + | 搖桿 | — | `JoystickView`（第二個 overlay 視窗，左下角 150dp，上＝北）。`PatrolService.joystick` StateFlow：`enabled` 切換進出 **MANUAL** 階段，向量每 tick 讀一次。`sim.advanceManual(dt, bearing, magnitude)` 從目前位置往該方向走 magnitude × 速度（交通工具覆蓋一樣適用，步數照 countsSteps）。關掉搖桿：`leaveManual()` 從所在位置接回本圈剩下的大花。搖桿期間暫停再繼續、回家、立刻前往都會先離開手動模式再規劃 |
+| + | 掃描一直顯示「遊戲畫面被遮蔽」 | 文案誤導：其實是**擷取到的畫面全黑**（遊戲在執行中偵測到錄影開始就對錄影遮蔽，螢幕本身正常），浮動列一行放不下解法 | `ScanState.WaitingForBirdsEye(blank=true)`；浮動列顯示短句並自動展開，主畫面跳出說明對話框附「開啟 Pikmin Bloom」按鈕（先把遊戲滑掉再由本 App 開啟就不會黑） |
+
+新階段：`PatrolPhase.PARKED`、`PatrolPhase.MANUAL`。`PatrolState` 新增 `travelOverride`、`homeIsCustom`。
+新事件：`ParkedAtHome`、`TravelModeChanged(mode, automatic)`、`Replanned(reason)`、`ConfigChanged(speedKmh)`。
+
+Debug receiver 新指令：`goto --ei index`、`travel --es mode CAR|BIKE|HIGHWAY|PLANE|WALK`、
+`joystick --ez on --ef bearing --ef magnitude`、`set_custom_home --es home "lat,lon"`、
+`add_waypoint --es waypoint "lat,lon,name"`、`remove_waypoint --ei index`。
+
+**尚未實機驗證**（手機不在身邊時完成）：以上全部只跑過單元測試（`LiveControlsTest`，8 個）與編譯。
+下次接上手機要驗：(a) 設定改速度 → logcat `config changed`；(b) 走路中刪／加大花 → `re-planned`，畫面不跳；
+(c) 自訂家 → 開始直接出現在該點、回家後 `parked`、停止才跳回；(d) 汽機車 → 速度 45 km/h、抵達自動 `back to walking`；
+(e) 搖桿 → `joystick took over` / `put away`，關掉後接回路線。

@@ -93,12 +93,16 @@ object WaypointDialogs {
         dialog.show()
     }
 
-    /** Bottom sheet shown when a waypoint marker is tapped. */
+    /**
+     * Bottom sheet shown when a waypoint marker is tapped. [running] relabels 從這裡開始 as
+     * 立刻前往這朵: mid-patrol the same action makes that flower the next target.
+     */
     fun showMarkerActions(
         activity: Activity,
         store: WaypointStore,
         prefs: Prefs,
         index: Int,
+        running: Boolean = false,
         onStartHere: (Int) -> Unit,
     ) {
         val list = store.load()
@@ -120,6 +124,7 @@ object WaypointDialogs {
         }
         binding.actionMoveUp.setOnClickListener { store.move(index, index - 1); sheet.dismiss() }
         binding.actionMoveDown.setOnClickListener { store.move(index, index + 1); sheet.dismiss() }
+        binding.actionStartHere.setText(if (running) R.string.action_go_now else R.string.action_start_here)
         binding.actionStartHere.setOnClickListener { sheet.dismiss(); onStartHere(index) }
         binding.actionDelete.setOnClickListener {
             sheet.dismiss()

@@ -44,8 +44,12 @@ object FlowerScanner {
         /** `start` was called without a projection: the UI must obtain consent first. */
         data object NeedProjection : ScanState()
 
-        /** Frames are arriving but are not usable; [reason] is a user-facing zh-TW line. */
-        data class WaitingForBirdsEye(val reason: String) : ScanState()
+        /**
+         * Frames are arriving but are not usable; [reason] is a user-facing zh-TW line. [blank] marks
+         * the one case the user must fix by hand (the game blanked itself against the capture and
+         * has to be relaunched), so the UI can explain it properly instead of in one truncated line.
+         */
+        data class WaitingForBirdsEye(val reason: String, val blank: Boolean = false) : ScanState()
 
         data class Calibrating(val framesSoFar: Int, val metresSoFar: Double) : ScanState()
 
@@ -185,7 +189,8 @@ object FlowerScanner {
                     continue
                 }
                 val now = SystemClock.elapsedRealtime()
-                if (patrol.phase == PatrolPhase.PAUSED) {
+                val frozen = patrol.phase == PatrolPhase.PAUSED || patrol.phase == PatrolPhase.PARKED
+                if (frozen) {
                     if (pausedSinceMs == 0L) pausedSinceMs = now
                 } else {
                     pausedSinceMs = 0L
@@ -197,7 +202,7 @@ object FlowerScanner {
                 // error budget absorbs, whereas stop-starting the walker every 20 m was both
                 // conspicuous in the game and confusing to watch. A pause that IS in effect is the
                 // user's own and simply yields a settled frame.
-                val stationary = patrol.phase == PatrolPhase.PAUSED
+                val stationary = frozen
                 val settled = stationary && pausedSinceMs != 0L && SystemClock.elapsedRealtime() - pausedSinceMs >= SETTLE_MS
 
                 // Position and frame are read back to back so they describe the same instant.
@@ -246,7 +251,7 @@ object FlowerScanner {
         when (outcome) {
             ScanTracker.Outcome.WrongView -> publishWaiting(app.getString(R.string.scan_wait_wrong_view))
             is ScanTracker.Outcome.Blank -> {
-                if (outcome.exhausted) publishWaiting(app.getString(R.string.scan_wait_blank))
+                if (outcome.exhausted) publishWaiting(app.getString(R.string.scan_wait_blank), blank = true)
             }
             is ScanTracker.Outcome.Empty -> {
                 if (outcome.exhausted) publishWaiting(app.getString(R.string.scan_wait_no_flowers))
@@ -281,10 +286,10 @@ object FlowerScanner {
         }
     }
 
-    private fun publishWaiting(reason: String) {
+    private fun publishWaiting(reason: String, blank: Boolean = false) {
         val cur = _state.value
         if (cur is ScanState.WaitingForBirdsEye && cur.reason == reason) return
-        _state.value = ScanState.WaitingForBirdsEye(reason)
+        _state.value = ScanState.WaitingForBirdsEye(reason, blank)
     }
 
     private fun doneState(tracker: ScanTracker): ScanState =

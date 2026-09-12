@@ -69,6 +69,28 @@ class Prefs(context: Context) {
             }
         }
 
+    /**
+     * A home the user chose on the map instead of where the phone really is (「我近期想要待在
+     * 日本到處溜搭」). While set, every patrol starts here and 回家 walks back here and parks with
+     * the mock still on; only 停止 returns the game to the real GPS. Null = the normal behaviour,
+     * where home is always a fresh real fix.
+     */
+    var customHome: LatLng?
+        get() {
+            if (!sp.contains(KEY_CUSTOM_HOME_LAT)) return null
+            val lat = java.lang.Double.longBitsToDouble(sp.getLong(KEY_CUSTOM_HOME_LAT, 0))
+            val lon = java.lang.Double.longBitsToDouble(sp.getLong(KEY_CUSTOM_HOME_LON, 0))
+            return runCatching { LatLng(lat, lon) }.getOrNull()
+        }
+        set(v) = sp.edit {
+            if (v == null) {
+                remove(KEY_CUSTOM_HOME_LAT); remove(KEY_CUSTOM_HOME_LON)
+            } else {
+                putLong(KEY_CUSTOM_HOME_LAT, java.lang.Double.doubleToRawLongBits(v.lat))
+                putLong(KEY_CUSTOM_HOME_LON, java.lang.Double.doubleToRawLongBits(v.lon))
+            }
+        }
+
     val homeSavedAtMs: Long get() = sp.getLong(KEY_HOME_SAVED_AT, 0L)
     val savedHomeAgeMs: Long get() = if (homeSavedAtMs == 0L) Long.MAX_VALUE else System.currentTimeMillis() - homeSavedAtMs
 
@@ -190,6 +212,8 @@ class Prefs(context: Context) {
         const val KEY_HOME_LAT = "home_lat"
         const val KEY_HOME_LON = "home_lon"
         const val KEY_HOME_SAVED_AT = "home_saved_at"
+        const val KEY_CUSTOM_HOME_LAT = "custom_home_lat"
+        const val KEY_CUSTOM_HOME_LON = "custom_home_lon"
         const val KEY_LAST_LAT = "last_lat"
         const val KEY_LAST_LON = "last_lon"
         const val KEY_DISCLAIMER = "disclaimer_accepted"

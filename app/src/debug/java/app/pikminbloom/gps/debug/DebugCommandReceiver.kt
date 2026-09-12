@@ -77,6 +77,42 @@ class DebugCommandReceiver : BroadcastReceiver() {
             "return_home" -> PatrolService.returnHome(context)
             "stop" -> PatrolService.stop(context)
             "skip" -> PatrolService.skipWaypoint(context)
+            // Live controls added 2026-09-12.
+            "goto" -> PatrolService.goTo(context, intent.getIntExtra("index", 0))
+            "travel" -> {
+                // --es mode CAR | BIKE | HIGHWAY | PLANE | WALK (WALK = back to the configured speed)
+                val name = intent.getStringExtra("mode").orEmpty().uppercase()
+                val mode = if (name == "WALK" || name.isBlank()) null
+                else runCatching { app.pikminbloom.gps.data.TravelMode.valueOf(name) }.getOrNull()
+                PatrolService.setTravelOverride(mode)
+                Log.i(TAG, "travel override -> ${mode ?: "walk"}")
+            }
+            "joystick" -> {
+                // --ez on true --ef bearing 90 --ef magnitude 1
+                val on = intent.getBooleanExtra("on", true)
+                PatrolService.setJoystickEnabled(on)
+                if (on) PatrolService.steer(intent.getFloatExtra("bearing", 0f).toDouble(), intent.getFloatExtra("magnitude", 1f).toDouble())
+                Log.i(TAG, "joystick -> ${PatrolService.joystick.value}")
+            }
+            "set_custom_home" -> {
+                val h = parseLatLng(intent.getStringExtra("home"))
+                prefs.customHome = h
+                Log.i(TAG, "custom home -> $h")
+            }
+            "add_waypoint" -> {
+                // Mid-patrol edit test: --es waypoint "lat,lon,name" (appended to the active route)
+                val parts = (intent.getStringExtra("waypoint") ?: "").split(',')
+                val lat = parts.getOrNull(0)?.trim()?.toDoubleOrNull()
+                val lon = parts.getOrNull(1)?.trim()?.toDoubleOrNull()
+                if (lat != null && lon != null) {
+                    store.add(Waypoint(UUID.randomUUID().toString(), parts.getOrNull(2)?.trim().orEmpty().ifBlank { "大花" }, lat, lon, prefs.defaultRadiusM, prefs.defaultDwellSec))
+                    Log.i(TAG, "waypoint added, now ${store.load().size}")
+                }
+            }
+            "remove_waypoint" -> {
+                val idx = intent.getIntExtra("index", -1)
+                store.load().getOrNull(idx)?.let { store.remove(it.id); Log.i(TAG, "waypoint $idx removed, now ${store.load().size}") }
+            }
             "status" -> {
                 val s = PatrolService.state.value
                 val mock = MockLocationController(context)
@@ -93,6 +129,10 @@ class DebugCommandReceiver : BroadcastReceiver() {
                     .put("speedMps", s.speedMps)
                     .put("laps", s.lapsCompleted)
                     .put("lastError", s.lastError)
+                    .put("travelOverride", s.travelOverride?.name)
+                    .put("homeIsCustom", s.homeIsCustom)
+                    .put("joystick", PatrolService.joystick.value.toString())
+                    .put("customHome", prefs.customHome?.toString())
                     .put("mockAppSelected", mock.isMockAppSelected())
                     .put("waypoints", store.load().size)
                     .put("config", prefs.config().toString())

@@ -65,10 +65,43 @@
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:visibility="gone" />
 
+            <!-- Live controls: vehicle override (applies to the next leg) and the joystick toggle. -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_s"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTravel"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="@string/travel_short_walk"
+                    app:icon="@drawable/ic_walk" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnJoystick"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_xs"
+                    android:layout_weight="1"
+                    android:checkable="true"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="@string/label_joystick"
+                    app:icon="@drawable/ic_gamepad" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
                 android:baselineAligned="false"
                 android:orientation="horizontal">
 

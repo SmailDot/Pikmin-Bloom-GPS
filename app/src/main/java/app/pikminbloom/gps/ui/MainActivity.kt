@@ -28,6 +28,7 @@ import app.pikminbloom.gps.R
 import app.pikminbloom.gps.data.PatrolPhase
 import app.pikminbloom.gps.data.PatrolState
 import app.pikminbloom.gps.data.Prefs
+import app.pikminbloom.gps.data.TravelMode
 import app.pikminbloom.gps.data.Waypoint
 import app.pikminbloom.gps.data.WaypointStore
 import app.pikminbloom.gps.databinding.ActivityMainBinding
@@ -45,7 +46,9 @@ import app.pikminbloom.gps.vision.ScreenCaptureService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -114,7 +117,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         store = WaypointStore.get(this)
         mock = MockLocationController(this)
         steps = StepInjector(this)
-        currentHome = prefs.home
+        currentHome = prefs.customHome ?: prefs.home
 
         registerLaunchers()
         applyInsets()
@@ -142,7 +145,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     override fun onResume() {
         super.onResume()
         binding.map.onResume()
-        currentHome = PatrolService.state.value.home ?: prefs.home
+        currentHome = PatrolService.state.value.home ?: prefs.customHome ?: prefs.home
         rebuildOverlays()
         render(PatrolService.state.value)
         maybeOfferResume()
@@ -300,12 +303,25 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         binding.btnResume.setOnClickListener { PatrolService.resume(this) }
         binding.btnHome.setOnClickListener { PatrolService.returnHome(this) }
         binding.btnStop.setOnClickListener { confirmStop() }
+        binding.btnTravel.setOnClickListener { showTravelDialog() }
+        binding.btnJoystick.setOnClickListener { toggleJoystick() }
     }
 
     /** A plain stop leaves the game at the fake position (looks like a teleport); suggest 回家 first. */
     private fun confirmStop() {
         val phase = PatrolService.state.value.phase
-        val movingOrPaused = phase == PatrolPhase.WALKING || phase == PatrolPhase.DWELLING || phase == PatrolPhase.PAUSED
+        if (phase == PatrolPhase.PARKED) {
+            // Parked at the custom home: stopping is the one deliberate teleport back to real GPS.
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.dlg_stop_parked_title)
+                .setMessage(R.string.dlg_stop_parked_msg)
+                .setPositiveButton(R.string.btn_stop) { _, _ -> PatrolService.stop(this) }
+                .setNegativeButton(R.string.action_cancel, null)
+                .show()
+            return
+        }
+        val movingOrPaused = phase == PatrolPhase.WALKING || phase == PatrolPhase.DWELLING ||
+            phase == PatrolPhase.PAUSED || phase == PatrolPhase.MANUAL
         if (!movingOrPaused) {
             PatrolService.stop(this)
             return
@@ -331,8 +347,92 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
                 launch { PatrolService.state.collect { render(it) } }
                 launch { PatrolService.events.collect { onEvent(it) } }
                 launch { FlowerScanner.state.collect { renderScan(it) } }
+                launch { PatrolService.travelOverride.collect { renderLiveControls() } }
+                launch { PatrolService.joystick.map { it.enabled }.distinctUntilChanged().collect { renderLiveControls() } }
             }
         }
+    }
+
+    // ------------------------------------------------------------------ live controls (移動方式 / 搖桿)
+
+    private fun renderLiveControls() {
+        val mode = PatrolService.travelOverride.value
+        binding.btnTravel.text = travelLabel(mode, short = true)
+        binding.btnTravel.setIconResource(if (mode == null) R.drawable.ic_walk else R.drawable.ic_car)
+        binding.btnJoystick.isChecked = PatrolService.joystick.value.enabled
+    }
+
+    private fun travelLabel(mode: TravelMode?, short: Boolean = false): String {
+        if (mode == null) {
+            return if (short) getString(R.string.travel_short_walk)
+            else getString(R.string.travel_walk_configured, "%.0f".format(prefs.config().speedMps * 3.6))
+        }
+        val kmh = mode.speedKmh.toInt()
+        return if (short) "${mode.label} $kmh km/h"
+        else getString(if (mode.countsSteps) R.string.travel_item else R.string.travel_item_no_steps, mode.label, kmh)
+    }
+
+    /** 移動方式: pick the vehicle for the next leg. Applies immediately, before or during a patrol. */
+    private fun showTravelDialog() {
+        val choices = PatrolService.OVERRIDE_CHOICES
+        val current = PatrolService.travelOverride.value
+        // An AlertDialog shows either a message or a list, never both, so build the two by hand.
+        val pad = resources.getDimensionPixelSize(R.dimen.space_xl)
+        val column = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(pad, pad / 2, pad, 0)
+        }
+        column.addView(android.widget.TextView(this).apply {
+            text = getString(R.string.dlg_travel_msg)
+            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+            setPadding(0, 0, 0, pad / 2)
+        })
+        val group = android.widget.RadioGroup(this)
+        choices.forEachIndexed { i, mode ->
+            group.addView(android.widget.RadioButton(this).apply {
+                id = View.generateViewId()
+                text = travelLabel(mode)
+                tag = i
+                isChecked = mode == current
+                minHeight = resources.getDimensionPixelSize(R.dimen.overlay_handle)
+            })
+        }
+        column.addView(group)
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dlg_travel_title)
+            .setView(android.widget.ScrollView(this).apply { addView(column) })
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+        group.setOnCheckedChangeListener { g, checkedId ->
+            val index = g.findViewById<View>(checkedId)?.tag as? Int ?: return@setOnCheckedChangeListener
+            PatrolService.setTravelOverride(choices[index])
+            toast(getString(R.string.snack_travel_changed, travelLabel(choices[index], short = true)))
+            dialog.dismiss()
+        }
+    }
+
+    /**
+     * 搖桿 lives on the floating bar (it has to sit on top of the game), so the toggle here makes
+     * sure the bar is up and then flips the pad. The service takes the walk over the moment a
+     * patrol is running.
+     */
+    private fun toggleJoystick() {
+        when {
+            PatrolService.joystick.value.enabled -> {
+                PatrolService.setJoystickEnabled(false)
+                toast(getString(R.string.toast_joystick_off))
+            }
+            !Permissions.canDrawOverlays(this) -> {
+                toast(getString(R.string.toast_joystick_need_overlay))
+                toggleOverlay()
+            }
+            else -> {
+                OverlayService.showJoystick(this)
+                toast(getString(if (PatrolService.isRunning) R.string.toast_joystick_on else R.string.toast_joystick_need_patrol))
+            }
+        }
+        // The checkable button flipped itself on the tap; the flow is the truth.
+        renderLiveControls()
     }
 
     // ------------------------------------------------------------------ map
@@ -414,13 +514,23 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     }
 
     private fun onWaypointTapped(index: Int) {
-        WaypointDialogs.showMarkerActions(this, store, prefs, index) { startPatrol(it) }
+        WaypointDialogs.showMarkerActions(this, store, prefs, index, running = PatrolService.isRunning) { startHereOrGoTo(it) }
+    }
+
+    /** Idle: start the patrol at that flower. Running: make it the next target (立刻前往). */
+    private fun startHereOrGoTo(index: Int) {
+        if (PatrolService.isRunning) {
+            PatrolService.goTo(this, index)
+            store.load().getOrNull(index)?.let { toast(getString(R.string.toast_go_now, it.name)) }
+        } else {
+            startPatrol(index)
+        }
     }
 
     // ------------------------------------------------------------------ state rendering
 
     private fun render(state: PatrolState) {
-        val home = state.home ?: prefs.home
+        val home = state.home ?: prefs.customHome ?: prefs.home
         if (home != currentHome) {
             currentHome = home
             rebuildOverlays()
@@ -556,6 +666,27 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     private fun renderScan(scan: FlowerScanner.ScanState) {
         val found = scan.foundFlowers
         overlays.updateScanned(found.map { it.waypoint.latLng }, found.map { it.waypoint.name })
+        if (scan is FlowerScanner.ScanState.WaitingForBirdsEye && scan.blank) maybeExplainBlankCapture()
+    }
+
+    private var blankDialog: androidx.appcompat.app.AlertDialog? = null
+
+    /**
+     * The capture is black although the screen looks fine: the game blanked itself when the
+     * projection appeared. One truncated line on the floating bar cannot explain that, so say it
+     * properly here, with the relaunch button that fixes it.
+     */
+    private fun maybeExplainBlankCapture() {
+        if (blankDialog?.isShowing == true || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        val b = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dlg_scan_blank_title)
+            .setMessage(R.string.dlg_scan_blank_msg)
+            .setNegativeButton(R.string.action_scan_launch_later, null)
+            .setOnDismissListener { blankDialog = null }
+        if (Permissions.isInstalled(this, PIKMIN_PACKAGE)) {
+            b.setPositiveButton(R.string.action_scan_launch_game) { _, _ -> Permissions.openApp(this, PIKMIN_PACKAGE) }
+        }
+        blankDialog = b.show()
     }
 
     /** Results dialog, shown on resume whenever the scan has found more than the user has seen. */
@@ -681,11 +812,16 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         if (state.phase == PatrolPhase.IDLE || name == null) {
             lines += getString(R.string.status_no_target)
             lines += getString(R.string.status_waypoint_count, store.load().size)
+            val custom = prefs.customHome
             val h = currentHome
-            lines += if (h == null) getString(R.string.status_home_none)
-            else getString(R.string.status_home_set, h.toString())
+            lines += when {
+                custom != null -> getString(R.string.status_home_custom, custom.toString())
+                h == null -> getString(R.string.status_home_none)
+                else -> getString(R.string.status_home_set, h.toString())
+            }
         } else {
             lines += getString(R.string.status_target, name, distanceText(state.distanceToTargetM))
+            if (state.homeIsCustom) lines += getString(R.string.status_home_custom, state.home.toString())
         }
         lines += getString(R.string.status_walked, distanceText(state.distanceWalkedM))
         lines += getString(R.string.status_session_steps, state.sessionSteps)
@@ -699,10 +835,11 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     }
 
     private fun renderButtons(phase: PatrolPhase) {
-        val moving = phase == PatrolPhase.WALKING || phase == PatrolPhase.DWELLING
+        val moving = phase == PatrolPhase.WALKING || phase == PatrolPhase.DWELLING || phase == PatrolPhase.MANUAL
         show(binding.btnStart, phase == PatrolPhase.IDLE)
         show(binding.btnPause, moving)
-        show(binding.btnResume, phase == PatrolPhase.PAUSED)
+        show(binding.btnResume, phase == PatrolPhase.PAUSED || phase == PatrolPhase.PARKED)
+        binding.btnResume.setText(if (phase == PatrolPhase.PARKED) R.string.btn_resume_lap else R.string.btn_resume)
         show(binding.btnHome, moving || phase == PatrolPhase.PAUSED)
         // 停止 stays available while STARTING so a slow GPS fix can be aborted.
         show(binding.btnStop, phase != PatrolPhase.IDLE && phase != PatrolPhase.STOPPING)
@@ -739,6 +876,8 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
             PatrolPhase.PAUSED -> R.string.phase_paused
             PatrolPhase.RETURNING_HOME -> R.string.phase_returning
             PatrolPhase.STOPPING -> R.string.phase_stopping
+            PatrolPhase.PARKED -> R.string.phase_parked
+            PatrolPhase.MANUAL -> R.string.phase_manual
         }
     )
 
@@ -751,6 +890,12 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
                 snack(getString(R.string.snack_returned_home), Snackbar.LENGTH_LONG)
             is PatrolEvent.Resumed ->
                 snack(getString(R.string.snack_resumed, ageText(event.checkpointAgeMs)), Snackbar.LENGTH_LONG)
+            is PatrolEvent.ParkedAtHome -> snack(getString(R.string.snack_parked), Snackbar.LENGTH_LONG)
+            is PatrolEvent.TravelModeChanged ->
+                if (event.automatic) snack(getString(R.string.snack_travel_auto_walk), Snackbar.LENGTH_SHORT)
+            is PatrolEvent.ConfigChanged ->
+                snack(getString(R.string.snack_speed_changed, "%.1f".format(event.speedKmh)), Snackbar.LENGTH_SHORT)
+            is PatrolEvent.Replanned -> snack(getString(R.string.snack_replanned), Snackbar.LENGTH_SHORT)
             else -> Unit
         }
     }
@@ -769,7 +914,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         R.id.action_scan_flowers -> { startScanFlow(); true }
         R.id.action_setup -> { startActivity(Intent(this, SetupActivity::class.java)); true }
         R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
-        R.id.action_clear_home -> { clearHome(); true }
+        R.id.action_home -> { showHomeDialog(); true }
         R.id.action_import -> { importLauncher.launch(arrayOf(MIME_ANY)); true }
         R.id.action_export_json -> { exportJsonLauncher.launch(getString(R.string.export_json_filename)); true }
         R.id.action_export_gpx -> { exportGpxLauncher.launch(getString(R.string.export_gpx_filename)); true }
@@ -782,7 +927,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
             store = store,
             prefs = prefs,
             onFocus = { center(LatLng(it.lat, it.lon)) },
-            onStartHere = { startPatrol(it) },
+            onStartHere = { startHereOrGoTo(it) },
             onAddRequested = { addWaypointAtMapCenter() },
         )
     }
@@ -794,11 +939,71 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         ) { store.add(it) }
     }
 
-    private fun clearHome() {
-        prefs.home = null
-        currentHome = null
+    // ------------------------------------------------------------------ custom home (家的位置)
+
+    /**
+     * 家的位置: by default home is always a fresh real fix (see [startPatrol]); this lets the user
+     * pin a home somewhere else instead - the "stay in Japan for a while" case - which the service
+     * then starts from and parks at.
+     */
+    private fun showHomeDialog() {
+        if (PatrolService.isRunning) {
+            toast(getString(R.string.toast_home_locked))
+            return
+        }
+        val custom = prefs.customHome
+        val b = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dlg_home_title)
+            .setMessage(
+                if (custom == null) getString(R.string.dlg_home_msg_real)
+                else getString(R.string.dlg_home_msg_custom, custom.toString()),
+            )
+            .setPositiveButton(R.string.action_home_map_center) { _, _ ->
+                val c = binding.map.mapCenter
+                setCustomHome(LatLng(c.latitude, c.longitude))
+            }
+            .setNeutralButton(R.string.action_home_enter_coords) { _, _ -> promptHomeCoords() }
+        if (custom != null) {
+            b.setNegativeButton(R.string.action_home_clear) { _, _ -> setCustomHome(null) }
+        } else {
+            b.setNegativeButton(R.string.action_cancel, null)
+        }
+        b.show()
+    }
+
+    private fun promptHomeCoords() {
+        val input = android.widget.EditText(this).apply {
+            setHint(R.string.dlg_home_coords_hint)
+            setSingleLine()
+            prefs.customHome?.let { setText("%.6f, %.6f".format(it.lat, it.lon)) }
+        }
+        val pad = resources.getDimensionPixelSize(R.dimen.space_xl)
+        val box = android.widget.FrameLayout(this).apply { setPadding(pad, pad / 2, pad, 0); addView(input) }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.action_home_enter_coords)
+            .setView(box)
+            .setPositiveButton(R.string.action_save) { _, _ ->
+                val parts = input.text?.toString().orEmpty().split(',', ' ').map { it.trim() }.filter { it.isNotEmpty() }
+                val lat = parts.getOrNull(0)?.toDoubleOrNull()
+                val lon = parts.getOrNull(1)?.toDoubleOrNull()
+                val p = if (lat != null && lon != null) runCatching { LatLng(lat, lon) }.getOrNull() else null
+                if (p == null) toast(getString(R.string.toast_home_coords_invalid)) else setCustomHome(p)
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    private fun setCustomHome(p: LatLng?) {
+        prefs.customHome = p
+        currentHome = p ?: prefs.home
         rebuildOverlays()
-        toast(getString(R.string.toast_home_cleared))
+        render(PatrolService.state.value)
+        if (p != null) {
+            center(p)
+            toast(getString(R.string.toast_home_custom_set, p.toString()))
+        } else {
+            toast(getString(R.string.toast_home_custom_cleared))
+        }
     }
 
     private fun goToMyLocation() {
@@ -894,6 +1099,8 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
             // the user is now; people move between sessions, and reusing this morning's home would
             // drop the game avatar there and look like a teleport. Passing null makes PatrolService
             // take the fix itself. (Prefs.home is still written, but only to draw the map marker.)
+            // The one exception is a home the user pinned on purpose (Prefs.customHome, 家的位置):
+            // the service starts from it and parks there instead of releasing the mock.
             PatrolService.start(this@MainActivity, null, startAtIndex)
         }
     }

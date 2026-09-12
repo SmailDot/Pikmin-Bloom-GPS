@@ -21,7 +21,9 @@
     <string name="scan_wait_wrong_view">請切換到俯瞰模式</string>
     <string name="scan_wait_no_flowers">畫面上沒有大花，請把地圖移到有大花的地方</string>
     <string name="scan_wait_patrol">等待巡邏開始</string>
-    <string name="scan_wait_blank">遊戲畫面被遮蔽：Pikmin Bloom 偵測到螢幕擷取後會把畫面變黑。請先把遊戲從最近工作清單滑掉，再重新開啟遊戲</string>
+    <string name="scan_wait_blank">擷取到全黑畫面：請把遊戲滑掉後重開</string>
+    <string name="dlg_scan_blank_title">擷取到的畫面全黑</string>
+    <string name="dlg_scan_blank_msg">你的螢幕看起來正常，但螢幕擷取拿到的是全黑畫面：Pikmin Bloom 在執行中偵測到「螢幕擷取開始」時，會對錄影遮蔽自己的畫面（一種防側錄），之後就一直是黑的。\n\n解法只有一個：\n1. 把 Pikmin Bloom 從最近工作清單滑掉（完全關閉）。\n2. 按下面的「開啟 Pikmin Bloom」由本 App 重新開啟（擷取已在進行，之後開的遊戲不會遮蔽）。\n3. 進遊戲後切到俯瞰模式，掃描會自動繼續。</string>
 
     <!-- 浮動控制列的一行狀態 -->
     <string name="scan_status_need_projection">需要螢幕擷取授權</string>
@@ -33,7 +35,7 @@
 
     <!-- 主畫面流程 -->
     <string name="dlg_scan_title">掃描俯瞰模式大花</string>
-    <string name="dlg_scan_msg">這個功能會擷取 Pikmin Bloom 的俯瞰模式畫面，辨識畫面上的大花並換算成座標，加進巡邏路線。\n\n步驟：\n1. 需要有進行中的巡邏，巡邏走動的距離就是比例尺。校準需要兩張靜止畫面，所以巡邏會自動短暫暫停幾秒（開始時一次、走約 40 公尺後一次、之後每 300 公尺一次）。\n2. 重要：請先把 Pikmin Bloom 從最近工作清單滑掉（完全關閉）。遊戲在執行中若偵測到螢幕擷取開始，會把畫面變黑；授權後再開啟遊戲則不會。\n3. 授權後開啟 Pikmin Bloom，按底部中央的地圖按鈕切到「俯瞰模式」，再按右下角的「回到目前位置」。\n4. 掃描期間狀態列會顯示螢幕錄製圖示；畫面只在手機上分析，不會上傳，也不會代替你點擊遊戲。\n5. 進度會顯示在浮動控制列，回到本畫面即可查看結果。\n\n接下來系統會詢問螢幕擷取授權，請選擇「整個螢幕」。</string>
+    <string name="dlg_scan_msg">這個功能會擷取 Pikmin Bloom 的俯瞰模式畫面，辨識畫面上的大花並換算成座標，加進巡邏路線。\n\n步驟：\n1. 需要有進行中的巡邏，巡邏走動的距離就是比例尺。走約 40 公尺後完成校準，過程中不會暫停巡邏。\n2. 重要：請先把 Pikmin Bloom 從最近工作清單滑掉（完全關閉）。遊戲在執行中若偵測到螢幕擷取開始，會把畫面變黑；授權後再開啟遊戲則不會。\n3. 授權後開啟 Pikmin Bloom，按底部中央的地圖按鈕切到「俯瞰模式」，再按右下角的「回到目前位置」。\n4. 掃描期間狀態列會顯示螢幕錄製圖示；畫面只在手機上分析，不會上傳，也不會代替你點擊遊戲。\n5. 進度會顯示在浮動控制列，回到本畫面即可查看結果。\n\n接下來系統會詢問螢幕擷取授權，請選擇「整個螢幕」。</string>
     <string name="dlg_scan_need_patrol_title">需要進行中的巡邏</string>
     <string name="dlg_scan_need_patrol_msg">掃描用巡邏的走動距離當比例尺，所以要先開始巡邏。開始巡邏後再回來按一次「掃描俯瞰模式大花」。</string>
     <string name="action_scan_start_patrol">先開始巡邏</string>

@@ -39,9 +39,9 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_clear_home"
+        android:id="@+id/action_home"
         android:icon="@drawable/ic_home"
-        android:title="@string/menu_clear_home"
+        android:title="@string/menu_home"
         app:showAsAction="never" />
 
     <item

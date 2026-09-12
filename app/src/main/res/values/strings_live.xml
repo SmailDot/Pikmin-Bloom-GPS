@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the live controls added 2026-09-12: custom home, vehicle override, joystick,
+     立刻前往, and the settings / waypoint edits that now apply mid-patrol. -->
+<resources>
+    <!-- phases -->
+    <string name="phase_parked">已回到自訂的家（模擬中，按「停止」才回真實位置）</string>
+    <string name="phase_manual">搖桿控制中</string>
+    <string name="ovl_phase_parked">在家</string>
+    <string name="ovl_phase_manual">搖桿</string>
+    <string name="btn_resume_lap">再巡一圈</string>
+
+    <!-- custom home -->
+    <string name="menu_home">家的位置…</string>
+    <string name="dlg_home_title">家的位置</string>
+    <string name="dlg_home_msg_real">目前：每次開始巡邏都以「當下的真實 GPS 位置」當作家，回家後解除模擬，遊戲無縫接回真實位置。\n\n想待在別的地方（例如日本）時可以自訂一個家：開始巡邏會直接出現在那裡，「回家」會走回那裡並停住（模擬維持），按「停止」才會回到真實位置。</string>
+    <string name="dlg_home_msg_custom">目前自訂的家：%1$s\n\n開始巡邏會直接出現在這裡；「回家」走回這裡後停住，模擬定位維持中，直到你按「停止」。\n\n注意：從真實位置一下子出現在很遠的地方，遊戲有可能判定為異常，建議自訂後至少停留幾小時再切回真實位置。</string>
+    <string name="action_home_map_center">設在地圖中心</string>
+    <string name="action_home_enter_coords">輸入座標</string>
+    <string name="action_home_clear">改回真實位置</string>
+    <string name="dlg_home_coords_hint">緯度, 經度（例如 35.6812, 139.7671）</string>
+    <string name="toast_home_custom_set">已自訂家的位置：%1$s</string>
+    <string name="toast_home_custom_cleared">已改回：以真實位置當作家</string>
+    <string name="toast_home_coords_invalid">座標格式不對，請用「緯度, 經度」</string>
+    <string name="toast_home_locked">巡邏中無法更改家的位置，請先停止</string>
+    <string name="status_home_custom">家（自訂）：%1$s</string>
+    <string name="dlg_stop_parked_title">回到真實位置？</string>
+    <string name="dlg_stop_parked_msg">停止後模擬定位解除，遊戲會立刻從自訂的家跳回真實 GPS 位置。要停止嗎？</string>
+    <string name="snack_parked">已回到自訂的家，模擬定位維持中</string>
+
+    <!-- travel mode override -->
+    <string name="label_travel_mode">移動方式</string>
+    <string name="travel_walk_configured">步行（設定速度 %1$s km/h）</string>
+    <string name="travel_item">%1$s（%2$d km/h）</string>
+    <string name="travel_item_no_steps">%1$s（%2$d km/h，不計步）</string>
+    <string name="dlg_travel_title">移動方式</string>
+    <string name="dlg_travel_msg">交通工具會用它的速度前往「下一個」大花，抵達後自動切回步行。車速超過約 20 km/h 時遊戲不會種花、也不會寫入步數，適合趕去搶蘑菇或跨區移動。</string>
+    <string name="snack_travel_changed">移動方式：%1$s</string>
+    <string name="snack_travel_auto_walk">已抵達，自動切回步行</string>
+    <string name="snack_speed_changed">速度已更新：%1$s km/h</string>
+    <string name="ovl_travel_flash">移動方式：%1$s</string>
+    <string name="ovl_cd_vehicle">切換移動方式</string>
+    <string name="travel_short_walk">步行</string>
+
+    <!-- joystick -->
+    <string name="label_joystick">搖桿</string>
+    <string name="ovl_cd_joystick">搖桿</string>
+    <string name="toast_joystick_on">搖桿已開啟：往上＝北。關閉後會從目前位置接著走原路線</string>
+    <string name="toast_joystick_off">搖桿已關閉，接回路線</string>
+    <string name="toast_joystick_need_patrol">請先開始巡邏，搖桿才會生效</string>
+    <string name="toast_joystick_need_overlay">搖桿顯示在浮動控制列上，請先開啟浮動控制列</string>
+    <string name="snack_replanned">路線已更新，從目前位置接著走</string>
+
+    <!-- 立刻前往 -->
+    <string name="action_go_now">立刻前往這朵</string>
+    <string name="toast_go_now">前往：%1$s</string>
+</resources>

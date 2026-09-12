@@ -28,17 +28,18 @@
             android:tint="@color/overlay_icon" />
     </FrameLayout>
 
+    <!-- Two rows (status line over the buttons) so the bar stays narrower than any phone. -->
     <LinearLayout
         android:id="@+id/bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/space_xs"
         android:background="@drawable/bg_overlay_bar"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="@dimen/space_m"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/space_s"
         android:paddingTop="@dimen/space_xs"
-        android:paddingEnd="@dimen/space_xs"
+        android:paddingEnd="@dimen/space_s"
         android:paddingBottom="@dimen/space_xs"
         android:visibility="gone">
 
@@ -47,8 +48,7 @@
         <TextView
             android:id="@+id/status"
             android:layout_width="@dimen/overlay_status_max"
-            android:layout_height="@dimen/overlay_button"
-            android:layout_marginEnd="@dimen/space_s"
+            android:layout_height="20dp"
             android:gravity="center_vertical"
             android:autoSizeMaxTextSize="11sp"
             android:autoSizeMinTextSize="7sp"
@@ -58,6 +58,13 @@
             android:singleLine="true"
             android:textColor="@color/overlay_text"
             android:textSize="11sp" />
+
+        <LinearLayout
+            android:id="@+id/buttons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
         <ImageButton
             android:id="@+id/btnToggle"
@@ -92,6 +99,30 @@
             android:src="@drawable/ic_stop"
             android:tint="@color/overlay_icon" />
 
+        <!-- Vehicle override: each tap cycles 步行 → 腳踏車 → 汽機車 → 高速公路 → 飛機. -->
+        <ImageButton
+            android:id="@+id/btnVehicle"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_vehicle"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_walk"
+            android:tint="@color/overlay_icon" />
+
+        <!-- Joystick on/off; the pad itself is a second window (overlay_joystick.xml). -->
+        <ImageButton
+            android:id="@+id/btnJoystick"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_joystick"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_gamepad"
+            android:tint="@color/overlay_icon" />
+
         <!-- Bird's-eye Big Flower scan toggle (vision/FlowerScanner). -->
         <ImageButton
             android:id="@+id/btnScan"
@@ -114,5 +145,6 @@
             android:scaleType="fitCenter"
             android:src="@drawable/ic_my_location"
             android:tint="@color/overlay_icon" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

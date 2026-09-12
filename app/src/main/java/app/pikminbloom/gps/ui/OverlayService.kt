@@ -27,7 +27,9 @@ import app.pikminbloom.gps.R
 import app.pikminbloom.gps.data.PatrolPhase
 import app.pikminbloom.gps.data.PatrolState
 import app.pikminbloom.gps.data.Prefs
+import app.pikminbloom.gps.data.TravelMode
 import app.pikminbloom.gps.databinding.OverlayBarBinding
+import app.pikminbloom.gps.databinding.OverlayJoystickBinding
 import app.pikminbloom.gps.service.PatrolEvent
 import app.pikminbloom.gps.service.PatrolNotifications
 import app.pikminbloom.gps.service.PatrolService
@@ -37,6 +39,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.max
@@ -61,6 +65,8 @@ class OverlayService : Service() {
     private lateinit var params: WindowManager.LayoutParams
 
     private var binding: OverlayBarBinding? = null
+    private var joystick: OverlayJoystickBinding? = null
+    private lateinit var joystickParams: WindowManager.LayoutParams
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val handler = Handler(Looper.getMainLooper())
 
@@ -125,6 +131,10 @@ class OverlayService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        if (intent?.getBooleanExtra(EXTRA_SHOW_JOYSTICK, false) == true) {
+            if (addJoystickWindow()) PatrolService.setJoystickEnabled(true)
+            setExpanded(true)
+        }
         if (intent?.hasExtra(EXTRA_PINNED) == true) {
             pinned = intent.getBooleanExtra(EXTRA_PINNED, false)
             prefs.overlayPinned = pinned
@@ -149,6 +159,7 @@ class OverlayService : Service() {
                 .onFailure { Log.w(TAG, "removeViewImmediate failed", it) }
         }
         binding = null
+        removeJoystickWindow()
         super.onDestroy()
     }
 
@@ -204,13 +215,77 @@ class OverlayService : Service() {
         b.handle.setOnTouchListener { _, event -> onHandleTouch(event) }
 
         b.btnToggle.setOnClickListener {
-            if (PatrolService.state.value.phase == PatrolPhase.PAUSED) PatrolService.resume(this)
+            val p = PatrolService.state.value.phase
+            if (p == PatrolPhase.PAUSED || p == PatrolPhase.PARKED) PatrolService.resume(this)
             else PatrolService.pause(this)
         }
         b.btnHome.setOnClickListener { PatrolService.returnHome(this) }
         b.btnStop.setOnClickListener { PatrolService.stop(this) }
         b.btnScan.setOnClickListener { onScanClicked() }
+        b.btnVehicle.setOnClickListener { onVehicleClicked() }
+        b.btnJoystick.setOnClickListener { onJoystickClicked() }
         b.btnOpen.setOnClickListener { openMainActivity() }
+    }
+
+    /** Cycles the vehicle override; the status line says which one is now in force. */
+    private fun onVehicleClicked() {
+        val next = PatrolService.cycleTravelOverride()
+        flash(getString(R.string.ovl_travel_flash, travelLabel(next)))
+    }
+
+    private fun travelLabel(mode: TravelMode?): String =
+        if (mode == null) getString(R.string.travel_short_walk) else "${mode.label} ${mode.speedKmh.toInt()} km/h"
+
+    /**
+     * 搖桿 toggle: shows the pad (a second overlay window) and hands the walk over to it. Without
+     * a patrol it only shows the pad; the service picks it up the moment a patrol starts.
+     */
+    private fun onJoystickClicked() {
+        if (PatrolService.joystick.value.enabled) {
+            PatrolService.setJoystickEnabled(false)
+            removeJoystickWindow()
+            toast(R.string.toast_joystick_off)
+        } else {
+            if (!addJoystickWindow()) return
+            PatrolService.setJoystickEnabled(true)
+            toast(if (PatrolService.isRunning) R.string.toast_joystick_on else R.string.toast_joystick_need_patrol)
+        }
+        render(PatrolService.state.value)
+    }
+
+    /** The pad sits at the bottom-left corner, clear of the game's own bottom-centre buttons. */
+    private fun addJoystickWindow(): Boolean {
+        if (joystick != null) return true
+        return try {
+            val themed = ContextThemeWrapper(this, R.style.Theme_PikminGps)
+            val j = OverlayJoystickBinding.inflate(LayoutInflater.from(themed))
+            val size = dp(JOYSTICK_DP)
+            joystickParams = WindowManager.LayoutParams(
+                size, size,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                PixelFormat.TRANSLUCENT,
+            ).apply {
+                gravity = Gravity.BOTTOM or Gravity.START
+                x = dp(JOYSTICK_MARGIN_DP)
+                y = dp(JOYSTICK_MARGIN_DP * 6)
+            }
+            j.pad.onSteer = { bearing, magnitude -> PatrolService.steer(bearing, magnitude) }
+            windowManager.addView(j.root, joystickParams)
+            joystick = j
+            true
+        } catch (t: Throwable) {
+            Log.w(TAG, "cannot add the joystick window", t)
+            false
+        }
+    }
+
+    private fun removeJoystickWindow() {
+        joystick?.let { j ->
+            runCatching { windowManager.removeViewImmediate(j.root) }
+                .onFailure { Log.w(TAG, "removeViewImmediate(joystick) failed", it) }
+        }
+        joystick = null
     }
 
     /**
@@ -336,9 +411,22 @@ class OverlayService : Service() {
                     is PatrolEvent.ArrivedAtWaypoint -> onArrived(event)
 
                     is PatrolEvent.ReturnedHome -> flash(getString(R.string.ovl_returned_home))
+                    is PatrolEvent.ParkedAtHome -> { flash(getString(R.string.snack_parked)); setExpanded(true) }
+                    is PatrolEvent.TravelModeChanged ->
+                        flash(if (event.automatic) getString(R.string.snack_travel_auto_walk) else getString(R.string.ovl_travel_flash, travelLabel(event.mode)))
+                    is PatrolEvent.ConfigChanged -> flash(getString(R.string.snack_speed_changed, "%.1f".format(event.speedKmh)))
+                    is PatrolEvent.Replanned -> flash(getString(R.string.snack_replanned))
                     is PatrolEvent.Error -> flash(event.message)
                     else -> Unit
                 }
+            }
+        }
+        scope.launch { PatrolService.travelOverride.collect { render(PatrolService.state.value) } }
+        scope.launch {
+            PatrolService.joystick.map { it.enabled }.distinctUntilChanged().collect { enabled ->
+                // The service drops the joystick on 回家 / 停止; take the pad down with it.
+                if (!enabled) removeJoystickWindow()
+                render(PatrolService.state.value)
             }
         }
         scope.launch {
@@ -347,6 +435,8 @@ class OverlayService : Service() {
                     // Terminal states are announced once, then the line goes back to patrol status.
                     is FlowerScanner.ScanState.Done -> flash(getString(R.string.scan_status_done, scan.found.size))
                     is FlowerScanner.ScanState.Error -> flash(getString(R.string.scan_status_error, scan.message))
+                    // The one waiting state the user must act on: make sure the line is visible.
+                    is FlowerScanner.ScanState.WaitingForBirdsEye -> if (scan.blank) setExpanded(true)
                     is FlowerScanner.ScanState.Scanning ->
                         if (scan.found.size > lastAnnouncedFound) {
                             lastAnnouncedFound = scan.found.size
@@ -416,13 +506,23 @@ class OverlayService : Service() {
             ?: scanStatusText(scan)?.let { "$it${getString(R.string.ovl_separator)}${getString(phaseLabel(state.phase))}" }
             ?: statusText(state)
 
-        val paused = state.phase == PatrolPhase.PAUSED
-        val moving = state.phase == PatrolPhase.WALKING || state.phase == PatrolPhase.DWELLING
+        val paused = state.phase == PatrolPhase.PAUSED || state.phase == PatrolPhase.PARKED
+        val moving = state.phase == PatrolPhase.WALKING || state.phase == PatrolPhase.DWELLING || state.phase == PatrolPhase.MANUAL
         b.btnToggle.setImageResource(if (paused) R.drawable.ic_play else R.drawable.ic_pause)
         b.btnToggle.contentDescription =
             getString(if (paused) R.string.ovl_cd_resume else R.string.ovl_cd_pause)
         enable(b.btnToggle, moving || paused)
-        enable(b.btnHome, moving || paused)
+        enable(b.btnHome, moving || state.phase == PatrolPhase.PAUSED)
+        // Vehicle icon shows what is in force; joystick icon lights up while the pad is out.
+        val vehicle = PatrolService.travelOverride.value
+        b.btnVehicle.setImageResource(if (vehicle == null) R.drawable.ic_walk else R.drawable.ic_car)
+        b.btnVehicle.imageTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(this, if (vehicle == null) R.color.overlay_icon else R.color.overlay_phase_paused),
+        )
+        val pad = PatrolService.joystick.value.enabled
+        b.btnJoystick.imageTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(this, if (pad) R.color.overlay_phase_manual else R.color.overlay_icon),
+        )
         enable(b.btnStop, state.phase != PatrolPhase.IDLE && state.phase != PatrolPhase.STOPPING)
         // The scan button reads as "on" while a scan runs; it is always tappable because without a
         // projection it simply opens the app to ask for one.
@@ -465,12 +565,16 @@ class OverlayService : Service() {
         PatrolPhase.PAUSED -> R.string.ovl_phase_paused
         PatrolPhase.RETURNING_HOME -> R.string.ovl_phase_returning
         PatrolPhase.STOPPING -> R.string.ovl_phase_stopping
+        PatrolPhase.PARKED -> R.string.ovl_phase_parked
+        PatrolPhase.MANUAL -> R.string.ovl_phase_manual
     }
 
     @ColorRes
     private fun phaseColor(state: PatrolState): Int = when {
         !state.lastError.isNullOrBlank() -> R.color.overlay_phase_error
         state.phase == PatrolPhase.PAUSED -> R.color.overlay_phase_paused
+        state.phase == PatrolPhase.PARKED -> R.color.overlay_phase_parked
+        state.phase == PatrolPhase.MANUAL -> R.color.overlay_phase_manual
         state.phase == PatrolPhase.RETURNING_HOME -> R.color.overlay_phase_returning
         state.phase == PatrolPhase.IDLE || state.phase == PatrolPhase.STOPPING -> R.color.overlay_phase_idle
         else -> R.color.overlay_phase_normal
@@ -501,11 +605,14 @@ class OverlayService : Service() {
     companion object {
         private const val TAG = "PikminGPS"
         private const val EXTRA_PINNED = "pinned"
+        private const val EXTRA_SHOW_JOYSTICK = "show_joystick"
         private const val MIN_RENDER_INTERVAL_MS = 500L
         private const val IDLE_HIDE_MS = 3_000L
         private const val FLASH_MS = 8_000L
         private const val ARRIVAL_REPEAT_MS = 60_000L
         private const val HANDLE_DP = 48
+        private const val JOYSTICK_DP = 150
+        private const val JOYSTICK_MARGIN_DP = 16
         private const val DEFAULT_MARGIN_DP = 8
 
         /** Process-local; the UI uses it to render a "show / hide" toggle. */
@@ -526,6 +633,15 @@ class OverlayService : Service() {
             if (pinned != null) intent.putExtra(EXTRA_PINNED, pinned)
             runCatching { context.startService(intent) }
                 .onFailure { Log.w(TAG, "startService(OverlayService) failed", it) }
+        }
+
+        /** Puts the joystick pad up (starting the bar if needed). No-op without the overlay permission. */
+        fun showJoystick(context: Context) {
+            if (!Permissions.canDrawOverlays(context)) return
+            // Pinned as well: an idle bar would otherwise hide itself (and the pad) three seconds later.
+            val intent = Intent(context, OverlayService::class.java).putExtra(EXTRA_SHOW_JOYSTICK, true).putExtra(EXTRA_PINNED, true)
+            runCatching { context.startService(intent) }
+                .onFailure { Log.w(TAG, "startService(OverlayService, joystick) failed", it) }
         }
 
         fun stop(context: Context) {

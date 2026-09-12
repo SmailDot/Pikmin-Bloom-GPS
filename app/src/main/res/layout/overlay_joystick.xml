@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Floating joystick window (ui/OverlayService), shown next to the control bar while 搖桿 is on. -->
+<app.pikminbloom.gps.ui.JoystickView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pad"
+    android:layout_width="@dimen/joystick_size"
+    android:layout_height="@dimen/joystick_size" />

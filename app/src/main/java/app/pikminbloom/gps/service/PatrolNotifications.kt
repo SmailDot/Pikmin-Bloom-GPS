@@ -30,13 +30,16 @@ class PatrolNotifications(private val ctx: Context) {
             PatrolPhase.PAUSED -> ctx.getString(R.string.svc_phase_paused)
             PatrolPhase.RETURNING_HOME -> ctx.getString(R.string.svc_phase_returning, formatDistance(state.distanceToTargetM))
             PatrolPhase.STOPPING -> ctx.getString(R.string.svc_phase_stopping)
+            PatrolPhase.PARKED -> ctx.getString(R.string.svc_phase_parked)
+            PatrolPhase.MANUAL -> ctx.getString(R.string.svc_phase_manual)
         }
+        val vehicle = state.travelOverride?.let { " · ${it.label} ${it.speedKmh.toInt()} km/h" }.orEmpty()
         val text = ctx.getString(
             R.string.svc_status_line,
             formatDistance(state.distanceWalkedM),
             state.sessionSteps,
             state.stepsWrittenToday,
-        )
+        ) + vehicle
         val b = NotificationCompat.Builder(ctx, PikminGpsApp.CHANNEL_PATROL)
             .setSmallIcon(R.drawable.ic_flower)
             .setContentTitle(title)
@@ -49,11 +52,11 @@ class PatrolNotifications(private val ctx: Context) {
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setContentIntent(openApp())
         when (state.phase) {
-            PatrolPhase.PAUSED -> b.addAction(0, ctx.getString(R.string.svc_action_resume), service(PatrolService.ACTION_RESUME))
-            PatrolPhase.WALKING, PatrolPhase.DWELLING -> b.addAction(0, ctx.getString(R.string.svc_action_pause), service(PatrolService.ACTION_PAUSE))
+            PatrolPhase.PAUSED, PatrolPhase.PARKED -> b.addAction(0, ctx.getString(R.string.svc_action_resume), service(PatrolService.ACTION_RESUME))
+            PatrolPhase.WALKING, PatrolPhase.DWELLING, PatrolPhase.MANUAL -> b.addAction(0, ctx.getString(R.string.svc_action_pause), service(PatrolService.ACTION_PAUSE))
             else -> Unit
         }
-        if (state.phase != PatrolPhase.RETURNING_HOME && state.phase != PatrolPhase.STOPPING) {
+        if (state.phase != PatrolPhase.RETURNING_HOME && state.phase != PatrolPhase.STOPPING && state.phase != PatrolPhase.PARKED) {
             b.addAction(0, ctx.getString(R.string.svc_action_home), service(PatrolService.ACTION_RETURN_HOME))
         }
         b.addAction(0, ctx.getString(R.string.svc_action_stop), service(PatrolService.ACTION_STOP))
@@ -73,6 +76,12 @@ class PatrolNotifications(private val ctx: Context) {
     fun returnedHome(vibrate: Boolean = true) {
         notifyEvent(ID_HOME, ctx.getString(R.string.svc_home_title), ctx.getString(R.string.svc_home_text))
         // Arriving home happens once per session, so a short double buzz is affordable.
+        if (vibrate) vibrate(longArrayOf(0, 200, 120, 200))
+    }
+
+    /** Reached the user-chosen home; the mock is still on, which the text must make clear. */
+    fun parkedAtHome(vibrate: Boolean) {
+        notifyEvent(ID_HOME, ctx.getString(R.string.svc_parked_title), ctx.getString(R.string.svc_parked_text))
         if (vibrate) vibrate(longArrayOf(0, 200, 120, 200))
     }
 

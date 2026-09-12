@@ -3,6 +3,7 @@ package app.pikminbloom.gps.service
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
@@ -28,6 +29,7 @@ import app.pikminbloom.gps.mock.MockLocationController
 import app.pikminbloom.gps.mock.MockNotAllowedException
 import app.pikminbloom.gps.route.PatrolPlan
 import app.pikminbloom.gps.route.PatrolPlanner
+import app.pikminbloom.gps.route.RouteSegment
 import app.pikminbloom.gps.route.SegmentKind
 import app.pikminbloom.gps.sim.Sample
 import app.pikminbloom.gps.sim.WalkSimulator
@@ -41,6 +43,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -54,6 +58,10 @@ import kotlin.math.floor
  * Foreground service that runs the whole patrol: captures the real position ("home"), installs the
  * mock providers, ticks the [WalkSimulator] once a second, flushes steps to Health Connect and walks
  * back home on request.
+ *
+ * Everything the user can change while walking is honoured live: settings (speed), the waypoint
+ * list (re-planned from where we are), a vehicle override ([setTravelOverride]) and the floating
+ * joystick ([joystick]).
  *
  * Threading: everything that touches the simulator, the plan or the step accounting runs on the
  * single-threaded [engine] dispatcher. Control actions arriving on the main thread are posted there.
@@ -74,6 +82,15 @@ class PatrolService : LifecycleService() {
     private var plan: PatrolPlan = PatrolPlan.EMPTY
     private var lap = 0
     private var home: LatLng? = null
+
+    /** True when [home] is the user's chosen one: 回家 parks there instead of releasing the mock. */
+    private var parkAtHome = false
+
+    /** Ids of the waypoints already visited (or skipped) in the current lap; a re-plan leaves them out. */
+    private val doneThisLap = HashSet<String>()
+
+    /** A waypoint edit arrived mid-vehicle-leg / mid-orbit; apply it once that leg is over. */
+    private var replanPending = false
 
     private var tickJob: Job? = null
     private var wakeLock: PowerManager.WakeLock? = null
@@ -99,6 +116,11 @@ class PatrolService : LifecycleService() {
     @Volatile private var pendingFinish: Finish? = null
     @Volatile private var stopRequested = false
 
+    /** Strong reference: SharedPreferences only holds listeners weakly. */
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == null || key in LIVE_CONFIG_KEYS) lifecycleScope.launch(engine) { onConfigChanged(key) }
+    }
+
     override fun onCreate() {
         super.onCreate()
         prefs = Prefs(this)
@@ -106,6 +128,14 @@ class PatrolService : LifecycleService() {
         mock = MockLocationController(this)
         steps = StepInjector(this)
         notifications = PatrolNotifications(this)
+        prefs.sp.registerOnSharedPreferenceChangeListener(prefListener)
+
+        // Live inputs. Each collector runs on the engine thread, so it can touch the simulator.
+        lifecycleScope.launch(engine) { store.waypoints.collect { onWaypointsChanged(it) } }
+        lifecycleScope.launch(engine) { _travelOverride.collect { onTravelOverrideChanged(it) } }
+        lifecycleScope.launch(engine) {
+            _joystick.map { it.enabled }.distinctUntilChanged().collect { onJoystickToggled(it) }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -130,6 +160,10 @@ class PatrolService : LifecycleService() {
             ACTION_RETURN_HOME -> lifecycleScope.launch(engine) { beginReturnHome() }
             ACTION_STOP -> lifecycleScope.launch(engine) { requestStop() }
             ACTION_SKIP_WAYPOINT -> lifecycleScope.launch(engine) { skipWaypoint() }
+            ACTION_GO_TO -> {
+                val index = intent.getIntExtra(EXTRA_WAYPOINT_INDEX, -1)
+                lifecycleScope.launch(engine) { goToWaypoint(index) }
+            }
         }
         return START_NOT_STICKY
     }
@@ -151,7 +185,7 @@ class PatrolService : LifecycleService() {
             Log.i(TAG, "start ignored: already ${state.value.phase}")
             return
         }
-        _state.value = PatrolState(phase = PatrolPhase.STARTING, mockAppSelected = mock.isMockAppSelected())
+        _state.value = PatrolState(phase = PatrolPhase.STARTING, mockAppSelected = mock.isMockAppSelected(), travelOverride = _travelOverride.value)
         stopRequested = false
         pendingFinish = null
 
@@ -168,6 +202,9 @@ class PatrolService : LifecycleService() {
         val overrideHome = if (intent.hasExtra(EXTRA_HOME_LAT) && intent.hasExtra(EXTRA_HOME_LON)) {
             runCatching { LatLng(intent.getDoubleExtra(EXTRA_HOME_LAT, 0.0), intent.getDoubleExtra(EXTRA_HOME_LON, 0.0)) }.getOrNull()
         } else null
+        // The user's chosen home (「待在日本」) wins over a real fix; an explicit override (debug
+        // driver) wins over both but keeps the ordinary "release the mock at home" ending.
+        val customHome = if (overrideHome == null) prefs.customHome else null
         val startIndex = intent.getIntExtra(EXTRA_START_AT_INDEX, 0).coerceIn(0, waypoints.size - 1)
         acquireWakeLock()
 
@@ -176,15 +213,16 @@ class PatrolService : LifecycleService() {
                 // A crashed/killed previous run may have left test providers installed; they would
                 // make every "real" fix look mocked, so clear them before capturing home.
                 mock.stop()
-                val h = overrideHome ?: mock.currentRealLocation(20_000)
+                val h = overrideHome ?: customHome ?: mock.currentRealLocation(20_000)
                 if (stopRequested) { failNow(getString(R.string.svc_phase_stopping), silent = true); return@launch }
                 if (h == null) { failNow(getString(R.string.svc_err_no_home)); return@launch }
                 home = h
+                parkAtHome = customHome != null
                 prefs.home = h
                 stepsWrittenToday = if (config.injectSteps && steps.isAvailable) steps.stepsWrittenByUsToday() else 0L
                 if (stopRequested) { failNow(getString(R.string.svc_phase_stopping), silent = true); return@launch }
                 mock.start(config)   // throws MockNotAllowedException
-                sim = WalkSimulator(config)
+                sim = WalkSimulator(config).also { it.travelOverride = _travelOverride.value }
                 lap = 0
                 stepsAccrued = 0.0; stepsFlushed = 0; distanceSinceFlush = 0.0
                 flushWindowStart = Instant.now()
@@ -197,9 +235,13 @@ class PatrolService : LifecycleService() {
                         healthConnectReady = steps.isAvailable, lastError = null,
                         currentWaypointIndex = plan.segments.firstOrNull()?.waypointIndex ?: -1,
                         currentWaypointName = plan.segments.firstOrNull()?.waypointIndex?.let { i -> waypoints.getOrNull(i)?.name },
+                        homeIsCustom = parkAtHome,
                     )
                 }
+                Log.i(TAG, "started at $h (custom home: $parkAtHome, override: ${_travelOverride.value})")
                 lastNotificationMs = 0
+                // The joystick may already be up (toggled before 開始); take it into account now.
+                if (_joystick.value.enabled) enterManual()
                 startTicking()
             } catch (e: MockNotAllowedException) {
                 failNow(e.message ?: getString(R.string.svc_err_not_mock_app))
@@ -231,7 +273,7 @@ class PatrolService : LifecycleService() {
         if (state.value.phase != PatrolPhase.IDLE) { Log.i(TAG, "resume ignored: already ${state.value.phase}"); return }
         val cp = PatrolCheckpoint.resumable(this) ?: run { failNow(getString(R.string.svc_err_no_checkpoint)); return }
 
-        _state.value = PatrolState(phase = PatrolPhase.STARTING, mockAppSelected = mock.isMockAppSelected())
+        _state.value = PatrolState(phase = PatrolPhase.STARTING, mockAppSelected = mock.isMockAppSelected(), travelOverride = _travelOverride.value)
         stopRequested = false
         pendingFinish = null
         config = prefs.config()
@@ -254,8 +296,10 @@ class PatrolService : LifecycleService() {
                 mock.pushRaw(resumeAt, accuracyM = 5f, altitudeM = config.altitudeM)
 
                 home = cp.home
+                // A session that started from the chosen home still parks there at the end.
+                parkAtHome = prefs.customHome?.let { GeoMath.distanceM(it, cp.home) < 1.0 } ?: false
                 prefs.home = cp.home
-                sim = WalkSimulator(config)
+                sim = WalkSimulator(config).also { it.travelOverride = _travelOverride.value }
                 lap = cp.lap
                 stepsAccrued = cp.stepsAccrued
                 stepsFlushed = cp.stepsFlushed
@@ -263,19 +307,19 @@ class PatrolService : LifecycleService() {
                 flushWindowStart = Instant.ofEpochMilli(cp.flushWindowStartMs)
                 stepsWrittenToday = cp.stepsWrittenToday
                 lastArrivalAlertMs = 0L
+                doneThisLap.clear()
 
-                val goHome = thenReturnHome || cp.phase == PatrolPhase.RETURNING_HOME || waypoints.isEmpty()
+                val goHome = thenReturnHome || cp.phase == PatrolPhase.RETURNING_HOME || cp.phase == PatrolPhase.PARKED || waypoints.isEmpty()
                 if (goHome) {
-                    plan = PatrolPlanner.planReturnHome(resumeAt, cp.home, routeTravelMode.takeIf { it != TravelMode.WALK })
-                    sim.load(plan)
+                    loadPlan(PatrolPlanner.planReturnHome(resumeAt, cp.home, routeTravelMode.takeIf { it != TravelMode.WALK }))
                     settleTicks = 0
                 } else {
                     // Continue with the remaining waypoints of the interrupted lap, from where we are.
                     val order = PatrolPlanner.orderFor(lap, waypoints.size, config.loopMode)
                     val pos = order.indexOf(cp.targetWaypointIndex.coerceIn(0, waypoints.size - 1))
                     val remaining = if (pos >= 0) order.drop(pos) else order
-                    plan = PatrolPlanner.planLap(resumeAt, waypoints, config, remaining.ifEmpty { order }, lap)
-                    sim.load(plan)
+                    if (pos > 0) order.take(pos).forEach { i -> waypoints.getOrNull(i)?.let { doneThisLap += it.id } }
+                    loadPlan(PatrolPlanner.planLap(resumeAt, waypoints, config, remaining.ifEmpty { order }, lap))
                 }
 
                 _state.update {
@@ -288,6 +332,7 @@ class PatrolService : LifecycleService() {
                         currentWaypointIndex = if (goHome) -1 else cp.targetWaypointIndex,
                         currentWaypointName = if (goHome) getString(R.string.svc_target_home) else waypoints.getOrNull(cp.targetWaypointIndex)?.name,
                         distanceToTargetM = if (goHome) GeoMath.distanceM(resumeAt, cp.home) else 0.0,
+                        homeIsCustom = parkAtHome,
                     )
                 }
                 Log.i(TAG, "resumed from checkpoint (${cp.ageMs / 1000}s old) at $resumeAt, goHome=$goHome")
@@ -355,11 +400,17 @@ class PatrolService : LifecycleService() {
 
     private fun loadLap(from: LatLng, startIndex: Int = 0) {
         var order = PatrolPlanner.orderFor(lap, waypoints.size, config.loopMode)
-        if (lap == 0 && startIndex > 0) order = order.drop(startIndex)
+        doneThisLap.clear()
+        replanPending = false
+        if (lap == 0 && startIndex > 0) {
+            // 從這裡開始: the ones before it are not visited this lap, and a re-plan must not add them back.
+            order.take(order.indexOf(startIndex).coerceAtLeast(0)).forEach { i -> waypoints.getOrNull(i)?.let { doneThisLap += it.id } }
+            order = order.drop(startIndex)
+        }
 
         val mode = routeTravelMode
         val first = order.firstOrNull()?.let { waypoints.getOrNull(it) }
-        plan = if (lap == 0 && mode != TravelMode.WALK && first != null) {
+        val next = if (lap == 0 && mode != TravelMode.WALK && first != null) {
             // A trip: cover the (possibly long) leg to the first place at vehicle speed - no steps,
             // no planting - then wander it on foot for its dwell time regardless of the global
             // orbit setting, because that walk is the whole point of going there. Any further
@@ -377,7 +428,7 @@ class PatrolService : LifecycleService() {
         } else {
             PatrolPlanner.planLap(from, waypoints, config, order, lap)
         }
-        sim.load(plan)
+        loadPlan(next)
         Log.i(TAG, "lap $lap loaded: ${plan.segments.size} segments, ${"%.0f".format(plan.totalLengthM)} m, mode=$mode")
     }
 
@@ -409,6 +460,18 @@ class PatrolService : LifecycleService() {
 
         when (state.value.phase) {
             PatrolPhase.PAUSED -> mock.push(sim.current())
+            PatrolPhase.PARKED -> {
+                // Keep the game fed with fixes at home; a silent provider reads as "GPS lost".
+                val h = home ?: run { pendingFinish = Finish.Stop; return }
+                mock.pushRaw(h, accuracyM = 5f, altitudeM = config.altitudeM)
+            }
+            PatrolPhase.MANUAL -> {
+                val j = _joystick.value
+                val s = sim.advanceManual(dt, j.bearingDeg, if (j.enabled) j.magnitude else 0.0)
+                mock.push(s)
+                account(s)
+                _state.update { it.copy(position = s.position, speedMps = s.speedMps, distanceToTargetM = 0.0) }
+            }
             PatrolPhase.WALKING, PatrolPhase.DWELLING -> {
                 val s = sim.advance(dt)
                 mock.push(s)
@@ -422,7 +485,13 @@ class PatrolService : LifecycleService() {
                         distanceToTargetM = distanceToTarget(s),
                     )
                 }
-                if (s.lapFinished) onLapFinished(s)
+                if (s.lapFinished) {
+                    onLapFinished(s)
+                } else if (replanPending && s.kind == SegmentKind.TRAVEL && s.countsSteps) {
+                    // The orbit / vehicle leg that was in progress when the edit came in is over.
+                    replanPending = false
+                    replanRemaining(reason = "deferred edit")
+                }
             }
             PatrolPhase.RETURNING_HOME -> {
                 val h = home ?: run { pendingFinish = Finish.Stop; return }
@@ -430,7 +499,9 @@ class PatrolService : LifecycleService() {
                     mock.pushRaw(h, accuracyM = 5f, altitudeM = config.altitudeM)
                     _state.update { it.copy(position = h, speedMps = 0.0, distanceToTargetM = 0.0) }
                     settleTicks++
-                    if (settleTicks >= SETTLE_TICKS) pendingFinish = Finish.ReturnedHome
+                    if (settleTicks >= SETTLE_TICKS) {
+                        if (parkAtHome) park(h) else pendingFinish = Finish.ReturnedHome
+                    }
                 } else {
                     val s = sim.advance(dt)
                     mock.push(s)
@@ -451,6 +522,23 @@ class PatrolService : LifecycleService() {
             lastCheckpointMs = nowMs
             writeCheckpoint()
         }
+    }
+
+    /**
+     * Home reached, but home is the user's chosen spot rather than where the phone is: releasing
+     * the mock would drop the game back onto the real GPS, which may be another country. Stay put
+     * with the mock on; 繼續 starts the next lap from here, 停止 is the deliberate way out.
+     */
+    private fun park(h: LatLng) {
+        loadPlan(PatrolPlanner.planReturnHome(h, h))
+        _state.update {
+            it.copy(phase = PatrolPhase.PARKED, position = h, speedMps = 0.0, distanceToTargetM = 0.0,
+                currentWaypointIndex = -1, currentWaypointName = getString(R.string.svc_target_home))
+        }
+        lastNotificationMs = 0
+        notifications.parkedAtHome(vibrate = config.vibrateOnArrival)
+        _events.tryEmit(PatrolEvent.ParkedAtHome)
+        Log.i(TAG, "parked at the custom home $h; mock stays on")
     }
 
     private suspend fun runFinish(finish: Finish) {
@@ -489,9 +577,20 @@ class PatrolService : LifecycleService() {
     private fun phaseFor(kind: SegmentKind) = if (kind == SegmentKind.ORBIT) PatrolPhase.DWELLING else PatrolPhase.WALKING
 
     private fun onArrived(index: Int) {
-        val name = waypoints.getOrNull(index)?.name ?: "#${index + 1}"
+        val wp = waypoints.getOrNull(index)
+        val name = wp?.name ?: "#${index + 1}"
+        wp?.let { doneThisLap += it.id }
         Log.i(TAG, "arrived at $index ($name)")
         _events.tryEmit(PatrolEvent.ArrivedAtWaypoint(index, name))
+        // A vehicle is for getting somewhere: it drops the player off at the first flower and the
+        // walking (planting, steps) starts there. Otherwise a forgotten 汽車 would zoom round a
+        // whole lap planting nothing.
+        val vehicle = _travelOverride.value
+        if (vehicle != null && !vehicle.countsSteps) {
+            Log.i(TAG, "arrived by $vehicle → back to walking")
+            autoDropPending = true
+            _travelOverride.value = null   // the collector applies it (onTravelOverrideChanged)
+        }
         if (!config.notifyOnArrival) return
         // Rate limit: passing several flowers in a row must not turn into a burst of buzzes.
         val now = SystemClock.elapsedRealtime()
@@ -527,6 +626,203 @@ class PatrolService : LifecycleService() {
             Log.i(TAG, "lap $lap is degenerate (${"%.1f".format(plan.totalLengthM)} m) → nothing left to walk, returning home")
             beginReturnHome()
         }
+    }
+
+    // ------------------------------------------------------------------ live changes (engine thread)
+
+    /** A settings screen edit while walking: re-read everything and hand the simulator the new speed. */
+    private fun onConfigChanged(key: String?) {
+        if (state.value.phase == PatrolPhase.IDLE) return
+        val fresh = prefs.config()
+        if (fresh == config) return
+        val speedChanged = fresh.speedMps != config.speedMps
+        config = fresh
+        sim.updateConfig(fresh)
+        Log.i(TAG, "config changed ($key): speed ${"%.1f".format(fresh.speedMps * 3.6)} km/h, orbit=${fresh.orbitAtWaypoints}")
+        if (speedChanged) _events.tryEmit(PatrolEvent.ConfigChanged(fresh.speedMps * 3.6))
+        lastNotificationMs = 0
+    }
+
+    /**
+     * The waypoint list (of the active route) changed while walking: keep the leg in progress if
+     * it still makes sense, then continue with whatever is left of the lap, in the new order.
+     */
+    private fun onWaypointsChanged(list: List<Waypoint>) {
+        val previous = waypoints
+        waypoints = list
+        val p = state.value.phase
+        if (p != PatrolPhase.WALKING && p != PatrolPhase.DWELLING && p != PatrolPhase.PAUSED) return
+        if (list == previous) return
+        if (list.isEmpty()) {
+            Log.i(TAG, "every waypoint removed while walking → returning home")
+            beginReturnHome()
+            return
+        }
+        val cur = sim.current()
+        val curWp = cur.waypointIndex?.let { previous.getOrNull(it) }
+        val midLeg = cur.kind == SegmentKind.ORBIT || !cur.countsSteps
+        if (midLeg && curWp != null && curWp in list) {
+            // Finish the orbit (or the drive) we are in the middle of, then take the new list up.
+            replanPending = true
+            Log.i(TAG, "waypoints edited (${previous.size} → ${list.size}); applying after the current leg")
+            return
+        }
+        replanRemaining(reason = "waypoints edited (${previous.size} → ${list.size})")
+    }
+
+    /**
+     * Re-plans the rest of the current lap from where we are: everything not yet visited this lap,
+     * in route order, with [firstIndex] (立刻前往) moved to the front when given. The leg in
+     * progress is kept when it belongs to a waypoint that still exists unchanged.
+     */
+    private fun replanRemaining(reason: String, firstIndex: Int? = null) {
+        val cur = sim.current()
+        val order = PatrolPlanner.orderFor(lap, waypoints.size, config.loopMode)
+        var rest = order.filter { i -> waypoints.getOrNull(i)?.let { it.id !in doneThisLap } ?: false }
+        if (firstIndex != null && firstIndex in waypoints.indices) {
+            rest = listOf(firstIndex) + rest.filter { it != firstIndex }
+        }
+
+        // Keep the leg we are on if it is still for a waypoint that exists unchanged (its index may
+        // have moved). Never for a 立刻前往 to somewhere else: that is an explicit change of target.
+        val keep = ArrayList<RouteSegment>()
+        var kept: Int? = null
+        val oldIdx = cur.waypointIndex
+        if (oldIdx != null) {
+            val legs = sim.remainingLegsOfCurrentWaypoint()
+            // The plan's index refers to the list it was made from; the same flower may now sit elsewhere.
+            val wp = planWaypoints.getOrNull(oldIdx)
+            val newIdx = if (wp != null) waypoints.indexOf(wp) else -1
+            if (legs.isNotEmpty() && newIdx >= 0 && (firstIndex == null || firstIndex == newIdx)) {
+                keep += legs.map { it.copy(waypointIndex = newIdx) }
+                kept = newIdx
+            }
+        }
+        if (kept != null) rest = rest.filter { it != kept }
+
+        val start = keep.lastOrNull()?.to ?: cur.position
+        val tail = if (rest.isEmpty()) PatrolPlan.EMPTY else PatrolPlanner.planLap(start, waypoints, config, rest, lap)
+        val merged = PatrolPlan.of(keep + tail.segments)
+        if (merged.isEmpty) {
+            // Nothing left in this lap at all: treat it as finished, which loads the next one (or goes home).
+            Log.i(TAG, "re-plan ($reason): nothing left → lap finished")
+            onLapFinished(cur)
+            return
+        }
+        replanPending = false
+        loadPlan(merged)
+        _state.update {
+            val first = plan.segments.first()
+            it.copy(
+                phase = if (it.phase == PatrolPhase.PAUSED) it.phase else phaseFor(first.kind),
+                currentWaypointIndex = first.waypointIndex ?: -1,
+                currentWaypointName = first.waypointIndex?.let { i -> waypoints.getOrNull(i)?.name },
+                distanceToTargetM = first.waypointIndex?.let { i -> waypoints.getOrNull(i)?.let { w -> GeoMath.distanceM(cur.position, w.latLng) } } ?: 0.0,
+            )
+        }
+        lastNotificationMs = 0
+        _events.tryEmit(PatrolEvent.Replanned(reason))
+        Log.i(TAG, "re-planned ($reason): kept ${keep.size} leg(s), then ${rest.size} waypoint(s), ${"%.0f".format(plan.totalLengthM)} m")
+    }
+
+    /** The waypoint list the current [plan] was built from: its segment indices refer to this one. */
+    private var planWaypoints: List<Waypoint> = emptyList()
+
+    /** Every plan goes through here so [planWaypoints] always matches [plan]. */
+    private fun loadPlan(p: PatrolPlan) {
+        plan = p
+        planWaypoints = waypoints
+        sim.load(p)
+    }
+
+    /** 立刻前往: make [index] the next target, keeping the rest of the lap after it. */
+    private fun goToWaypoint(index: Int) {
+        val p = state.value.phase
+        if (index !in waypoints.indices) return
+        when (p) {
+            PatrolPhase.WALKING, PatrolPhase.DWELLING, PatrolPhase.PAUSED -> {
+                doneThisLap.remove(waypoints[index].id)
+                replanRemaining(reason = "go to ${waypoints[index].name}", firstIndex = index)
+            }
+            PatrolPhase.PARKED, PatrolPhase.MANUAL -> {
+                // Leave the parking spot / the joystick and walk the lap starting at that flower.
+                if (p == PatrolPhase.MANUAL) _joystick.update { it.copy(enabled = false) }
+                doneThisLap.clear()
+                val order = PatrolPlanner.orderFor(lap, waypoints.size, config.loopMode)
+                val rest = listOf(index) + order.filter { it != index }
+                loadPlan(PatrolPlanner.planLap(sim.current().position, waypoints, config, rest, lap))
+                _state.update {
+                    it.copy(phase = phaseFor(plan.segments.first().kind), currentWaypointIndex = index,
+                        currentWaypointName = waypoints[index].name)
+                }
+                lastNotificationMs = 0
+                _events.tryEmit(PatrolEvent.Replanned("go to ${waypoints[index].name}"))
+            }
+            else -> Unit
+        }
+    }
+
+    /** Set right before dropping the override on arrival, so the change is reported as automatic. */
+    private var autoDropPending = false
+
+    private fun onTravelOverrideChanged(mode: TravelMode?) {
+        val automatic = autoDropPending && mode == null
+        autoDropPending = false
+        if (state.value.phase == PatrolPhase.IDLE) {
+            _state.update { it.copy(travelOverride = mode) }
+            return
+        }
+        applyTravelOverride(mode, automatic)
+    }
+
+    private fun applyTravelOverride(mode: TravelMode?, automatic: Boolean) {
+        sim.travelOverride = mode
+        _state.update { it.copy(travelOverride = mode) }
+        lastNotificationMs = 0
+        _events.tryEmit(PatrolEvent.TravelModeChanged(mode, automatic))
+        Log.i(TAG, "travel override → ${mode ?: "walk"} (${if (automatic) "auto" else "user"})")
+    }
+
+    /** Joystick shown / hidden. Taking over is immediate; giving back re-plans from wherever we ended up. */
+    private fun onJoystickToggled(enabled: Boolean) {
+        val p = state.value.phase
+        if (enabled) {
+            if (p == PatrolPhase.WALKING || p == PatrolPhase.DWELLING || p == PatrolPhase.PARKED) enterManual()
+            // PAUSED keeps its frozen position; 繼續 goes to MANUAL because the joystick is up.
+        } else if (p == PatrolPhase.MANUAL) {
+            leaveManual()
+        }
+    }
+
+    private fun enterManual() {
+        _state.update {
+            it.copy(phase = PatrolPhase.MANUAL, currentWaypointIndex = -1,
+                currentWaypointName = getString(R.string.svc_target_joystick), distanceToTargetM = 0.0)
+        }
+        lastNotificationMs = 0
+        Log.i(TAG, "joystick took over at ${sim.current().position}")
+    }
+
+    private fun leaveManual() {
+        if (waypoints.isEmpty()) { beginReturnHome(); return }
+        // Whatever was visited stays visited; the rest of the lap continues from here.
+        val cur = sim.current()
+        val order = PatrolPlanner.orderFor(lap, waypoints.size, config.loopMode)
+        val rest = order.filter { i -> waypoints.getOrNull(i)?.let { it.id !in doneThisLap } ?: false }
+        if (rest.isEmpty()) {
+            _state.update { it.copy(phase = PatrolPhase.WALKING) }
+            onLapFinished(cur)
+            return
+        }
+        loadPlan(PatrolPlanner.planLap(cur.position, waypoints, config, rest, lap))
+        val first = plan.segments.first()
+        _state.update {
+            it.copy(phase = phaseFor(first.kind), currentWaypointIndex = first.waypointIndex ?: -1,
+                currentWaypointName = first.waypointIndex?.let { i -> waypoints.getOrNull(i)?.name })
+        }
+        lastNotificationMs = 0
+        _events.tryEmit(PatrolEvent.Replanned("joystick off"))
+        Log.i(TAG, "joystick put away at ${cur.position}; ${rest.size} waypoint(s) left in lap $lap")
     }
 
     // ------------------------------------------------------------------ steps (engine thread)
@@ -571,10 +867,30 @@ class PatrolService : LifecycleService() {
 
     private fun setPaused(paused: Boolean) {
         val p = state.value.phase
-        if (paused && (p == PatrolPhase.WALKING || p == PatrolPhase.DWELLING)) {
+        if (paused && (p == PatrolPhase.WALKING || p == PatrolPhase.DWELLING || p == PatrolPhase.MANUAL)) {
             _state.update { it.copy(phase = PatrolPhase.PAUSED, speedMps = 0.0) }
         } else if (!paused && p == PatrolPhase.PAUSED) {
-            _state.update { it.copy(phase = phaseFor(sim.current().kind)) }
+            when {
+                _joystick.value.enabled -> enterManual()
+                // Paused while the joystick had us off-route, and the joystick was put away since:
+                // the old plan says nothing about where we are now, so pick the route up from here.
+                sim.inManual -> leaveManual()
+                else -> _state.update { it.copy(phase = phaseFor(sim.current().kind)) }
+            }
+        } else if (!paused && p == PatrolPhase.PARKED) {
+            // 繼續 from the custom home: another lap, from here.
+            val h = home ?: return
+            if (waypoints.isEmpty()) return
+            if (_joystick.value.enabled) { enterManual(); return }
+            loadLap(h)
+            _state.update {
+                it.copy(
+                    phase = if (plan.isEmpty) PatrolPhase.WALKING else phaseFor(plan.segments[0].kind),
+                    currentWaypointIndex = plan.segments.firstOrNull()?.waypointIndex ?: -1,
+                    currentWaypointName = plan.segments.firstOrNull()?.waypointIndex?.let { i -> waypoints.getOrNull(i)?.name },
+                )
+            }
+            Log.i(TAG, "left the parking spot for lap $lap")
         }
         lastNotificationMs = 0
     }
@@ -584,27 +900,27 @@ class PatrolService : LifecycleService() {
         if (p != PatrolPhase.WALKING && p != PatrolPhase.DWELLING && p != PatrolPhase.PAUSED) return
         val cur = sim.current()
         val idx = cur.waypointIndex ?: return
+        waypoints.getOrNull(idx)?.let { doneThisLap += it.id }
         val order = PatrolPlanner.orderFor(lap, waypoints.size, config.loopMode)
         val pos = order.indexOf(idx)
         val rest = if (pos >= 0) order.drop(pos + 1) else emptyList()
         if (rest.isEmpty()) { onLapFinished(cur); return }
-        plan = PatrolPlanner.planLap(cur.position, waypoints, config, rest, lap)
-        sim.load(plan)
+        loadPlan(PatrolPlanner.planLap(cur.position, waypoints, config, rest, lap))
     }
 
     private fun beginReturnHome() {
         val p = state.value.phase
-        if (p == PatrolPhase.IDLE || p == PatrolPhase.RETURNING_HOME || p == PatrolPhase.STOPPING) return
+        if (p == PatrolPhase.IDLE || p == PatrolPhase.RETURNING_HOME || p == PatrolPhase.STOPPING || p == PatrolPhase.PARKED) return
         if (p == PatrolPhase.STARTING) { requestStop(); return }
         val h = home ?: run { requestStop(); return }
+        if (p == PatrolPhase.MANUAL) _joystick.update { it.copy(enabled = false) }
         val from = sim.current().position
         settleTicks = 0
         // A trip that was driven out is driven back: walking 20 km home would take hours, and the
         // route already declares how such legs are covered. Ordinary patrols still walk.
         val mode = routeTravelMode.takeIf { it != TravelMode.WALK }
         if (config.returnMode == ReturnMode.WALK) {
-            plan = PatrolPlanner.planReturnHome(from, h, mode)
-            sim.load(plan)
+            loadPlan(PatrolPlanner.planReturnHome(from, h, mode))
         }
         _state.update {
             it.copy(phase = PatrolPhase.RETURNING_HOME, currentWaypointName = getString(R.string.svc_target_home),
@@ -645,6 +961,9 @@ class PatrolService : LifecycleService() {
         PatrolCheckpoint.clear(this)
         val last = state.value
         prefs.lastPosition = last.position
+        // A vehicle is a one-session thing; the next patrol starts on foot. Same for the joystick.
+        _travelOverride.value = null
+        _joystick.update { it.copy(enabled = false) }
         _state.value = PatrolState(
             home = last.home ?: prefs.home,
             lastError = keepError,
@@ -654,6 +973,8 @@ class PatrolService : LifecycleService() {
         )
         stopRequested = false
         pendingFinish = null
+        replanPending = false
+        doneThisLap.clear()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -685,6 +1006,7 @@ class PatrolService : LifecycleService() {
 
     override fun onDestroy() {
         tickJob?.cancel()
+        prefs.sp.unregisterOnSharedPreferenceChangeListener(prefListener)
         if (state.value.phase != PatrolPhase.IDLE) {
             // Killed without a clean stop (task swipe, system kill): never leave mock providers behind.
             mock.stop()
@@ -695,6 +1017,9 @@ class PatrolService : LifecycleService() {
         super.onDestroy()
     }
 
+    /** The joystick's current input. [enabled] is the on/off switch; the vector is what the pad reports. */
+    data class JoystickInput(val enabled: Boolean = false, val bearingDeg: Double = 0.0, val magnitude: Double = 0.0)
+
     companion object {
         const val TAG = "PikminGPS"
         private const val PKG = "app.pikminbloom.gps"
@@ -704,11 +1029,13 @@ class PatrolService : LifecycleService() {
         const val ACTION_RETURN_HOME = "$PKG.action.RETURN_HOME"
         const val ACTION_STOP = "$PKG.action.STOP"
         const val ACTION_SKIP_WAYPOINT = "$PKG.action.SKIP_WAYPOINT"
+        const val ACTION_GO_TO = "$PKG.action.GO_TO"
         const val ACTION_RESUME_CHECKPOINT = "$PKG.action.RESUME_CHECKPOINT"
         const val EXTRA_THEN_RETURN_HOME = "then_return_home"
         const val EXTRA_HOME_LAT = "home_lat"
         const val EXTRA_HOME_LON = "home_lon"
         const val EXTRA_START_AT_INDEX = "start_at_index"
+        const val EXTRA_WAYPOINT_INDEX = "waypoint_index"
 
         private const val NOTIFICATION_INTERVAL_MS = 5_000L
         private const val SETTLE_TICKS = 3
@@ -717,12 +1044,53 @@ class PatrolService : LifecycleService() {
         private const val MIN_LAP_M = 5.0
         private const val CHECKPOINT_INTERVAL_MS = 5_000L
 
+        /** Settings that matter while a patrol runs (everything Prefs.config() reads). */
+        private val LIVE_CONFIG_KEYS = setOf(
+            Prefs.KEY_SPEED_KMH, Prefs.KEY_SPEED_JITTER_PCT, Prefs.KEY_STRIDE_CM, Prefs.KEY_LOOP_MODE,
+            Prefs.KEY_ORBIT, Prefs.KEY_INJECT_STEPS, Prefs.KEY_STEP_FLUSH_SEC, Prefs.KEY_DAILY_STEP_CAP,
+            Prefs.KEY_MAX_CADENCE, Prefs.KEY_ACC_MIN, Prefs.KEY_ACC_MAX, Prefs.KEY_ALTITUDE,
+            Prefs.KEY_NOTIFY_ARRIVAL, Prefs.KEY_VIBRATE_ARRIVAL, Prefs.KEY_ALERT_GAP_SEC,
+            Prefs.KEY_AUTO_RETURN_LAPS, Prefs.KEY_RETURN_MODE,
+        )
+
         private val _state = MutableStateFlow(PatrolState())
         val state: StateFlow<PatrolState> = _state
         private val _events = MutableSharedFlow<PatrolEvent>(extraBufferCapacity = 32)
         val events: SharedFlow<PatrolEvent> = _events
 
+        /** Live vehicle override; null = walk at the configured speed. Survives until the patrol ends. */
+        private val _travelOverride = MutableStateFlow<TravelMode?>(null)
+        val travelOverride: StateFlow<TravelMode?> = _travelOverride
+
+        /** What the floating joystick reports; the engine reads it every tick while MANUAL. */
+        private val _joystick = MutableStateFlow(JoystickInput())
+        val joystick: StateFlow<JoystickInput> = _joystick
+
         val isRunning: Boolean get() = _state.value.phase != PatrolPhase.IDLE
+
+        /** The override choices offered in the UI, in cycling order. */
+        val OVERRIDE_CHOICES: List<TravelMode?> = listOf(null, TravelMode.BIKE, TravelMode.CAR, TravelMode.HIGHWAY, TravelMode.PLANE)
+
+        fun setTravelOverride(mode: TravelMode?) {
+            _travelOverride.value = mode
+        }
+
+        /** Next choice after the current one (overlay button cycles through them). */
+        fun cycleTravelOverride(): TravelMode? {
+            val i = OVERRIDE_CHOICES.indexOf(_travelOverride.value)
+            val next = OVERRIDE_CHOICES[(i + 1) % OVERRIDE_CHOICES.size]
+            _travelOverride.value = next
+            return next
+        }
+
+        fun setJoystickEnabled(enabled: Boolean) {
+            _joystick.update { if (enabled) it.copy(enabled = true) else JoystickInput() }
+        }
+
+        /** Pad input; [magnitude] 0 = standing still. Only meaningful while enabled. */
+        fun steer(bearingDeg: Double, magnitude: Double) {
+            _joystick.update { it.copy(bearingDeg = GeoMath.normalizeBearing(bearingDeg), magnitude = magnitude.coerceIn(0.0, 1.0)) }
+        }
 
         fun intent(context: Context, action: String): Intent =
             Intent(context, PatrolService::class.java).setAction(action)
@@ -734,10 +1102,12 @@ class PatrolService : LifecycleService() {
             ContextCompat.startForegroundService(context, i)
         }
 
-        private fun send(context: Context, action: String) {
+        private fun send(context: Context, action: String, configure: (Intent.() -> Unit)? = null) {
             // The service is a running foreground service whenever these make sense; when it is not,
             // onStartCommand stops itself immediately, which also discharges the start obligation.
-            runCatching { ContextCompat.startForegroundService(context, intent(context, action)) }
+            val i = intent(context, action)
+            configure?.invoke(i)
+            runCatching { ContextCompat.startForegroundService(context, i) }
                 .onFailure { Log.w(TAG, "send $action failed: ${it.message}") }
         }
 
@@ -752,5 +1122,8 @@ class PatrolService : LifecycleService() {
         fun returnHome(context: Context) = send(context, ACTION_RETURN_HOME)
         fun stop(context: Context) = send(context, ACTION_STOP)
         fun skipWaypoint(context: Context) = send(context, ACTION_SKIP_WAYPOINT)
+
+        /** 立刻前往: head for waypoint [index] of the active route next. */
+        fun goTo(context: Context, index: Int) = send(context, ACTION_GO_TO) { putExtra(EXTRA_WAYPOINT_INDEX, index) }
     }
 }

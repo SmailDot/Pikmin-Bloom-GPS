@@ -1,9 +1,11 @@
 package app.pikminbloom.gps.sim
 
 import app.pikminbloom.gps.data.PatrolConfig
+import app.pikminbloom.gps.data.TravelMode
 import app.pikminbloom.gps.geo.GeoMath
 import app.pikminbloom.gps.geo.LatLng
 import app.pikminbloom.gps.route.PatrolPlan
+import app.pikminbloom.gps.route.RouteSegment
 import app.pikminbloom.gps.route.SegmentKind
 import kotlin.math.min
 import kotlin.random.Random
@@ -36,11 +38,16 @@ data class Sample(
  * noise (<= 1 m), the speed wobbles by +-[PatrolConfig.speedJitterPct] re-drawn every few seconds,
  * accuracy drifts slowly inside the configured band and altitude drifts a few decimetres.
  * Deterministic for a seeded [Random].
+ *
+ * Two things can change while a plan is being walked: the configured speed ([updateConfig]) and a
+ * live vehicle override ([travelOverride]). Both apply from the next tick on; legs that declare
+ * their own [RouteSegment.travelMode] (decor trips) keep it regardless.
  */
 class WalkSimulator(
-    private val config: PatrolConfig,
+    config: PatrolConfig,
     private val random: Random = Random.Default,
 ) {
+    private var config: PatrolConfig = config
     private var plan: PatrolPlan = PatrolPlan.EMPTY
     private var segIdx = 0
     private var distIntoSeg = 0.0
@@ -59,14 +66,27 @@ class WalkSimulator(
     private var lastBearing = 0.0
     private var lastSample: Sample = idleSample(LatLng(0.0, 0.0))
 
+    /** Exact position while the joystick steers ([advanceManual]); null whenever a plan is loaded. */
+    private var manualPos: LatLng? = null
+
+    /**
+     * Vehicle override for every leg that has no travel mode of its own. Null walks at the
+     * configured speed and counts steps; a vehicle moves at its speed and counts none.
+     */
+    var travelOverride: TravelMode? = null
+
     var finished: Boolean = true
         private set
+
+    /** True after [advanceManual] until the next [load]: the loaded plan no longer describes where we are. */
+    val inManual: Boolean get() = manualPos != null
 
     fun load(plan: PatrolPlan) {
         this.plan = plan
         segIdx = 0
         distIntoSeg = 0.0
         progress = 0.0
+        manualPos = null
         finished = plan.isEmpty
         val start = plan.start ?: lastSample.position
         if (!plan.isEmpty) lastBearing = plan.segments[0].bearingDeg
@@ -77,8 +97,15 @@ class WalkSimulator(
         )
     }
 
+    /** Applies a settings change mid-walk; the new speed is used from the next tick on. */
+    fun updateConfig(config: PatrolConfig) {
+        this.config = config
+        targetSpeed = config.speedMps
+        accuracy = accuracy.coerceIn(config.accuracyMinM, config.accuracyMaxM)
+    }
+
     fun setSpeed(mps: Double) {
-        targetSpeed = mps.coerceIn(0.2, 10.0)
+        targetSpeed = mps.coerceIn(0.2, 200.0)
     }
 
     /** Last reported fix without moving (used while paused). Speed is reported as 0. */
@@ -89,8 +116,15 @@ class WalkSimulator(
         lapFinished = false,
     )
 
-    fun advance(dtSec: Double): Sample {
-        val dt = dtSec.coerceIn(0.0, 5.0)
+    /** Speed of a leg without its own travel mode, before jitter. */
+    private val legDefaultSpeed: Double get() = travelOverride?.speedMps ?: targetSpeed
+
+    private fun legSpeedOf(seg: RouteSegment): Double = seg.travelMode?.speedMps ?: legDefaultSpeed
+
+    private fun legCountsSteps(seg: RouteSegment): Boolean =
+        seg.travelMode?.countsSteps ?: (travelOverride?.countsSteps ?: true)
+
+    private fun redrawJitter(dt: Double) {
         elapsedSec += dt
         if (elapsedSec >= nextSpeedRedrawAt) {
             val j = config.speedJitterPct / 100.0
@@ -98,9 +132,16 @@ class WalkSimulator(
             speedFactor = if (j > 1e-9) 1.0 + random.nextDouble(-j, j) else 1.0
             nextSpeedRedrawAt = elapsedSec + random.nextDouble(3.0, 8.0)
         }
+    }
+
+    fun advance(dtSec: Double): Sample {
+        val dt = dtSec.coerceIn(0.0, 5.0)
+        redrawJitter(dt)
         drift()
 
-        if (finished || plan.isEmpty) {
+        // Off-route after the joystick: the plan cannot be advanced from here, so hold position
+        // until the caller loads a plan that starts where we are.
+        if (finished || plan.isEmpty || manualPos != null) {
             lastSample = lastSample.copy(
                 speedMps = 0.0,
                 accuracyM = accuracy,
@@ -126,7 +167,7 @@ class WalkSimulator(
             val seg = plan.segments[segIdx]
             // Never consume two arrival points in one tick: each arrival must be reported once.
             if (arrived != null && seg.arrivalAtEnd) break
-            val legSpeed = ((seg.travelMode?.speedMps ?: targetSpeed) * speedFactor).coerceAtLeast(1e-6)
+            val legSpeed = (legSpeedOf(seg) * speedFactor).coerceAtLeast(1e-6)
             lastLegSpeed = legSpeed
             val left = seg.lengthM - distIntoSeg
             val step = min(left, legSpeed * remainingTime)
@@ -159,7 +200,7 @@ class WalkSimulator(
             position = noisy(exact),
             // Report the speed of the leg we ended the tick on, so a fix taken just after a
             // highway leg does not still claim 90 km/h while the avatar is walking.
-            speedMps = if (finished) 0.0 else ((seg.travelMode?.speedMps ?: targetSpeed) * speedFactor).takeIf { it > 0 } ?: lastLegSpeed,
+            speedMps = if (finished) 0.0 else (legSpeedOf(seg) * speedFactor).takeIf { it > 0 } ?: lastLegSpeed,
             bearingDeg = lastBearing,
             accuracyM = accuracy,
             altitudeM = altitude,
@@ -170,12 +211,68 @@ class WalkSimulator(
             arrivedAtWaypoint = arrived,
             lapFinished = lapDone,
             progressM = progress,
-            countsSteps = seg.travelMode?.countsSteps ?: true,
+            countsSteps = legCountsSteps(seg),
         )
         return lastSample
     }
 
+    /**
+     * Joystick tick: moves [magnitude] (0..1) of the current speed along [bearingDeg] from wherever
+     * we are, ignoring the loaded plan. The plan is left untouched; the caller re-plans from
+     * [current] when the joystick is put away. Speed and step accounting follow [travelOverride]
+     * exactly like a planned leg would.
+     */
+    fun advanceManual(dtSec: Double, bearingDeg: Double, magnitude: Double): Sample {
+        val dt = dtSec.coerceIn(0.0, 5.0)
+        redrawJitter(dt)
+        drift()
+        val from = manualPos ?: exactPosition()
+        val speed = legDefaultSpeed * speedFactor * magnitude.coerceIn(0.0, 1.0)
+        val step = speed * dt
+        val to = if (step > 1e-6) GeoMath.destination(from, bearingDeg, step) else from
+        manualPos = to
+        if (step > 1e-6) lastBearing = GeoMath.normalizeBearing(bearingDeg)
+        progress += step
+        lastSample = Sample(
+            position = noisy(to),
+            speedMps = speed,
+            bearingDeg = lastBearing,
+            accuracyM = accuracy,
+            altitudeM = altitude,
+            distanceDeltaM = step,
+            segmentIndex = segIdx,
+            waypointIndex = null,
+            kind = SegmentKind.TRAVEL,
+            arrivedAtWaypoint = null,
+            lapFinished = false,
+            progressM = progress,
+            countsSteps = travelOverride?.countsSteps ?: true,
+        )
+        return lastSample
+    }
+
+    /**
+     * The unfinished legs that belong to the waypoint we are currently on, the first one shortened
+     * to start exactly where we are. Lets a re-plan keep an orbit (or a vehicle leg) in progress
+     * instead of restarting it. Empty when nothing is loaded, the plan is finished, or the
+     * joystick has taken over.
+     */
+    fun remainingLegsOfCurrentWaypoint(): List<RouteSegment> {
+        if (finished || plan.isEmpty || manualPos != null) return emptyList()
+        val cur = plan.segments[segIdx]
+        val out = ArrayList<RouteSegment>()
+        val here = exactPosition()
+        if (GeoMath.distanceM(here, cur.to) > 0.5) out += cur.copy(from = here)
+        for (i in segIdx + 1 until plan.segments.size) {
+            val s = plan.segments[i]
+            if (s.waypointIndex != cur.waypointIndex) break
+            out += s
+        }
+        return out
+    }
+
     private fun exactPosition(): LatLng {
+        manualPos?.let { return it }
         if (plan.isEmpty) return lastSample.position
         val seg = plan.segments[segIdx]
         if (seg.lengthM <= 1e-9) return seg.to

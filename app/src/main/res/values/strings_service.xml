@@ -25,4 +25,11 @@
     <string name="svc_err_no_checkpoint">找不到可以繼續的巡邏紀錄</string>
     <string name="svc_err_checkpoint_pending">上次巡邏尚未處理：請先在主畫面選擇「從中斷點繼續」或「放棄」</string>
     <string name="svc_target_home">家</string>
+    <string name="svc_target_joystick">搖桿</string>
+
+    <!-- Custom home (PatrolPhase.PARKED) and the joystick (PatrolPhase.MANUAL), added 2026-09-12 -->
+    <string name="svc_phase_parked">已回到自訂的家（模擬定位維持中）</string>
+    <string name="svc_phase_manual">搖桿控制中</string>
+    <string name="svc_parked_title">已回到自訂的家</string>
+    <string name="svc_parked_text">模擬定位維持中，遊戲仍看到你在這裡。按「繼續」再巡一圈；按「停止」才會回到真實 GPS 位置。</string>
 </resources>

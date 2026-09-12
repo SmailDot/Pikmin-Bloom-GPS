@@ -113,6 +113,13 @@ enum class PatrolPhase {
     PAUSED,          // position frozen, mock still active
     RETURNING_HOME,  // walking (or teleporting) back to the real position
     STOPPING,        // removing mock providers
+    /**
+     * Back at a user-chosen home (Prefs.customHome) with the mock still on. Only 停止 hands the game
+     * back to the real GPS, because a custom home is by definition not where the phone is.
+     */
+    PARKED,
+    /** The floating joystick steers; the route is suspended and resumes from wherever this ends. */
+    MANUAL,
 }
 
 /** Snapshot published by PatrolService (StateFlow) for the UI and notification. */
@@ -132,4 +139,8 @@ data class PatrolState(
     val lastError: String? = null,
     val mockAppSelected: Boolean = false,
     val healthConnectReady: Boolean = false,
+    /** Live vehicle override (PatrolService.setTravelOverride); null = the configured walking speed. */
+    val travelOverride: TravelMode? = null,
+    /** True when this session's home is the user-chosen one (Prefs.customHome), not a real fix. */
+    val homeIsCustom: Boolean = false,
 )
