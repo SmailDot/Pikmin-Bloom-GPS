@@ -1,266 +1,273 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">皮克敏巡花助手</string>
-    <string name="title_settings">設定</string>
-    <string name="title_setup">初始設定</string>
-    <string name="title_health_rationale">健康資料使用說明</string>
+    <string name="app_name">Pikmin Bloom GPS</string>
+    <!-- Which language the resources resolved to (values/ en, values-zh/ zh, values-ja/ ja): i18n.Lang reads it so the
+         texts built in Kotlin always match the XML ones. -->
+    <string name="lang_code">en</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_setup">Setup</string>
+    <string name="title_health_rationale">How health data is used</string>
 
     <!-- Health Connect rationale text -->
-    <string name="health_rationale_body">本 App 會在模擬走路巡邏時，依照模擬距離把步數與距離寫入「健康資料同步 (Health Connect)」，讓 Pikmin Bloom 能夠讀取步數來培育花苗。資料只寫入你自己手機上的 Health Connect，不會上傳到任何伺服器。</string>
+    <string name="health_rationale_body">While patrolling on a simulated walk, this app writes steps and distance to Health Connect based on the simulated distance, so Pikmin Bloom can read the steps to grow seedlings. The data is only written to Health Connect on your own phone and is never uploaded to any server.</string>
 
-    <!-- ============================ 主畫面 ============================ -->
-    <string name="menu_waypoint_list">大花清單</string>
-    <string name="menu_setup">初始設定</string>
-    <string name="menu_settings">設定</string>
-    <string name="menu_my_location">我的位置</string>
-    <string name="menu_import">匯入</string>
-    <string name="menu_export_json">匯出 JSON</string>
-    <string name="menu_export_gpx">匯出 GPX</string>
+    <!-- ============================ Main screen ============================ -->
+    <string name="menu_waypoint_list">Big Flower list</string>
+    <string name="menu_setup">Setup</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_my_location">My location</string>
+    <string name="menu_import">Import</string>
+    <string name="menu_export_json">Export JSON</string>
+    <string name="menu_export_gpx">Export GPX</string>
 
-    <string name="btn_start">開始巡邏</string>
-    <string name="btn_pause">暫停</string>
-    <string name="btn_resume">繼續</string>
-    <string name="btn_return_home">回家</string>
-    <string name="btn_stop">停止</string>
+    <string name="btn_start">Start patrol</string>
+    <string name="btn_pause">Pause</string>
+    <string name="btn_resume">Resume</string>
+    <string name="btn_return_home">Go home</string>
+    <string name="btn_stop">Stop</string>
 
-    <string name="phase_idle">閒置中</string>
-    <string name="phase_starting">準備中：取得真實位置…</string>
-    <string name="phase_walking">巡邏中</string>
-    <string name="phase_dwelling">圈內種花中</string>
-    <string name="phase_paused">已暫停（位置固定）</string>
-    <string name="phase_returning">回家中</string>
-    <string name="phase_stopping">正在停止…</string>
+    <string name="phase_idle">Idle</string>
+    <string name="phase_starting">Starting: getting real location…</string>
+    <string name="phase_walking">Patrolling</string>
+    <string name="phase_dwelling">Planting flowers in the circle</string>
+    <string name="phase_paused">Paused (location fixed)</string>
+    <string name="phase_returning">Going home</string>
+    <string name="phase_stopping">Stopping…</string>
 
-    <string name="status_target">目前目標：%1$s · 距離 %2$s</string>
-    <string name="status_no_target">目前目標：尚未開始</string>
-    <string name="status_waypoint_count">已標記 %1$d 個大花</string>
-    <string name="status_walked">已走距離：%1$s</string>
-    <string name="status_session_steps">本次步數：%1$d</string>
-    <string name="status_today_steps">今日已寫入步數：%1$d</string>
-    <string name="status_speed">速度：%1$s km/h</string>
-    <string name="status_error">錯誤：%1$s</string>
-    <string name="status_home_none">尚未記錄家的位置</string>
-    <string name="status_home_set">家：%1$s</string>
+    <string name="status_target">Target: %1$s · %2$s away</string>
+    <string name="status_no_target">Target: not started yet</string>
+    <string name="status_waypoint_count">Big Flowers marked: %1$d</string>
+    <string name="status_walked">Distance walked: %1$s</string>
+    <string name="status_session_steps">Steps this session: %1$d</string>
+    <string name="status_today_steps">Steps written today: %1$d</string>
+    <string name="status_speed">Speed: %1$s km/h</string>
+    <string name="status_error">Error: %1$s</string>
+    <string name="status_home_none">Home location not saved yet</string>
+    <string name="status_home_set">Home: %1$s</string>
 
-    <string name="fmt_distance_m">%1$.0f 公尺</string>
-    <string name="fmt_distance_km">%1$.2f 公里</string>
-    <string name="fmt_minutes_ago">%1$d 分鐘前</string>
-    <string name="fmt_hours_ago">%1$d 小時前</string>
+    <string name="fmt_distance_m">%1$.0f m</string>
+    <string name="fmt_distance_km">%1$.2f km</string>
+    <string name="fmt_minutes_ago">%1$d min ago</string>
+    <string name="fmt_hours_ago">%1$d h ago</string>
 
-    <!-- ============================ 大花對話框 ============================ -->
-    <string name="dlg_add_waypoint_title">新增大花</string>
-    <string name="dlg_edit_waypoint_title">編輯大花</string>
-    <string name="hint_waypoint_name">名稱</string>
-    <string name="hint_waypoint_coords">座標（緯度, 經度）</string>
-    <string name="helper_waypoint_coords">可直接貼上 Google 地圖的座標或網址</string>
-    <string name="err_coords_invalid">看不懂這個座標，請用「緯度, 經度」，例如 35.6812, 139.7671</string>
-    <string name="err_name_required">請輸入名稱</string>
-    <string name="default_waypoint_name">大花 %1$d</string>
+    <!-- ============================ Big Flower dialogs ============================ -->
+    <string name="dlg_add_waypoint_title">Add Big Flower</string>
+    <string name="dlg_edit_waypoint_title">Edit Big Flower</string>
+    <string name="hint_waypoint_name">Name</string>
+    <string name="hint_waypoint_coords">Coordinates (latitude, longitude)</string>
+    <string name="helper_waypoint_coords">You can paste coordinates or a link from Google Maps</string>
+    <string name="err_coords_invalid">Can\'t read these coordinates. Use \"latitude, longitude\", e.g. 35.6812, 139.7671</string>
+    <string name="err_name_required">Please enter a name</string>
+    <string name="default_waypoint_name">Big Flower %1$d</string>
 
-    <string name="action_save">儲存</string>
-    <string name="action_cancel">取消</string>
-    <string name="action_ok">確定</string>
-    <string name="action_delete">刪除</string>
-    <string name="action_edit">編輯</string>
-    <string name="action_move_up">上移</string>
-    <string name="action_move_down">下移</string>
-    <string name="action_start_here">從這裡開始巡邏</string>
-    <string name="action_teleport_here">瞬移到這裡開始巡邏</string>
-    <string name="action_teleport_now">瞬移過去（立刻）</string>
-    <string name="toast_teleport_now">已瞬移到 %1$s 旁</string>
-    <string name="action_add_waypoint">新增大花</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_move_up">Move up</string>
+    <string name="action_move_down">Move down</string>
+    <string name="action_start_here">Start patrol from here</string>
+    <string name="action_teleport_here">Teleport here and start patrol</string>
+    <string name="action_teleport_now">Teleport there (now)</string>
+    <string name="toast_teleport_now">Teleported next to %1$s</string>
+    <string name="action_add_waypoint">Add Big Flower</string>
 
-    <string name="dlg_stop_title">直接停止？</string>
-    <string name="dlg_stop_msg">直接停止會讓遊戲下一秒看到你回到真實位置，看起來像瞬移。建議先按「回家」走回去，到家後會自動解除模擬。</string>
-    <string name="action_return_home_first">先回家</string>
-    <string name="action_stop_anyway">直接停止</string>
-    <string name="dlg_import_replace_title">取代目前的大花清單？</string>
-    <string name="dlg_import_replace_msg">匯入會取代目前的 %1$d 個大花，此動作無法復原。</string>
-    <string name="action_replace">取代</string>
+    <string name="dlg_stop_title">Stop right away?</string>
+    <string name="dlg_stop_msg">If you stop right away, the game sees you back at your real location the next second, which looks like a teleport. It\'s better to tap \"Go home\" and walk back first; the mock location turns off automatically once you get home.</string>
+    <string name="action_return_home_first">Go home first</string>
+    <string name="action_stop_anyway">Stop anyway</string>
+    <string name="dlg_import_replace_title">Replace the current Big Flower list?</string>
+    <string name="dlg_import_replace_msg">Importing replaces your current Big Flowers (%1$d). This can\'t be undone.</string>
+    <string name="action_replace">Replace</string>
 
-    <string name="title_waypoint_list">大花清單</string>
-    <string name="waypoint_list_empty">還沒有大花。在地圖上長按即可新增。</string>
+    <string name="title_waypoint_list">Big Flower list</string>
+    <string name="waypoint_list_empty">No Big Flowers yet. Long-press the map to add one.</string>
     <string name="waypoint_summary">%1$.5f, %2$.5f</string>
 
-    <string name="dlg_delete_title">刪除大花</string>
-    <string name="dlg_delete_message">確定要刪除「%1$s」嗎？</string>
+    <string name="dlg_delete_title">Delete Big Flower</string>
+    <string name="dlg_delete_message">Delete \"%1$s\"?</string>
 
-    <!-- ============================ 開始前檢查 ============================ -->
-    <string name="dlg_need_location_title">需要定位權限</string>
-    <string name="dlg_need_location_msg">需要「精確位置」權限，才能記錄出發點（家），並在結束時回到真實位置。</string>
-    <string name="dlg_need_notification_title">建議開啟通知</string>
-    <string name="dlg_need_notification_msg">通知用來顯示巡邏狀態與「已抵達大花」提醒。不開啟也可以繼續巡邏。</string>
-    <string name="dlg_need_mock_title">尚未選擇模擬位置應用程式</string>
-    <string name="dlg_need_mock_msg">請到「設定 → 其他設定 → 開發者選項 → 選擇模擬位置應用程式」，選擇「皮克敏巡花助手」後再回來。</string>
-    <string name="dlg_no_waypoints_title">尚未加入大花</string>
-    <string name="dlg_no_waypoints_msg">請先在地圖上長按，加入至少一個大花位置。</string>
-    <string name="dlg_hc_unavailable_title">Health Connect 不可用</string>
-    <string name="dlg_hc_unavailable_msg">Health Connect 不可用，將不寫入步數。仍要開始巡邏嗎？</string>
-    <string name="dlg_hc_permission_title">需要 Health Connect 權限</string>
-    <string name="dlg_hc_permission_msg">需要步數與距離的讀寫權限，Pikmin Bloom 才能讀到巡邏走出來的步數。</string>
+    <!-- ============================ Pre-start checks ============================ -->
+    <string name="dlg_need_location_title">Location permission needed</string>
+    <string name="dlg_need_location_msg">The \"Precise location\" permission is needed to record your starting point (home) and to return to your real location at the end.</string>
+    <string name="dlg_need_notification_title">Notifications recommended</string>
+    <string name="dlg_need_notification_msg">Notifications show the patrol status and \"Arrived at Big Flower\" alerts. You can still patrol without them.</string>
+    <string name="dlg_need_mock_title">No mock location app selected</string>
+    <!-- verify: HyperOS / Xiaomi English menu name "Additional settings" -->
+    <string name="dlg_need_mock_msg">Go to Settings → Additional settings → Developer options → Select mock location app, choose \"Pikmin Bloom GPS\", then come back.</string>
+    <string name="dlg_no_waypoints_title">No Big Flowers yet</string>
+    <string name="dlg_no_waypoints_msg">First long-press the map to add at least one Big Flower.</string>
+    <string name="dlg_hc_unavailable_title">Health Connect unavailable</string>
+    <string name="dlg_hc_unavailable_msg">Health Connect is unavailable, so no steps will be written. Start the patrol anyway?</string>
+    <string name="dlg_hc_permission_title">Health Connect permission needed</string>
+    <string name="dlg_hc_permission_msg">Read and write access to steps and distance is needed so Pikmin Bloom can read the steps from your patrol.</string>
 
-    <string name="action_grant">授予權限</string>
-    <string name="action_continue">繼續</string>
-    <string name="action_continue_without_steps">不寫步數繼續</string>
-    <string name="action_open_developer_options">開啟開發者選項</string>
+    <string name="action_grant">Grant</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_continue_without_steps">Continue without steps</string>
+    <string name="action_open_developer_options">Open Developer options</string>
 
-    <string name="toast_location_denied">沒有定位權限，無法開始巡邏</string>
-    <string name="toast_locating">正在定位…</string>
-    <string name="toast_location_unavailable">無法取得目前的真實位置</string>
+    <string name="toast_location_denied">No location permission, can\'t start patrol</string>
+    <string name="toast_locating">Getting location…</string>
+    <string name="toast_location_unavailable">Can\'t get your current real location</string>
 
-    <!-- ============================ 免責聲明 ============================ -->
-    <string name="dlg_disclaimer_title">免責聲明（請務必閱讀）</string>
-    <string name="dlg_disclaimer_msg">本 App 會模擬 GPS 位置並把步數寫入 Health Connect。\n\nNiantic 的服務條款明文禁止竄改定位與步數；違規帳號可能被「三振政策」警告、停權 7 天，甚至永久停權。\n\n使用本 App 代表你已了解並自行承擔帳號被處分的全部風險，作者不負任何責任。</string>
-    <string name="action_accept">我了解並接受風險</string>
-    <string name="action_exit">離開</string>
+    <!-- ============================ Disclaimer ============================ -->
+    <string name="dlg_disclaimer_title">Disclaimer (please read)</string>
+    <!-- verify: official English name of Niantic's "three-strike" discipline policy -->
+    <string name="dlg_disclaimer_msg">This app mocks your GPS location and writes steps to Health Connect.\n\nNiantic\'s Terms of Service explicitly prohibit tampering with location and steps. Accounts that break them may get a warning under the three-strike policy, a 7-day suspension, or even a permanent ban.\n\nBy using this app, you understand and accept all the risk of action against your account. The author takes no responsibility.</string>
+    <string name="action_accept">I understand and accept the risk</string>
+    <string name="action_exit">Exit</string>
 
-    <!-- ============================ 事件提示 ============================ -->
-    <string name="snack_arrived">已抵達「%1$s」，可在遊戲內點大花往下滑領花蜜</string>
-    <string name="snack_returned_home">已回到真實位置，模擬定位已解除</string>
+    <!-- ============================ Event messages ============================ -->
+    <string name="snack_arrived">Arrived at \"%1$s\". In the game, tap the Big Flower and swipe down to collect Nectar.</string>
+    <string name="snack_returned_home">Back at your real location. Mock location turned off.</string>
 
-    <!-- ============================ 匯入匯出 ============================ -->
-    <string name="toast_import_done">已匯入 %1$d 個大花</string>
-    <string name="toast_import_failed">匯入失敗：檔案格式無法辨識</string>
-    <string name="toast_export_done">已匯出</string>
-    <string name="toast_export_failed">匯出失敗</string>
+    <!-- ============================ Import / export ============================ -->
+    <string name="toast_import_done">Big Flowers imported: %1$d</string>
+    <string name="toast_import_failed">Import failed: unrecognized file format</string>
+    <string name="toast_export_done">Exported</string>
+    <string name="toast_export_failed">Export failed</string>
     <string name="export_json_filename">waypoints.json</string>
     <string name="export_gpx_filename">waypoints.gpx</string>
 
-    <!-- ============================ 初始設定 ============================ -->
-    <string name="setup_header">依序完成下列項目，巡邏才能正常運作。回到本頁會自動重新檢查。</string>
-    <string name="setup_ok">已完成</string>
-    <string name="setup_todo">尚未完成</string>
-    <string name="setup_manual">需手動確認</string>
+    <!-- ============================ Setup ============================ -->
+    <string name="setup_header">Complete these items in order so patrols work properly. Everything is rechecked automatically when you come back to this page.</string>
+    <string name="setup_ok">Done</string>
+    <string name="setup_todo">Not done</string>
+    <string name="setup_manual">Check manually</string>
 
-    <string name="setup_location_title">1. 定位權限</string>
-    <string name="setup_location_desc">需要「精確位置」才能在開始時記錄真實位置（家），並在回家後與真實 GPS 接軌。建議在系統設定中把本 App 的位置權限改成「一律允許」。</string>
+    <string name="setup_location_title">1. Location permission</string>
+    <string name="setup_location_desc">\"Precise location\" is needed to record your real location (home) at the start and to hand back smoothly to the real GPS after going home. We recommend setting this app\'s location permission to \"Allow all the time\" in system settings.</string>
 
-    <string name="setup_notification_title">2. 通知權限</string>
-    <string name="setup_notification_desc">巡邏是前景服務，需要常駐通知；抵達大花時也會用通知加震動提醒你去領花蜜。</string>
+    <string name="setup_notification_title">2. Notification permission</string>
+    <string name="setup_notification_desc">Patrol runs as a foreground service, which needs an ongoing notification. When you reach a Big Flower, a notification with vibration also reminds you to collect Nectar.</string>
 
-    <string name="setup_mock_title">3. 開發者選項 → 選擇模擬位置應用程式</string>
-    <string name="setup_mock_desc">HyperOS / 小米：設定 → 我的裝置 → 全部規格 → 連點「OS 版本」7 次開啟開發者選項；接著到 設定 → 其他設定 → 開發者選項 → 選擇模擬位置應用程式 → 選「皮克敏巡花助手」。</string>
+    <string name="setup_mock_title">3. Developer options → Select mock location app</string>
+    <!-- verify: HyperOS / Xiaomi English menu names "About phone", "All specs", "OS version", "Additional settings" -->
+    <string name="setup_mock_desc">HyperOS / Xiaomi: Settings → About phone → All specs → tap \"OS version\" 7 times to turn on Developer options. Then go to Settings → Additional settings → Developer options → Select mock location app → choose \"Pikmin Bloom GPS\".</string>
 
-    <string name="setup_health_title">4. Health Connect（步數）</string>
-    <string name="setup_health_desc">巡邏走出來的距離會換算成步數寫入 Health Connect，Pikmin Bloom 才能拿來培育花苗。需要步數與距離的讀寫權限。</string>
-    <string name="setup_health_hint">提示：在 Health Connect → 資料來源與優先順序 中，把本 App 移到最上面，遊戲才會優先採用這裡的步數。</string>
-    <string name="setup_health_unavailable">這台裝置目前沒有可用的 Health Connect</string>
-    <string name="setup_health_update">Health Connect 需要更新</string>
-    <string name="action_open_health_connect">開啟 Health Connect</string>
+    <string name="setup_health_title">4. Health Connect (steps)</string>
+    <string name="setup_health_desc">The distance walked on patrol is converted to steps and written to Health Connect, so Pikmin Bloom can use them to grow seedlings. Read and write access to steps and distance is needed.</string>
+    <!-- verify: Health Connect English menu name "Data sources and priority" -->
+    <string name="setup_health_hint">Tip: in Health Connect → Data sources and priority, move this app to the top so the game uses its steps first.</string>
+    <string name="setup_health_unavailable">Health Connect isn\'t available on this device right now</string>
+    <string name="setup_health_update">Health Connect needs an update</string>
+    <string name="action_open_health_connect">Open Health Connect</string>
 
-    <string name="setup_battery_title">5. 電池最佳化排除</string>
-    <string name="setup_battery_desc">HyperOS 的省電策略會殺掉前景服務。請把本 App 排除電池最佳化，並到 設定 → 應用程式 → 皮克敏巡花助手 → 省電策略 選「無限制」，同時開啟「自啟動」。</string>
-    <string name="action_exclude_battery">排除電池最佳化</string>
+    <string name="setup_battery_title">5. Battery optimization exemption</string>
+    <!-- verify: HyperOS / Xiaomi English labels "Battery saver", "No restrictions", "Autostart" -->
+    <string name="setup_battery_desc">HyperOS power saving kills foreground services. Exclude this app from battery optimization, then in Settings → Apps → Pikmin Bloom GPS → Battery saver choose \"No restrictions\", and also turn on \"Autostart\".</string>
+    <string name="action_exclude_battery">Exclude from battery optimization</string>
 
-    <string name="setup_overlay_title">6. 浮動控制列權限（顯示在其他應用程式上層）</string>
-    <string name="setup_overlay_desc">開啟後才能在 Pikmin Bloom 畫面上顯示浮動控制列，不用切回本 App 就能暫停 / 回家 / 停止巡邏。</string>
-    <string name="setup_overlay_hint">HyperOS / 小米：除了「顯示在其他應用程式上層」，還要到 設定 → 應用程式 → 皮克敏巡花助手 → 權限 開啟「後台彈出介面」，浮動控制列才會在遊戲上層出現。</string>
-    <string name="action_open_overlay_settings">開啟懸浮視窗權限</string>
+    <string name="setup_overlay_title">6. Floating bar permission (display over other apps)</string>
+    <string name="setup_overlay_desc">Lets the floating bar appear over Pikmin Bloom, so you can pause / go home / stop the patrol without switching back to this app.</string>
+    <!-- verify: Xiaomi English permission name "Display pop-up windows while running in the background" -->
+    <string name="setup_overlay_hint">HyperOS / Xiaomi: besides \"Display over other apps\", also go to Settings → Apps → Pikmin Bloom GPS → Permissions and turn on \"Display pop-up windows while running in the background\", or the floating bar won\'t appear over the game.</string>
+    <string name="action_open_overlay_settings">Open overlay permission</string>
 
-    <string name="setup_game_title">7. Pikmin Bloom 遊戲內設定（需自行操作）</string>
-    <string name="setup_game_desc">Pikmin Bloom：設定 → 隱私權&amp;步數 → 步數 → 選擇 Health Connect → 開啟設定 → 允許讀取步數 → 新增存取權 → 允許「在背景存取資料」。\n手機設定 → 應用程式 → Pikmin Bloom → 權限 → 位置 → 一律允許。</string>
-    <string name="action_open_settings_app_info">開啟應用程式資訊</string>
-    <string name="action_open_pikmin">開啟 Pikmin Bloom</string>
-    <string name="action_pikmin_app_info">Pikmin Bloom 應用程式資訊</string>
-    <string name="toast_pikmin_not_installed">找不到 Pikmin Bloom，請先安裝</string>
-    <string name="toast_no_activity">找不到可以開啟的系統設定畫面</string>
+    <string name="setup_game_title">7. Pikmin Bloom in-game settings (do it yourself)</string>
+    <!-- verify: Pikmin Bloom English in-game menu names ("Privacy & Steps", "Steps", "Open settings") and Health Connect labels ("Add access", "Access data in the background") -->
+    <string name="setup_game_desc">Pikmin Bloom: Settings → Privacy &amp; Steps → Steps → choose Health Connect → Open settings → allow reading steps → Add access → allow \"Access data in the background\".\nPhone settings → Apps → Pikmin Bloom → Permissions → Location → Allow all the time.</string>
+    <string name="action_open_settings_app_info">Open app info</string>
+    <string name="action_open_pikmin">Open Pikmin Bloom</string>
+    <string name="action_pikmin_app_info">Pikmin Bloom app info</string>
+    <string name="toast_pikmin_not_installed">Pikmin Bloom not found. Please install it first.</string>
+    <string name="toast_no_activity">Couldn\'t find a system settings screen to open</string>
 
-    <!-- ============================ 設定頁 ============================ -->
-    <string name="pref_cat_walk">走路</string>
-    <string name="pref_orbit_title">抵達後在大花圈內繞行</string>
-    <string name="pref_orbit_summary">開啟：抵達大花後在 40 公尺圈內來回種花（衝開花用）。關閉：只經過大花，直接前往下一個。</string>
-    <string name="hc_priority_warning_title">步數沒有被計入</string>
-    <string name="hc_priority_warning_msg">本 App 已寫入 %1$d 步，但 Health Connect 今日總計只有 %2$d 步，代表本 App 不在「資料來源」清單中，遊戲讀不到這些步數。
+    <!-- ============================ Settings screen ============================ -->
+    <string name="pref_cat_walk">Walking</string>
+    <string name="pref_orbit_title">Circle the Big Flower after arriving</string>
+    <string name="pref_orbit_summary">On: after reaching a Big Flower, walk back and forth within 40 m to plant flowers (to help it bloom faster). Off: just pass the Big Flower and head straight to the next one.</string>
+    <string name="hc_priority_warning_title">Steps aren\'t being counted</string>
+    <!-- verify: Health Connect English menu names "Manage data", "Data sources and priority", "Add data source" -->
+    <string name="hc_priority_warning_msg">This app has written %1$d steps, but today\'s Health Connect total is only %2$d steps. That means this app isn\'t in the \"Data sources\" list, so the game can\'t read these steps.
 
-請到 Health Connect →「管理資料」→「資料來源與優先順序」→「新增資料來源」→ 選「皮克敏巡花助手」。</string>
-    <string name="action_open_hc_sources">開啟 Health Connect</string>
-    <string name="pref_speed_title">走路速度</string>
-    <string name="pref_stride_title">步幅</string>
-    <string name="pref_loop_mode_title">路線模式</string>
+Go to Health Connect → \"Manage data\" → \"Data sources and priority\" → \"Add data source\" → choose \"Pikmin Bloom GPS\".</string>
+    <string name="action_open_hc_sources">Open Health Connect</string>
+    <string name="pref_speed_title">Walking speed</string>
+    <string name="pref_stride_title">Stride</string>
+    <string name="pref_loop_mode_title">Route mode</string>
 
-    <string name="pref_cat_vehicle">交通工具速度</string>
-    <string name="pref_speed_car_title">其他</string>
-    <string name="pref_speed_highway_title">汽車</string>
-    <string name="pref_stay_ask_title">前往後停在這裡：超過幾公里先問怎麼去</string>
-    <string name="pref_stay_ask_summary">%1$s 公里以上用走的，會先問要走路（寫步數）還是搭交通工具（不寫步數）。填 0 不問</string>
-    <string name="pref_stay_ask_never">不詢問（填了 0）</string>
-    <string name="fmt_km">%1$s 公里</string>
-    <string name="pref_speed_plane_title">飛機</string>
-    <string name="pref_speed_vehicle_hint">交通工具一律不計步。遊戲約 15–20 km/h 以上停止種花，設在那以下遊戲仍會種花。範圍 5–1200 km/h，巡邏中改了下一秒生效。</string>
-    <string name="toast_vehicle_speed_range">請輸入 %1$d–%2$d 之間的數字</string>
-    <string name="pref_cat_steps">步數</string>
-    <string name="pref_inject_steps_title">寫入步數到 Health Connect</string>
-    <string name="pref_inject_steps_summary">關閉後只模擬定位，不寫入任何步數</string>
-    <string name="pref_step_flush_title">步數寫入間隔</string>
-    <string name="pref_speed_hint">預設 18 km/h，實測最穩。19–20 km/h 在手機過熱卡頓時，恢復的瞬間可能一次衝一段距離，遊戲可能當成坐車。上限 20 km/h，自行選擇。</string>
-    <string name="pref_daily_cap_title">每日步數上限</string>
-    <string name="pref_daily_cap_unlimited">不限制（留空）</string>
-    <string name="toast_daily_cap_invalid">請輸入正整數，或留空代表不限制</string>
-    <string name="pref_delete_today_title">刪除本 App 今日寫入的步數</string>
-    <string name="pref_delete_today_summary">只會刪除本 App 自己寫入的紀錄，不影響手機原本的步數</string>
-    <string name="dlg_delete_steps_title">刪除今日步數</string>
-    <string name="dlg_delete_steps_msg">將刪除本 App 今天寫入 Health Connect 的步數與距離紀錄，確定嗎？</string>
-    <string name="toast_delete_steps_ok">已刪除今日寫入的紀錄</string>
-    <string name="toast_delete_steps_failed">刪除失敗（Health Connect 不可用或沒有權限）</string>
+    <string name="pref_cat_vehicle">Vehicle speeds</string>
+    <string name="pref_speed_car_title">Other</string>
+    <string name="pref_speed_highway_title">Car</string>
+    <string name="pref_stay_ask_title">Go and stay there: ask how to travel when farther than (km)</string>
+    <string name="pref_stay_ask_summary">From %1$s km on foot, asks first whether to walk (writes steps) or take a vehicle (no steps). Enter 0 to never ask</string>
+    <string name="pref_stay_ask_never">Never ask (set to 0)</string>
+    <string name="fmt_km">%1$s km</string>
+    <string name="pref_speed_plane_title">Plane</string>
+    <string name="pref_speed_vehicle_hint">Vehicles never count steps. The game stops planting flowers above about 15–20 km/h; below that, it still plants. Range 5–1200 km/h. Changes during a patrol apply the next second.</string>
+    <string name="toast_vehicle_speed_range">Please enter a number from %1$d to %2$d</string>
+    <string name="pref_cat_steps">Steps</string>
+    <string name="pref_inject_steps_title">Write steps to Health Connect</string>
+    <string name="pref_inject_steps_summary">When off, only the location is mocked and no steps are written</string>
+    <string name="pref_step_flush_title">Step write interval</string>
+    <string name="pref_speed_hint">Default 18 km/h, the most stable in testing. At 19–20 km/h, if your phone overheats and stutters, it may jump a whole stretch the moment it recovers, and the game may think you\'re in a car. Max 20 km/h, your choice.</string>
+    <string name="pref_daily_cap_title">Daily step cap</string>
+    <string name="pref_daily_cap_unlimited">No limit (leave empty)</string>
+    <string name="toast_daily_cap_invalid">Enter a positive whole number, or leave it empty for no limit</string>
+    <string name="pref_delete_today_title">Delete steps this app wrote today</string>
+    <string name="pref_delete_today_summary">Only deletes records written by this app; your phone\'s own steps aren\'t affected</string>
+    <string name="dlg_delete_steps_title">Delete today\'s steps</string>
+    <string name="dlg_delete_steps_msg">This deletes the step and distance records this app wrote to Health Connect today. Are you sure?</string>
+    <string name="toast_delete_steps_ok">Deleted today\'s written records</string>
+    <string name="toast_delete_steps_failed">Delete failed (Health Connect unavailable or no permission)</string>
 
-    <string name="pref_cat_location">定位</string>
-    <string name="pref_mock_network_title">同時模擬 network provider</string>
-    <string name="pref_mock_fused_title">同時模擬 fused provider</string>
-    <string name="pref_flp_mock_title">使用 Play 服務模擬模式 (FLP)</string>
-    <string name="pref_notify_arrival_title">抵達大花時通知提醒</string>
+    <string name="pref_cat_location">Location</string>
+    <string name="pref_mock_network_title">Also mock the network provider</string>
+    <string name="pref_mock_fused_title">Also mock the fused provider</string>
+    <string name="pref_flp_mock_title">Use Play services mock mode (FLP)</string>
+    <string name="pref_notify_arrival_title">Notify on arrival at a Big Flower</string>
 
-    <string name="pref_cat_about">關於</string>
-    <string name="pref_version_title">版本</string>
-    <string name="pref_disclaimer_title">免責聲明</string>
+    <string name="pref_cat_about">About</string>
+    <string name="pref_version_title">Version</string>
+    <string name="pref_disclaimer_title">Disclaimer</string>
 
     <string name="fmt_kmh">%1$s km/h</string>
-    <string name="fmt_cm">%1$s 公分</string>
-    <string name="fmt_second">%1$s 秒</string>
-    <string name="fmt_step">%1$s 步</string>
+    <string name="fmt_cm">%1$s cm</string>
+    <string name="fmt_second">%1$s s</string>
+    <string name="fmt_step">%1$s steps</string>
 
-    <!-- ============================ 浮動控制列 ============================ -->
-    <string name="menu_overlay">浮動控制列</string>
-    <string name="pref_cat_overlay">浮動控制</string>
-    <string name="pref_overlay_title">巡邏時顯示浮動控制列</string>
-    <string name="pref_overlay_summary">在 Pikmin Bloom 上層顯示小懸浮視窗，可直接暫停 / 回家 / 停止。需要「顯示在其他應用程式上層」權限。</string>
-    <string name="dlg_overlay_permission_title">需要懸浮視窗權限</string>
-    <string name="dlg_overlay_permission_msg">浮動控制列需要「顯示在其他應用程式上層」權限。\nHyperOS / 小米還要另外開啟「後台彈出介面」，浮動控制列才會出現在遊戲上層。要現在去設定嗎？</string>
-    <string name="toast_overlay_shown">已顯示浮動控制列（長按小花可固定 / 取消固定）</string>
-    <string name="toast_overlay_hidden">已隱藏浮動控制列</string>
-    <string name="toast_overlay_denied">尚未取得懸浮視窗權限</string>
-    <string name="toast_overlay_pinned">已固定：巡邏結束也不會自動隱藏</string>
-    <string name="toast_overlay_unpinned">已取消固定：巡邏結束後自動隱藏</string>
+    <!-- ============================ Floating bar ============================ -->
+    <string name="menu_overlay">Floating bar</string>
+    <string name="pref_cat_overlay">Floating bar</string>
+    <string name="pref_overlay_title">Show floating bar while patrolling</string>
+    <string name="pref_overlay_summary">Shows a small floating window over Pikmin Bloom so you can pause / go home / stop right there. Needs the \"Display over other apps\" permission.</string>
+    <string name="dlg_overlay_permission_title">Overlay permission needed</string>
+    <!-- verify: Xiaomi English permission name "Display pop-up windows while running in the background" -->
+    <string name="dlg_overlay_permission_msg">The floating bar needs the \"Display over other apps\" permission.\nOn HyperOS / Xiaomi, also turn on \"Display pop-up windows while running in the background\", or the floating bar won\'t appear over the game. Go to settings now?</string>
+    <string name="toast_overlay_shown">Floating bar shown (long-press the flower to pin / unpin)</string>
+    <string name="toast_overlay_hidden">Floating bar hidden</string>
+    <string name="toast_overlay_denied">Overlay permission not granted yet</string>
+    <string name="toast_overlay_pinned">Pinned: stays visible after the patrol ends</string>
+    <string name="toast_overlay_unpinned">Unpinned: hides automatically after the patrol ends</string>
 
-    <string name="ovl_phase_idle">閒置</string>
-    <string name="ovl_phase_starting">準備中</string>
-    <string name="ovl_phase_walking">巡邏中</string>
-    <string name="ovl_phase_dwelling">種花中</string>
-    <string name="ovl_phase_paused">已暫停</string>
-    <string name="ovl_phase_returning">回家中</string>
-    <string name="ovl_phase_stopping">停止中</string>
-    <string name="ovl_stopped">已停止</string>
+    <string name="ovl_phase_idle">Idle</string>
+    <string name="ovl_phase_starting">Starting</string>
+    <string name="ovl_phase_walking">Patrolling</string>
+    <string name="ovl_phase_dwelling">Planting</string>
+    <string name="ovl_phase_paused">Paused</string>
+    <string name="ovl_phase_returning">Going home</string>
+    <string name="ovl_phase_stopping">Stopping</string>
+    <string name="ovl_stopped">Stopped</string>
     <string name="ovl_target">%1$s %2$s</string>
-    <string name="ovl_steps">今日 %1$d 步</string>
+    <string name="ovl_steps">%1$d steps today</string>
     <string name="ovl_separator">·</string>
-    <string name="ovl_arrived">已抵達 %1$s，可領花蜜</string>
-    <string name="ovl_returned_home">已回到家</string>
-    <string name="ovl_cd_handle">浮動控制列</string>
-    <!-- The bar's 定位／回家 dialog could not be shown (overlay permission revoked meanwhile), T18b. -->
-    <string name="ovl_dialog_failed">請回主畫面操作</string>
-    <string name="ovl_cd_pause">暫停</string>
-    <string name="ovl_cd_resume">繼續</string>
-    <string name="ovl_cd_home">回家</string>
-    <string name="ovl_cd_stop">停止</string>
-    <string name="ovl_cd_open">開啟主畫面</string>
+    <string name="ovl_arrived">At %1$s, collect Nectar</string>
+    <string name="ovl_returned_home">Back home</string>
+    <string name="ovl_cd_handle">Floating bar</string>
+    <!-- The bar's Location / Go home dialog could not be shown (overlay permission revoked meanwhile), T18b. -->
+    <string name="ovl_dialog_failed">Please use the main screen</string>
+    <string name="ovl_cd_pause">Pause</string>
+    <string name="ovl_cd_resume">Resume</string>
+    <string name="ovl_cd_home">Go home</string>
+    <string name="ovl_cd_stop">Stop</string>
+    <string name="ovl_cd_open">Open main screen</string>
 
     <string-array name="loop_mode_entries">
-        <item>循環</item>
-        <item>來回</item>
-        <item>單趟後回家</item>
-    </string-array>
-    <string-array name="loop_mode_values">
-        <item>LOOP</item>
-        <item>PINGPONG</item>
-        <item>ONCE</item>
+        <item>Loop</item>
+        <item>Back and forth</item>
+        <item>Once, then home</item>
     </string-array>
 </resources>

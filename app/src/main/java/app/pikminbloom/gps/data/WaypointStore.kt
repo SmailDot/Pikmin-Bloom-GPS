@@ -2,6 +2,7 @@ package app.pikminbloom.gps.data
 
 import android.content.Context
 import android.util.Log
+import app.pikminbloom.gps.i18n.tr
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
@@ -70,7 +71,7 @@ class WaypointStore private constructor(context: Context) {
     fun save(list: List<Waypoint>) {
         val active = state.active ?: run {
             // No routes at all yet (fresh install): create one so the list has somewhere to live.
-            val created = Route(UUID.randomUUID().toString(), DEFAULT_ROUTE_NAME, list)
+            val created = Route(UUID.randomUUID().toString(), defaultRouteName, list)
             commit(Snapshot(listOf(created), created.id))
             return
         }
@@ -102,7 +103,7 @@ class WaypointStore private constructor(context: Context) {
         val source = copyFromId?.let { id -> state.routes.firstOrNull { it.id == id } }
         val route = Route(
             id = UUID.randomUUID().toString(),
-            name = uniqueName(name.ifBlank { DEFAULT_ROUTE_NAME }),
+            name = uniqueName(name.ifBlank { defaultRouteName }),
             waypoints = source?.waypoints.orEmpty(),
             travelMode = if (source != null) source.travelMode else travelMode,
         )
@@ -121,7 +122,7 @@ class WaypointStore private constructor(context: Context) {
     fun deleteRoute(id: String) {
         val remaining = state.routes.filterNot { it.id == id }
         if (remaining.isEmpty()) {
-            val fresh = Route(UUID.randomUUID().toString(), DEFAULT_ROUTE_NAME, emptyList())
+            val fresh = Route(UUID.randomUUID().toString(), defaultRouteName, emptyList())
             commit(Snapshot(listOf(fresh), fresh.id))
             return
         }
@@ -177,7 +178,7 @@ class WaypointStore private constructor(context: Context) {
                     val r = routesArr.optJSONObject(i) ?: continue
                     val wps = parseWaypoints(r.optJSONArray("waypoints") ?: JSONArray())
                     if (wps.isEmpty()) continue
-                    imported.add(Route(UUID.randomUUID().toString(), uniqueName(r.optString("name").ifBlank { DEFAULT_ROUTE_NAME }), wps))
+                    imported.add(Route(UUID.randomUUID().toString(), uniqueName(r.optString("name").ifBlank { defaultRouteName }), wps))
                 }
                 if (imported.isEmpty()) return 0
                 commit(Snapshot(state.routes + imported, imported.first().id))
@@ -251,7 +252,7 @@ class WaypointStore private constructor(context: Context) {
                                 }
                                 val wp = Waypoint(
                                     id = UUID.randomUUID().toString(),
-                                    name = name?.takeIf { it.isNotBlank() } ?: "大花 ${out.size + fallback.size + 1}",
+                                    name = name?.takeIf { it.isNotBlank() } ?: defaultFlowerName(out.size + fallback.size + 1),
                                     lat = la, lon = lo,
                                     radiusM = radius.coerceIn(8.0, 40.0),
                                     dwellSec = dwell.coerceIn(0, 1800),
@@ -283,7 +284,7 @@ class WaypointStore private constructor(context: Context) {
     }
 
     private fun emptySnapshot(): Snapshot {
-        val r = Route(UUID.randomUUID().toString(), DEFAULT_ROUTE_NAME, emptyList())
+        val r = Route(UUID.randomUUID().toString(), defaultRouteName, emptyList())
         return Snapshot(listOf(r), r.id)
     }
 
@@ -318,7 +319,7 @@ class WaypointStore private constructor(context: Context) {
                     routes.add(
                         Route(
                             id = r.optString("id").takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
-                            name = r.optString("name").takeIf { it.isNotBlank() } ?: "$DEFAULT_ROUTE_NAME ${i + 1}",
+                            name = r.optString("name").takeIf { it.isNotBlank() } ?: "$defaultRouteName ${i + 1}",
                             waypoints = parseWaypoints(r.optJSONArray("waypoints") ?: JSONArray()),
                             travelMode = runCatching { TravelMode.valueOf(r.optString("travelMode")) }.getOrDefault(TravelMode.WALK),
                         )
@@ -331,7 +332,7 @@ class WaypointStore private constructor(context: Context) {
         }
         // v1 or a bare array: one route holding everything.
         val migrated = parseAnyWaypoints(trimmed)
-        val r = Route(UUID.randomUUID().toString(), DEFAULT_ROUTE_NAME, migrated)
+        val r = Route(UUID.randomUUID().toString(), defaultRouteName, migrated)
         Log.i(TAG, "migrated ${migrated.size} waypoints from the old single-list format")
         return Snapshot(listOf(r), r.id)
     }
@@ -352,7 +353,7 @@ class WaypointStore private constructor(context: Context) {
             out.add(
                 Waypoint(
                     id = o.optString("id").takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
-                    name = o.optString("name").takeIf { it.isNotBlank() } ?: "大花 ${i + 1}",
+                    name = o.optString("name").takeIf { it.isNotBlank() } ?: defaultFlowerName(i + 1),
                     lat = lat, lon = lon,
                     radiusM = o.optDouble("radiusM", Waypoint.DEFAULT_RADIUS_M).coerceIn(8.0, 40.0),
                     dwellSec = o.optInt("dwellSec", Waypoint.DEFAULT_DWELL_SEC).coerceIn(0, 1800),
@@ -367,7 +368,11 @@ class WaypointStore private constructor(context: Context) {
     companion object {
         private const val TAG = "PikminGPS"
         private const val FILE_NAME = "waypoints.json"
-        const val DEFAULT_ROUTE_NAME = "巡邏 1"
+        /** Name of a route nobody named, in the app's language (i18n.Lang). */
+        val defaultRouteName: String get() = tr("巡邏 1", "Patrol 1", "巡回 1")
+
+        /** "大花 3": a Big Flower imported without a name. */
+        fun defaultFlowerName(n: Int): String = tr("大花 $n", "Big Flower $n", "おおきな花 $n")
 
         @Volatile private var instance: WaypointStore? = null
 

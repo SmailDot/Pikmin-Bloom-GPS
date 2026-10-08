@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the OpenStreetMap candidate search (ui/OverpassSearch.kt). Kept in a separate file
+     so it can be edited without touching the main strings.xml. -->
+<resources>
+    <string name="menu_find_candidates">搜尋附近候選大花</string>
+    <string name="overpass_search_short">搜尋附近</string>
+    <string name="overpass_title">搜尋附近候選大花</string>
+    <string name="overpass_explain">Niantic 不公開大花座標。大花長在 Wayspot（寶可夢補給站的同一批地點）上，而這些地點多半在 OpenStreetMap 有對應地標。\n\n本功能會查詢附近的紀念物、公共藝術、廟宇教堂、遊戲場、公園設施等，當成「候選點」加入清單。實際命中率約三到六成，走過去確認後把沒有大花的刪掉即可。</string>
+    <string name="overpass_need_center">還不知道要從哪裡找起。請先讓 App 取得一次你的位置，或在地圖上長按新增一個大花。</string>
+    <string name="overpass_radius_title">搜尋範圍</string>
+    <string name="overpass_radius_item">半徑 %1$d 公尺</string>
+    <string name="overpass_search">開始搜尋</string>
+    <string name="overpass_searching">查詢 OpenStreetMap 中…</string>
+    <string name="overpass_none">附近沒有找到新的候選點（已排除清單中已有的地點）。</string>
+    <string name="overpass_failed_title">搜尋失敗</string>
+    <string name="overpass_failed_msg">無法連線到 OpenStreetMap 查詢服務：%1$s\n\n請確認網路連線，或稍後再試（公用服務有流量限制）。</string>
+    <string name="overpass_pick_title">找到 %1$d 個候選點</string>
+    <string name="overpass_item">%1$s（%2$.0f 公尺）</string>
+    <string name="overpass_toggle_all">全選 / 全不選</string>
+    <string name="overpass_add">加入清單</string>
+    <string name="overpass_added">已加入 %1$d 個候選點</string>
+</resources>

@@ -1,6 +1,9 @@
 package app.pikminbloom.gps.data
 
 import app.pikminbloom.gps.geo.LatLng
+import app.pikminbloom.gps.i18n.Lang
+import app.pikminbloom.gps.i18n.Tr
+import app.pikminbloom.gps.i18n.tr
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -39,6 +42,9 @@ data class Home(val name: String, val lat: Double, val lon: Double) {
     val latLng: LatLng get() = LatLng(lat, lon)
 
     companion object {
+        /** "家 3" / "Home 3": the name a new home gets until the user types one. */
+        fun defaultName(n: Int): String = tr("家 $n", "Home $n", "家 $n")
+
         fun toJson(homes: List<Home>): String = JSONArray().also { arr ->
             homes.forEach { h -> arr.put(JSONObject().put("name", h.name).put("lat", h.lat).put("lon", h.lon)) }
         }.toString()
@@ -74,24 +80,29 @@ enum class TravelMode(
     /** Default speed; the one actually used is [PatrolConfig.speedKmhOf], which Settings can change. */
     val speedKmh: Double,
     val countsSteps: Boolean,
-    val label: String,
+    private val name3: Tr,
 ) {
-    WALK(4.7, true, "步行"),
-    BRISK(7.0, true, "快走"),
-    RUN(10.0, true, "慢跑"),
+    WALK(4.7, true, Tr("步行", "Walk", "徒歩")),
+    BRISK(7.0, true, Tr("快走", "Brisk walk", "早歩き")),
+    RUN(10.0, true, Tr("慢跑", "Jog", "ジョギング")),
     /**
      * Retired from every picker 2026-10-08 ("腳踏車可以砍掉"). Kept so checkpoints and saved trip routes
      * that name it still load; it runs at its default speed, which Settings no longer offers to change.
      */
-    BIKE(18.0, false, "腳踏車"),
+    BIKE(18.0, false, Tr("腳踏車", "Bike", "自転車")),
     /** "汽機車改成其他即可" (2026-10-08): the one free-speed vehicle; the enum name stays for stored data. */
-    CAR(45.0, false, "其他"),
+    CAR(45.0, false, Tr("其他", "Other", "その他")),
     /** Named 汽車 since 2026-10-08 (was 高速公路); the enum name stays for stored data. */
-    HIGHWAY(90.0, false, "汽車"),
-    PLANE(600.0, false, "飛機"),
+    HIGHWAY(90.0, false, Tr("汽車", "Car", "車")),
+    PLANE(600.0, false, Tr("飛機", "Plane", "飛行機")),
     ;
 
     val speedMps: Double get() = speedKmh / 3.6
+
+    /** The name shown for this mode, in the app's language (i18n.Lang). */
+    val label: String get() = name3.text
+
+    fun labelIn(lang: Lang): String = name3.of(lang)
 
     companion object {
         /** What the decor trip picker offers: every mode but the retired [BIKE]. */

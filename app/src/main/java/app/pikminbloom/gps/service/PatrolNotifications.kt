@@ -135,7 +135,7 @@ class PatrolNotifications(private val ctx: Context) {
     fun askRealForMaps() {
         val n = NotificationCompat.Builder(ctx, PikminGpsApp.CHANNEL_EVENTS)
             .setSmallIcon(R.drawable.ic_flower)
-            .setContentTitle(RealModeCopy.MAPS_TITLE)
+            .setContentTitle(RealModeCopy.mapsTitle())
             .setContentText(ctx.getString(R.string.svc_maps_ask_text))
             .setStyle(NotificationCompat.BigTextStyle().bigText(ctx.getString(R.string.svc_maps_ask_text)))
             .setAutoCancel(true)

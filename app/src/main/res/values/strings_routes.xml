@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Saved patrol routes and the newer patrol options. Separate file to keep merges simple. -->
 <resources>
-    <string name="route_picker_title">選擇巡邏路線</string>
-    <string name="route_item">%1$s（%2$d 個大花）</string>
-    <string name="route_new">新增路線</string>
-    <string name="route_manage">管理路線</string>
-    <string name="route_rename">重新命名</string>
-    <string name="route_duplicate">複製一份</string>
-    <string name="route_delete">刪除路線</string>
-    <string name="route_delete_msg">確定要刪除路線「%1$s」嗎？裡面的 %2$d 個大花會一起刪除，無法復原。</string>
-    <string name="route_copy_name">%1$s 副本</string>
-    <string name="route_name_hint">路線名稱，例如「公司附近」</string>
-    <string name="fmt_lap">%1$s 圈</string>
+    <string name="route_picker_title">Choose patrol route</string>
+    <string name="route_item">%1$s (%2$d Big Flowers)</string>
+    <string name="route_new">New route</string>
+    <string name="route_manage">Manage routes</string>
+    <string name="route_rename">Rename</string>
+    <string name="route_duplicate">Duplicate</string>
+    <string name="route_delete">Delete route</string>
+    <string name="route_delete_msg">Delete the route \"%1$s\"? Its %2$d Big Flowers will be deleted too. This can\'t be undone.</string>
+    <string name="route_copy_name">%1$s copy</string>
+    <string name="route_name_hint">Route name, e.g. \"Near work\"</string>
+    <string name="fmt_lap">%1$s laps</string>
 
     <!-- Patrol options added 2026-09-10 -->
-    <string name="pref_cat_alerts">提醒與省電</string>
-    <string name="pref_vibrate_title">抵達大花時震動</string>
-    <string name="pref_vibrate_summary">關閉可省電。震動馬達比模擬定位本身還耗電，路線上大花越多影響越大。關閉後仍會有通知。</string>
-    <string name="pref_alert_gap_title">提醒最短間隔（秒）</string>
-    <string name="pref_alert_gap_summary">連續經過多個大花時，至少間隔這麼久才會再震動一次。</string>
-    <string name="pref_auto_return_title">巡邏幾圈後自動回家</string>
-    <string name="pref_auto_return_summary">走完設定的圈數就自動走回真實位置並解除模擬。填 0 表示不限制，直到你自己按「回家」。</string>
+    <string name="pref_cat_alerts">Alerts and battery</string>
+    <string name="pref_vibrate_title">Vibrate at Big Flowers</string>
+    <string name="pref_vibrate_summary">Turn off to save battery. The vibration motor uses more power than the mock location itself, and the more Big Flowers on your route, the bigger the effect. You\'ll still get notifications when it\'s off.</string>
+    <string name="pref_alert_gap_title">Minimum alert interval (seconds)</string>
+    <string name="pref_alert_gap_summary">When you pass several Big Flowers in a row, wait at least this long before vibrating again.</string>
+    <string name="pref_auto_return_title">Go home after laps</string>
+    <string name="pref_auto_return_summary">After the set number of laps, walk back to your real location and turn off the mock automatically. Enter 0 for no limit, until you tap \"Go home\" yourself.</string>
 </resources>

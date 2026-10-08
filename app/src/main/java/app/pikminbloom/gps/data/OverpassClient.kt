@@ -3,6 +3,8 @@ package app.pikminbloom.gps.data
 import android.util.Log
 import app.pikminbloom.gps.geo.GeoMath
 import app.pikminbloom.gps.geo.LatLng
+import app.pikminbloom.gps.i18n.Lang
+import app.pikminbloom.gps.i18n.tr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -340,13 +342,16 @@ object OverpassClient {
         return best
     }
 
-    private fun pickName(tags: JSONObject): String? =
-        listOf("name:zh-Hant", "name:zh", "name", "name:en", "official_name")
-            .firstNotNullOfOrNull { tags.optString(it).takeIf { s -> s.isNotBlank() } }
+    /** The place's name in the app's language when OpenStreetMap has one, else its local name. */
+    private fun pickName(tags: JSONObject): String? = when (Lang.current) {
+        Lang.ZH -> listOf("name:zh-Hant", "name:zh-TW", "name:zh", "name", "name:en", "official_name")
+        Lang.JA -> listOf("name:ja", "name", "name:en", "official_name")
+        Lang.EN -> listOf("name:en", "name", "official_name")
+    }.firstNotNullOfOrNull { tags.optString(it).takeIf { s -> s.isNotBlank() } }
 
     private fun fallbackName(tags: JSONObject): String {
         val kind = listOf("historic", "memorial", "tourism", "amenity", "leisure", "man_made")
             .firstNotNullOfOrNull { tags.optString(it).takeIf { s -> s.isNotBlank() } }
-        return kind ?: "候選地點"
+        return kind ?: tr("候選地點", "Candidate", "候補地点")
     }
 }

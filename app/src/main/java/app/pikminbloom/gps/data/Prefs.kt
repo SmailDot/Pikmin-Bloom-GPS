@@ -69,7 +69,7 @@ class Prefs(context: Context) {
             if (sp.contains(KEY_CUSTOM_HOME_LAT)) {
                 val lat = java.lang.Double.longBitsToDouble(sp.getLong(KEY_CUSTOM_HOME_LAT, 0))
                 val lon = java.lang.Double.longBitsToDouble(sp.getLong(KEY_CUSTOM_HOME_LON, 0))
-                val migrated = runCatching { LatLng(lat, lon) }.map { listOf(Home("家 1", it.lat, it.lon)) }.getOrDefault(emptyList())
+                val migrated = runCatching { LatLng(lat, lon) }.map { listOf(Home(Home.defaultName(1), it.lat, it.lon)) }.getOrDefault(emptyList())
                 sp.edit { remove(KEY_CUSTOM_HOME_LAT); remove(KEY_CUSTOM_HOME_LON); putString(KEY_HOMES, Home.toJson(migrated)) }
             }
             return Home.fromJson(sp.getString(KEY_HOMES, null))

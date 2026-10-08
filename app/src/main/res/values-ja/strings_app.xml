@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notification channels (PikminGpsApp). -->
+<resources>
+    <string name="channel_patrol_name">巡回の状態</string>
+    <string name="channel_patrol_desc">巡回中に常に表示される通知</string>
+    <string name="channel_events_name">到着通知</string>
+    <string name="channel_events_desc">おおきな花への到着、帰宅完了、エラーなどのお知らせ</string>
+</resources>

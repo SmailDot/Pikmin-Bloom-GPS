@@ -1,21 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 2026-10-08: keeping the mock in place, and what happens when it slipped anyway (service/MockGuard). -->
 <resources>
-    <string name="svc_err_mock_permission_lost">系統把模擬位置權限關掉了，遊戲可能看到真實位置。請到開發者選項重新選擇本 App。</string>
-    <string name="svc_mock_lost_title">模擬位置權限被關掉了</string>
-    <string name="svc_mock_lost_text">系統把「選取模擬位置資訊應用程式」改掉了。請到 開發者選項 → 選取模擬位置資訊應用程式 → 選「皮克敏巡花助手」；或用電腦執行 adb shell appops set app.pikminbloom.gps android:mock_location allow。遊戲若已經看到真實位置，App 會停在真實位置，不會自己跳回去。</string>
-    <string name="svc_maps_ask_text">Google 地圖開著，但遊戲和地圖都看到虛擬位置。要切到真實位置請點這裡（遊戲會跳一次）；只是查店家、看評論不用理它。</string>
-    <string name="dlg_accuracy_title">建議先關掉「Google 定位準確度」</string>
-    <string name="dlg_accuracy_msg">它開著時，Play 服務會自己用附近的 Wi-Fi 和基地台算出你的真實位置；模擬只要有一點空隙，遊戲就可能看到真實位置（跳回台灣）。關掉之後只剩 GPS，而巡邏時 GPS 是本 App 模擬的。
-
-位置：設定 → 位置 → 定位服務 → Google 定位準確度（各家手機名稱略有不同）。
-
-代價：沒巡邏時，地圖等 App 在室內定位會比較慢、比較不準；開始巡邏抓真實位置可能要多等幾秒，靠窗比較快。</string>
-    <string name="action_accuracy_open">去關掉</string>
-    <string name="action_accuracy_start_anyway">照樣開始</string>
-    <string name="action_accuracy_mute">不再提醒</string>
-    <string name="svc_leak_title">遊戲看到了真實位置</string>
-    <string name="svc_leak_text">模擬定位失效，遊戲看到了真實位置（離虛擬位置 %1$s）。為了不在兩地之間來回跳，已改成「真實位置」，虛擬巡邏停在原處。要回去時開 App 按「回到虛擬位置…」（會再跳一次）。</string>
-    <string name="ovl_real_on_leak">遊戲看到了真實位置，已停在真實位置（不會自己跳回去）；要回去請按定位鈕</string>
-    <string name="snack_real_on_leak">模擬定位失效、遊戲看到了真實位置，已改成「真實位置」不再來回跳。要回去請按「回到虛擬位置…」</string>
+    <string name="svc_err_mock_permission_lost">The system turned off the mock location permission, so the game may see your real location. Go to Developer options and select this app again.</string>
+    <string name="svc_mock_lost_title">Mock location permission turned off</string>
+    <string name="svc_mock_lost_text">The system changed the \"Select mock location app\" setting. Go to Developer options → Select mock location app → choose \"Pikmin Bloom GPS\", or run adb shell appops set app.pikminbloom.gps android:mock_location allow from a computer. If the game has already seen your real location, the app stays on your real location and won\'t jump back by itself.</string>
+    <string name="svc_maps_ask_text">Google Maps is open, but the game and Maps both see the virtual location. Tap here to switch to real location (the game will jump once). If you\'re just looking up a shop or reading reviews, you can ignore this.</string>
+    <string name="dlg_accuracy_title">Turn off \"Google Location Accuracy\" first (recommended)</string>
+    <string name="dlg_accuracy_msg">While it\'s on, Play services works out your real location on its own from nearby Wi-Fi and cell towers. If the mock slips even briefly, the game may see your real location (and jump back to where you really are). With it off, only GPS is left, and during a patrol the GPS is mocked by this app.\n\nWhere: Settings → Location → Location services → Google Location Accuracy (the name varies a little by phone maker).\n\nTrade-off: when you\'re not patrolling, Maps and other apps locate you more slowly and less accurately indoors, and getting your real location when a patrol starts may take a few extra seconds (faster near a window).</string>
+    <string name="action_accuracy_open">Turn it off</string>
+    <string name="action_accuracy_start_anyway">Start anyway</string>
+    <string name="action_accuracy_mute">Don\'t remind me</string>
+    <string name="svc_leak_title">The game saw your real location</string>
+    <string name="svc_leak_text">The mock location failed and the game saw your real location (%1$s from the virtual location). To avoid jumping back and forth between the two, it switched to \"Real location\" and the virtual patrol waits where it was. To go back, open the app and tap \"Back to virtual location…\" (it jumps again).</string>
+    <string name="ovl_real_on_leak">The game saw your real location, so it stays on real location (won\'t jump back by itself). Tap the location button to go back</string>
+    <string name="snack_real_on_leak">The mock location failed and the game saw your real location, so it switched to \"Real location\" to stop jumping back and forth. To go back, tap \"Back to virtual location…\"</string>
 </resources>

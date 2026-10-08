@@ -198,6 +198,6 @@ class RealModeCopyTest {
         assertTrue(m, m.contains("跳一次"))
         assertTrue(m, m.contains("評論不用切"))
         assertTrue("no distance when unknown", !RealModeCopy.mapsMessage(null).contains("約"))
-        assertEquals("不用", RealModeCopy.MAPS_NO)
+        assertEquals("不用", RealModeCopy.mapsNo())
     }
 }

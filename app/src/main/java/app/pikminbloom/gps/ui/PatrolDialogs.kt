@@ -54,13 +54,13 @@ object PatrolDialogs {
     fun confirmRealForMaps(context: Context, state: PatrolState, onStale: (String) -> Unit): AlertDialog? {
         RealModeCopy.staleSwitchText(true, state.phase)?.let { onStale(it); return null }
         val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle(RealModeCopy.MAPS_TITLE)
+            .setTitle(RealModeCopy.mapsTitle())
             .setMessage(RealModeCopy.mapsMessage(RealModeCopy.jumpMeters(state.home, state.position)))
             .setPositiveButton(RealModeCopy.confirmButton(toReal = true)) { _, _ ->
                 val stale = RealModeCopy.staleSwitchText(true, PatrolService.state.value.phase)
                 if (stale != null) onStale(stale) else PatrolService.switchToReal(context)
             }
-            .setNegativeButton(RealModeCopy.MAPS_NO, null)
+            .setNegativeButton(RealModeCopy.mapsNo(), null)
             .create()
         dialog.setCanceledOnTouchOutside(true)
         armAfterDelay(dialog) { it.getButton(DialogInterface.BUTTON_POSITIVE) }

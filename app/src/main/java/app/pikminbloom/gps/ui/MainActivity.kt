@@ -1133,13 +1133,13 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     }
 
     private fun promptHomeName(p: LatLng) {
-        val (input, box) = textInput(initial = "家 ${prefs.homes.size + 1}")
+        val (input, box) = textInput(initial = Home.defaultName(prefs.homes.size + 1))
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.dlg_home_name_title)
             .setMessage(p.toString())
             .setView(box)
             .setPositiveButton(R.string.action_save) { _, _ ->
-                val name = input.text?.toString()?.trim().orEmpty().ifEmpty { "家 ${prefs.homes.size + 1}" }
+                val name = input.text?.toString()?.trim().orEmpty().ifEmpty { Home.defaultName(prefs.homes.size + 1) }
                 prefs.homes = prefs.homes + Home(name, p.lat, p.lon)
                 rebuildOverlays()
                 center(p)

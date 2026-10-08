@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the decor hunt (ui/DecorHunt.kt): pick a Pikmin Bloom decor, find real-world places
+     of that category on OpenStreetMap, judge purity, and turn one into a waypoint / route. -->
+<resources>
+    <string name="decor_hunt_short">デコ探し</string>
+    <string name="decor_hunt_title">デコ探し</string>
+    <string name="decor_need_center">どこから探せばよいかまだ分かりません。先にアプリで一度現在地を取得するか、地図を長押ししておおきな花を追加してください。</string>
+
+    <!-- picker -->
+    <string name="decor_pick_title">どのデコを探しますか？</string>
+    <string name="decor_pick_filter_hint">デコや場所で絞り込み</string>
+    <string name="decor_pick_empty">一致するデコがありません</string>
+    <string name="decor_pick_next">次へ</string>
+    <string name="decor_pick_none_selected">先にデコを 1 つ選んでください</string>
+
+    <!-- radius -->
+    <string name="decor_radius_title">%1$s：検索範囲</string>
+    <string name="decor_radius_item">半径 %1$d km</string>
+    <string name="decor_radius_search">検索開始</string>
+
+    <!-- search -->
+    <string name="decor_searching">OpenStreetMap で「%1$s」を検索中…</string>
+    <string name="decor_failed_title">検索に失敗しました</string>
+    <string name="decor_failed_msg">OpenStreetMap の検索サービスに接続できません：%1$s\n\nネットワーク接続を確認するか、しばらくしてからもう一度お試しください（公開サービスには利用制限があります）。</string>
+    <string name="decor_none">半径 %1$d km 以内に「%2$s」は見つかりませんでした。範囲を広げてみてください。</string>
+
+    <!-- results -->
+    <string name="decor_results_title">%1$s：%2$d か所</string>
+    <string name="decor_results_explain">単一スポット＝120 m 以内にほかのデコのカテゴリーがなく、行けばこのデコだけが手に入る場所です。上位 5 件は自動でチェックされます。残りは「さらにチェック」で確認できます。</string>
+    <string name="decor_results_check_more">さらにチェック</string>
+    <string name="decor_results_all_checked">すべてチェック済み</string>
+    <string name="decor_purity_unchecked">未チェック</string>
+    <string name="decor_purity_failed">チェック不可</string>
+
+    <!-- confirm -->
+    <string name="decor_confirm_title">「%1$s」へ向かう</string>
+    <string name="decor_confirm_summary">デコ：%1$s\n場所：%2$s\n距離：%3$s\n純度：%4$s</string>
+    <string name="decor_confirm_travel_label">移動方法</string>
+    <string name="decor_confirm_travel_note">乗り物（その他、車、飛行機）は歩数を書き込まず、途中で花植えもしません。到着してから徒歩の速さで周回します。</string>
+    <string name="decor_confirm_radius_hint">到着後の周回半径（m）</string>
+    <string name="decor_confirm_radius_helper">リストの上限は 8–40 m です。超えた場合は 40 に縮めます。</string>
+    <string name="decor_confirm_radius_clamped">40 を超えています。追加時に 40 m に縮めます。</string>
+    <string name="decor_confirm_minutes_hint">到着後の周回時間（分、0–30）</string>
+    <!-- The quoted setting name is pref_orbit_title. -->
+    <string name="decor_confirm_minutes_note">設定「到着後、おおきな花の円内を周回」がオンのときだけ有効です。</string>
+    <string name="decor_confirm_add">リストに追加</string>
+    <string name="decor_confirm_new_route">専用ルートを作成</string>
+    <string name="decor_confirm_new_route_hint">「%1$s」という名前のルートを別に作成して切り替えます。現在のルートは変わりません。</string>
+    <string name="decor_confirm_err_radius">1–500 の数値を入力してください</string>
+    <string name="decor_confirm_err_minutes">0–30 の整数を入力してください</string>
+    <string name="decor_added_to_list">「%1$s」をルート「%2$s」に追加しました</string>
+    <string name="decor_route_created">ルート「%1$s」を作成して切り替えました。メイン画面に戻って「巡回開始」をタップすると出発します。</string>
+</resources>

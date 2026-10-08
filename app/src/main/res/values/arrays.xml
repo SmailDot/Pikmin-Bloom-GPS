@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Stored values of the loop mode preference; the shown names (loop_mode_entries) are translated. -->
+    <string-array name="loop_mode_values" translatable="false">
+        <item>LOOP</item>
+        <item>PINGPONG</item>
+        <item>ONCE</item>
+    </string-array>
+</resources>

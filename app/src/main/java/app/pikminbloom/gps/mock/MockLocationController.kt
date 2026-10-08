@@ -21,6 +21,7 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import app.pikminbloom.gps.data.PatrolConfig
 import app.pikminbloom.gps.geo.LatLng
+import app.pikminbloom.gps.i18n.tr
 import app.pikminbloom.gps.sim.Sample
 import app.pikminbloom.gps.sim.WalkSimulator
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -200,7 +201,11 @@ class MockLocationController(context: Context) {
 
         if (activeProviders.isEmpty()) {
             throw MockNotAllowedException(
-                security?.message ?: "無法啟用模擬位置提供者，請確認已在開發者選項選擇本 App"
+                security?.message ?: tr(
+                    "無法啟用模擬位置提供者，請確認已在開發者選項選擇本 App",
+                    "Could not enable the mock location providers. Check that this app is the mock location app in Developer options.",
+                    "擬似位置プロバイダを有効にできません。開発者向けオプションでこのアプリが仮の現在地情報アプリに選ばれているか確認してください。",
+                )
             )
         }
 

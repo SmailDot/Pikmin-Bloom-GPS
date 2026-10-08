@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="svc_phase_idle">アイドル</string>
+    <string name="svc_phase_starting">準備中：実際の位置を取得中…</string>
+    <string name="svc_phase_walking">巡回中：%1$s へ移動中</string>
+    <string name="svc_phase_dwelling">「%1$s」の円内で花植え中</string>
+    <string name="svc_phase_paused">一時停止中（位置を固定）</string>
+    <string name="svc_phase_returning">帰宅中…残り %1$s</string>
+    <string name="svc_phase_stopping">停止しています…</string>
+    <string name="svc_status_line">移動 %1$s · 今回 %2$d 歩 · 本日書き込み %3$d 歩</string>
+    <string name="svc_action_pause">一時停止</string>
+    <string name="svc_action_resume">再開</string>
+    <string name="svc_action_home">帰宅</string>
+    <string name="svc_action_stop">停止</string>
+    <string name="svc_arrived_title">「%1$s」に到着</string>
+    <string name="svc_arrived_text">ゲーム内でおおきな花をタップし、下にスワイプしてミツを集めましょう。アプリは円内で花植えを続けます。</string>
+    <string name="svc_home_title">実際の位置に戻りました</string>
+    <string name="svc_home_text">擬似位置を解除しました。ゲームには実際の GPS が見えています。</string>
+    <string name="svc_error_title">巡回でエラーが発生しました</string>
+    <string name="svc_err_not_mock_app">「開発者向けオプション → 仮の現在地情報アプリを選択」でこのアプリがまだ選択されていません</string>
+    <string name="svc_err_no_location_permission">位置情報の権限がないため開始できません</string>
+    <string name="svc_err_no_home">実際の位置を取得できません（ほかの擬似位置アプリを終了し、GPS がオンになっているか確認してください）</string>
+    <string name="svc_err_no_waypoints">おおきな花がまだ追加されていません</string>
+    <string name="svc_err_background_start">先にアプリのメイン画面を開いてから「巡回開始」をタップしてください。Android ではバックグラウンドから位置情報サービスを開始できません。</string>
+    <string name="svc_err_no_checkpoint">再開できる巡回記録が見つかりません</string>
+    <string name="svc_err_checkpoint_pending">前回の巡回が未処理です：先にメイン画面で「中断したところから再開」か「破棄」を選んでください</string>
+    <string name="svc_target_home">家</string>
+    <string name="svc_target_joystick">ジョイスティック</string>
+
+    <!-- Custom home (PatrolPhase.PARKED) and the joystick (PatrolPhase.MANUAL), added 2026-09-12 -->
+    <string name="svc_phase_parked">登録した家に戻りました（擬似位置は維持中）</string>
+    <string name="svc_phase_manual">ジョイスティック操作中</string>
+    <string name="svc_parked_title">登録した家に戻りました</string>
+    <string name="svc_parked_text">擬似位置は維持中なので、ゲームではまだここにいることになっています。「再開」でもう1周、「停止」で実際の GPS 位置に戻ります。</string>
+
+    <!-- Real location (PatrolPhase.SUSPENDED), 2026-10-03 -->
+    <string name="svc_phase_suspended">実際の位置：「仮想位置に戻る…」をタップすると仮想の巡回に戻ります</string>
+    <string name="svc_err_suspended">現在は実際の位置です。先に「仮想位置に戻る…」をタップしてください</string>
+</resources>

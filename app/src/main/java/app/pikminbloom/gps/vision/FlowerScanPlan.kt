@@ -3,6 +3,7 @@ package app.pikminbloom.gps.vision
 import app.pikminbloom.gps.data.Waypoint
 import app.pikminbloom.gps.geo.GeoMath
 import app.pikminbloom.gps.geo.LatLng
+import app.pikminbloom.gps.i18n.tr
 import java.util.Locale
 
 /**
@@ -31,7 +32,7 @@ object FlowerScanPlan {
         /** Dwell written into each produced [Waypoint]. */
         val dwellSec: Int = Waypoint.DEFAULT_DWELL_SEC,
         /** Name prefix; the index is appended. */
-        val namePrefix: String = "掃描花",
+        val namePrefix: String = tr("掃描花", "Scanned flower", "スキャンした花"),
         /**
          * Drop detections whose ground anchor was a fallback (no stem found). Those are typically
          * several metres out. Off by default: a slightly misplaced waypoint still lands inside the

@@ -3,7 +3,9 @@ package app.pikminbloom.gps
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.res.Configuration as AndroidConfiguration
 import android.util.Log
+import app.pikminbloom.gps.i18n.Lang
 import app.pikminbloom.gps.mock.MockLocationController
 import app.pikminbloom.gps.service.PatrolService
 import com.google.android.material.color.DynamicColors
@@ -13,6 +15,7 @@ class PikminGpsApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        Lang.refresh(this)
         DynamicColors.applyToActivitiesIfAvailable(this)
 
         // osmdroid needs a user agent for the OSM tile servers and a private cache dir.
@@ -26,6 +29,16 @@ class PikminGpsApp : Application() {
         // A new process mid-patrol means the old one was killed: the mock-health diary (MockGuard) wants to know when.
         app.pikminbloom.gps.service.MockHealthLog.append(this, "APP PROCESS START${if (app.pikminbloom.gps.service.PatrolCheckpoint.resumable(this) != null) " (a patrol checkpoint is waiting: the last one was killed)" else ""}")
         cleanupStaleMockProviders()
+    }
+
+    /**
+     * The phone's language (or, on Android 13+, this app's own language) changed: the Kotlin-built texts follow, and
+     * the notification channels are renamed (creating an existing channel again only updates its name and description).
+     */
+    override fun onConfigurationChanged(newConfig: AndroidConfiguration) {
+        super.onConfigurationChanged(newConfig)
+        Lang.refresh(this)
+        createNotificationChannels()
     }
 
     /**
@@ -52,14 +65,14 @@ class PikminGpsApp : Application() {
     private fun createNotificationChannels() {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_PATROL, "巡邏狀態", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "巡邏進行中的常駐通知"
+            NotificationChannel(CHANNEL_PATROL, getString(R.string.channel_patrol_name), NotificationManager.IMPORTANCE_LOW).apply {
+                description = getString(R.string.channel_patrol_desc)
                 setShowBadge(false)
             }
         )
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_EVENTS, "抵達提醒", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "抵達巨大花朵、回家完成、錯誤等提醒"
+            NotificationChannel(CHANNEL_EVENTS, getString(R.string.channel_events_name), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = getString(R.string.channel_events_desc)
                 enableVibration(true)
             }
         )

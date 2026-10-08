@@ -2,6 +2,8 @@ package app.pikminbloom.gps.data
 
 import app.pikminbloom.gps.geo.GeoMath
 import app.pikminbloom.gps.geo.LatLng
+import app.pikminbloom.gps.i18n.Lang
+import app.pikminbloom.gps.i18n.tr
 import org.json.JSONObject
 import java.util.Locale
 
@@ -36,14 +38,17 @@ data class LocationJump(val atMs: Long, val distanceM: Double) {
         }
 
         /** "上次跳躍 1,850 km · 2 小時 5 分鐘前", or null when there is none in the last day. */
-        fun readout(jump: LocationJump?, nowMs: Long): String? {
+        fun readout(jump: LocationJump?, nowMs: Long, lang: Lang = Lang.current): String? {
             if (jump == null) return null
             val ageMs = (nowMs - jump.atMs).coerceAtLeast(0L)
             if (ageMs > SHOW_FOR_MS) return null
             val distance = distanceText(jump.distanceM)
             val minutes = ageMs / 60_000L
-            val age = if (minutes < 60) "$minutes 分鐘前" else "${minutes / 60} 小時 ${minutes % 60} 分鐘前"
-            return "上次跳躍 $distance · $age"
+            val h = minutes / 60
+            val m = minutes % 60
+            val age = if (minutes < 60) tr("$minutes 分鐘前", "$minutes min ago", "$minutes 分前", lang)
+            else tr("$h 小時 $m 分鐘前", "$h h $m min ago", "$h 時間 $m 分前", lang)
+            return tr("上次跳躍 $distance · $age", "Last jump $distance · $age", "前回のジャンプ $distance · $age", lang)
         }
     }
 }

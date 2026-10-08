@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Crash / thermal-kill recovery (service/PatrolCheckpoint + MainActivity.maybeOfferResume). -->
+<resources>
+    <string name="dlg_resume_title">前回の巡回が正常に終了しませんでした</string>
+    <string name="dlg_resume_msg">アプリは %1$sにシステムによって終了されました（通常は過熱が原因です）。ゲームのキャラクターはまだ中断した位置にいます。\n\nルート：%2$s\n移動距離：%3$s\n家までの距離：%4$s\n\n「中断したところから再開」はその位置からそのまま歩き続けるので、ゲームにジャンプは見えません。\n「中断したところから歩いて帰宅」はその位置から再開し、前回出発した家まで歩いて戻ります。\n「破棄」は位置情報をすぐに実際の GPS に戻すため、ゲームには1回ワープしたように見えます。</string>
+    <string name="action_resume_patrol">中断したところから再開</string>
+    <string name="action_resume_go_home">中断したところから歩いて帰宅</string>
+    <string name="action_discard_checkpoint">破棄</string>
+    <string name="dlg_discard_title">破棄しますか？</string>
+    <string name="dlg_discard_msg">破棄すると、ゲームは中断した位置から実際の位置へすぐにジャンプします。2地点が遠く離れている場合、これは最も異常と判定されやすい動作です。代わりに「中断したところから歩いて帰宅」をおすすめします。</string>
+    <string name="toast_checkpoint_discarded">前回の巡回を破棄しました。位置情報は実際の GPS に戻りました</string>
+    <string name="snack_resumed">%1$sの中断ポイントから再開し、巡回を続けます</string>
+
+    <!-- Killed on real location (Prefs.suspendedAtMs): the providers were already gone, so the game sees the real GPS. -->
+    <string name="dlg_resume_msg_real">%1$sにアプリが終了されたとき、実際の位置（実際の GPS）を使っていたため、ゲームには現在あなたの実際の GPS 位置が見えています。\n\nルート：%2$s\n移動距離：%3$s\n仮想位置から家までの距離：%4$s\n\n「中断したところから再開」はゲームを仮想の巡回位置に戻し（1回ジャンプします）、そこから歩き続けます。\n「中断したところから歩いて帰宅」も先に仮想位置へジャンプしてから、前回出発した家まで歩いて戻ります。\n「破棄」はゲームを実際の位置のままにするので、ジャンプは一切ありません。</string>
+    <string name="dlg_discard_msg_real">破棄するとこの巡回の進行状況が削除されます。ゲームは実際の位置のままで、ジャンプは一切ありません。</string>
+
+    <!-- Checkpoint taken while PAUSED (ResumeCopy.usePausedText): Resume from checkpoint puts the avatar back at that spot and keeps it paused. -->
+    <string name="dlg_resume_msg_paused">アプリは %1$sにシステムによって終了されました（通常は過熱が原因です）。ゲームのキャラクターはまだ中断した位置にいます。\n\nルート：%2$s\n移動距離：%3$s\n家までの距離：%4$s\n\n中断前、巡回は一時停止中でした。\n「中断したところから再開」はキャラクターをその位置に戻して一時停止のままにするので、ゲームにジャンプは見えません。「再開」をタップすると歩き始めます。\n「中断したところから歩いて帰宅」はその位置から再開し、前回出発した家まで歩いて戻ります。\n「破棄」は位置情報をすぐに実際の GPS に戻すため、ゲームには1回ワープしたように見えます。</string>
+</resources>

@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pikmin Bloom GPS</string>
+    <!-- Which language the resources resolved to (values/ en, values-zh/ zh, values-ja/ ja): i18n.Lang reads it so the
+         texts built in Kotlin always match the XML ones. -->
+    <string name="lang_code">ja</string>
+    <string name="title_settings">設定</string>
+    <string name="title_setup">初期設定</string>
+    <string name="title_health_rationale">健康データの利用について</string>
+
+    <!-- Health Connect rationale text -->
+    <string name="health_rationale_body">このアプリは、擬似的に歩いて巡回しているあいだ、擬似的な移動距離に応じて歩数と距離を「ヘルスコネクト（Health Connect）」に書き込みます。これにより、ピクミン ブルームが歩数を読み取ってなえを育てられます。データはあなたのスマートフォン内のヘルスコネクトにのみ書き込まれ、サーバーにアップロードされることはありません。</string>
+
+    <!-- ============================ Main screen ============================ -->
+    <string name="menu_waypoint_list">おおきな花リスト</string>
+    <string name="menu_setup">初期設定</string>
+    <string name="menu_settings">設定</string>
+    <string name="menu_my_location">現在地</string>
+    <string name="menu_import">インポート</string>
+    <string name="menu_export_json">JSON をエクスポート</string>
+    <string name="menu_export_gpx">GPX をエクスポート</string>
+
+    <string name="btn_start">巡回開始</string>
+    <string name="btn_pause">一時停止</string>
+    <string name="btn_resume">再開</string>
+    <string name="btn_return_home">帰宅</string>
+    <string name="btn_stop">停止</string>
+
+    <string name="phase_idle">待機中</string>
+    <string name="phase_starting">準備中：実際の位置を取得しています…</string>
+    <string name="phase_walking">巡回中</string>
+    <string name="phase_dwelling">円内で花植え中</string>
+    <string name="phase_paused">一時停止中（位置固定）</string>
+    <string name="phase_returning">帰宅中</string>
+    <string name="phase_stopping">停止しています…</string>
+
+    <string name="status_target">現在の目標：%1$s · 距離 %2$s</string>
+    <string name="status_no_target">現在の目標：未開始</string>
+    <string name="status_waypoint_count">登録済みのおおきな花：%1$d 個</string>
+    <string name="status_walked">歩いた距離：%1$s</string>
+    <string name="status_session_steps">今回の歩数：%1$d</string>
+    <string name="status_today_steps">今日書き込んだ歩数：%1$d</string>
+    <string name="status_speed">速度：%1$s km/h</string>
+    <string name="status_error">エラー：%1$s</string>
+    <string name="status_home_none">家の位置はまだ記録されていません</string>
+    <string name="status_home_set">家：%1$s</string>
+
+    <string name="fmt_distance_m">%1$.0f m</string>
+    <string name="fmt_distance_km">%1$.2f km</string>
+    <string name="fmt_minutes_ago">%1$d 分前</string>
+    <string name="fmt_hours_ago">%1$d 時間前</string>
+
+    <!-- ============================ Big Flower dialogs ============================ -->
+    <string name="dlg_add_waypoint_title">おおきな花を追加</string>
+    <string name="dlg_edit_waypoint_title">おおきな花を編集</string>
+    <string name="hint_waypoint_name">名前</string>
+    <string name="hint_waypoint_coords">座標（緯度, 経度）</string>
+    <string name="helper_waypoint_coords">Google マップの座標や URL をそのまま貼り付けられます</string>
+    <string name="err_coords_invalid">この座標を読み取れません。「緯度, 経度」の形式で入力してください（例：35.6812, 139.7671）</string>
+    <string name="err_name_required">名前を入力してください</string>
+    <string name="default_waypoint_name">おおきな花 %1$d</string>
+
+    <string name="action_save">保存</string>
+    <string name="action_cancel">キャンセル</string>
+    <string name="action_ok">OK</string>
+    <string name="action_delete">削除</string>
+    <string name="action_edit">編集</string>
+    <string name="action_move_up">上へ移動</string>
+    <string name="action_move_down">下へ移動</string>
+    <string name="action_start_here">ここから巡回開始</string>
+    <string name="action_teleport_here">ここにワープして巡回開始</string>
+    <string name="action_teleport_now">そこへワープ（今すぐ）</string>
+    <string name="toast_teleport_now">%1$s のそばにワープしました</string>
+    <string name="action_add_waypoint">おおきな花を追加</string>
+
+    <string name="dlg_stop_title">すぐに停止しますか？</string>
+    <string name="dlg_stop_msg">すぐに停止すると、ゲームには次の瞬間に実際の位置へ戻ったように見え、ワープしたように見えます。先に「帰宅」で歩いて戻るのがおすすめです。家に着くと擬似位置は自動で解除されます。</string>
+    <string name="action_return_home_first">先に帰宅</string>
+    <string name="action_stop_anyway">すぐに停止</string>
+    <string name="dlg_import_replace_title">現在のおおきな花リストを置き換えますか？</string>
+    <string name="dlg_import_replace_msg">インポートすると、現在のおおきな花 %1$d 個が置き換えられます。この操作は元に戻せません。</string>
+    <string name="action_replace">置き換え</string>
+
+    <string name="title_waypoint_list">おおきな花リスト</string>
+    <string name="waypoint_list_empty">おおきな花はまだありません。地図を長押しすると追加できます。</string>
+    <string name="waypoint_summary">%1$.5f, %2$.5f</string>
+
+    <string name="dlg_delete_title">おおきな花を削除</string>
+    <string name="dlg_delete_message">「%1$s」を削除しますか？</string>
+
+    <!-- ============================ Pre-start checks ============================ -->
+    <string name="dlg_need_location_title">位置情報の権限が必要です</string>
+    <string name="dlg_need_location_msg">出発地点（家）を記録し、終了時に実際の位置へ戻るために、「正確な位置情報」の権限が必要です。</string>
+    <string name="dlg_need_notification_title">通知のオンをおすすめします</string>
+    <string name="dlg_need_notification_msg">通知は巡回の状態や「おおきな花に到着」のお知らせに使います。オンにしなくても巡回は続けられます。</string>
+    <string name="dlg_need_mock_title">仮の現在地情報アプリが選択されていません</string>
+    <!-- verify: HyperOS / Xiaomi Japanese menu name 「追加設定」 (Additional settings) -->
+    <string name="dlg_need_mock_msg">「設定 → 追加設定 → 開発者向けオプション → 仮の現在地情報アプリを選択」で「Pikmin Bloom GPS」を選んでから、戻ってきてください。</string>
+    <string name="dlg_no_waypoints_title">おおきな花が登録されていません</string>
+    <string name="dlg_no_waypoints_msg">まず地図を長押しして、おおきな花の位置を1つ以上追加してください。</string>
+    <string name="dlg_hc_unavailable_title">ヘルスコネクトを利用できません</string>
+    <string name="dlg_hc_unavailable_msg">ヘルスコネクトを利用できないため、歩数は書き込まれません。それでも巡回を開始しますか？</string>
+    <string name="dlg_hc_permission_title">ヘルスコネクトの権限が必要です</string>
+    <string name="dlg_hc_permission_msg">ピクミン ブルームが巡回で歩いた歩数を読み取れるように、歩数と距離の読み取り・書き込み権限が必要です。</string>
+
+    <string name="action_grant">許可する</string>
+    <string name="action_continue">続行</string>
+    <string name="action_continue_without_steps">歩数なしで続行</string>
+    <string name="action_open_developer_options">開発者向けオプションを開く</string>
+
+    <string name="toast_location_denied">位置情報の権限がないため、巡回を開始できません</string>
+    <string name="toast_locating">位置を取得しています…</string>
+    <string name="toast_location_unavailable">現在の実際の位置を取得できません</string>
+
+    <!-- ============================ Disclaimer ============================ -->
+    <string name="dlg_disclaimer_title">免責事項（必ずお読みください）</string>
+    <!-- verify: official Japanese name of Niantic's "three-strike" discipline policy (3ストライク制度) -->
+    <string name="dlg_disclaimer_msg">このアプリは GPS の位置を擬似的に変更し、歩数をヘルスコネクトに書き込みます。\n\nNiantic の利用規約では、位置情報や歩数の改ざんが明確に禁止されています。違反したアカウントは「3ストライク制度」による警告、7日間の利用停止、さらには永久停止の対象になる可能性があります。\n\n本アプリを使用することで、アカウントが処分されるリスクをすべて理解し、自己責任で負うものとします。作者は一切の責任を負いません。</string>
+    <string name="action_accept">リスクを理解して同意する</string>
+    <string name="action_exit">終了</string>
+
+    <!-- ============================ Event messages ============================ -->
+    <string name="snack_arrived">「%1$s」に到着しました。ゲーム内でおおきな花をタップし、下にスワイプしてミツを集めましょう</string>
+    <string name="snack_returned_home">実際の位置に戻りました。擬似位置を解除しました</string>
+
+    <!-- ============================ Import / export ============================ -->
+    <string name="toast_import_done">おおきな花を %1$d 個インポートしました</string>
+    <string name="toast_import_failed">インポートに失敗しました：ファイル形式を認識できません</string>
+    <string name="toast_export_done">エクスポートしました</string>
+    <string name="toast_export_failed">エクスポートに失敗しました</string>
+    <string name="export_json_filename">waypoints.json</string>
+    <string name="export_gpx_filename">waypoints.gpx</string>
+
+    <!-- ============================ Setup ============================ -->
+    <string name="setup_header">巡回を正しく動作させるため、以下の項目を順番に設定してください。このページに戻ると自動で再チェックします。</string>
+    <string name="setup_ok">完了</string>
+    <string name="setup_todo">未完了</string>
+    <string name="setup_manual">手動で確認</string>
+
+    <string name="setup_location_title">1. 位置情報の権限</string>
+    <string name="setup_location_desc">開始時に実際の位置（家）を記録し、帰宅後に実際の GPS へスムーズに切り替えるため、「正確な位置情報」が必要です。システム設定で、このアプリの位置情報の権限を「常に許可」にすることをおすすめします。</string>
+
+    <string name="setup_notification_title">2. 通知の権限</string>
+    <string name="setup_notification_desc">巡回はフォアグラウンドサービスとして動作するため、常駐通知が必要です。おおきな花に到着したときも、通知とバイブレーションでミツを集めるようお知らせします。</string>
+
+    <string name="setup_mock_title">3. 開発者向けオプション → 仮の現在地情報アプリを選択</string>
+    <!-- verify: HyperOS / Xiaomi Japanese menu names 「デバイス情報」「すべての仕様」「OS バージョン」「追加設定」 -->
+    <string name="setup_mock_desc">HyperOS / Xiaomi：設定 → デバイス情報 → すべての仕様 → 「OS バージョン」を7回タップして開発者向けオプションを有効にします。次に、設定 → 追加設定 → 開発者向けオプション → 仮の現在地情報アプリを選択 → 「Pikmin Bloom GPS」を選びます。</string>
+
+    <string name="setup_health_title">4. ヘルスコネクト（歩数）</string>
+    <string name="setup_health_desc">巡回で歩いた距離は歩数に換算されてヘルスコネクトに書き込まれ、ピクミン ブルームがなえを育てるのに使われます。歩数と距離の読み取り・書き込み権限が必要です。</string>
+    <!-- verify: Health Connect Japanese menu name 「データソースと優先度」 (Data sources and priority) -->
+    <string name="setup_health_hint">ヒント：ヘルスコネクト → データソースと優先度 で、このアプリをいちばん上に移動すると、ゲームがこのアプリの歩数を優先して使います。</string>
+    <string name="setup_health_unavailable">この端末では現在ヘルスコネクトを利用できません</string>
+    <string name="setup_health_update">ヘルスコネクトの更新が必要です</string>
+    <string name="action_open_health_connect">ヘルスコネクトを開く</string>
+
+    <string name="setup_battery_title">5. 電池の最適化から除外</string>
+    <!-- verify: HyperOS / Xiaomi Japanese labels 「バッテリーセーバー」「制限なし」「自動起動」 -->
+    <string name="setup_battery_desc">HyperOS の省電力機能はフォアグラウンドサービスを終了させてしまいます。このアプリを電池の最適化から除外し、設定 → アプリ → Pikmin Bloom GPS → バッテリーセーバー で「制限なし」を選び、「自動起動」もオンにしてください。</string>
+    <string name="action_exclude_battery">電池の最適化から除外</string>
+
+    <string name="setup_overlay_title">6. フローティングバーの権限（他のアプリの上に重ねて表示）</string>
+    <string name="setup_overlay_desc">オンにすると、ピクミン ブルームの画面上にフローティングバーを表示でき、このアプリに戻らなくても巡回の一時停止／帰宅／停止ができます。</string>
+    <!-- verify: Xiaomi Japanese permission name 「バックグラウンドで実行中にポップアップウィンドウを表示」 -->
+    <string name="setup_overlay_hint">HyperOS / Xiaomi：「他のアプリの上に重ねて表示」に加えて、設定 → アプリ → Pikmin Bloom GPS → 権限 で「バックグラウンドで実行中にポップアップウィンドウを表示」もオンにしないと、フローティングバーがゲームの上に表示されません。</string>
+    <string name="action_open_overlay_settings">重ねて表示の権限を開く</string>
+
+    <string name="setup_game_title">7. ピクミン ブルームのゲーム内設定（手動）</string>
+    <!-- verify: Pikmin Bloom Japanese in-game menu names (「プライバシー＆歩数」「歩数」「設定を開く」) and Health Connect labels (「アクセス権を追加」「バックグラウンドでのデータへのアクセス」) -->
+    <string name="setup_game_desc">ピクミン ブルーム：設定 → プライバシー＆歩数 → 歩数 → ヘルスコネクトを選択 → 設定を開く → 歩数の読み取りを許可 → アクセス権を追加 → 「バックグラウンドでのデータへのアクセス」を許可。\nスマートフォンの設定 → アプリ → ピクミン ブルーム → 権限 → 位置情報 → 常に許可。</string>
+    <string name="action_open_settings_app_info">アプリ情報を開く</string>
+    <string name="action_open_pikmin">ピクミン ブルームを開く</string>
+    <string name="action_pikmin_app_info">ピクミン ブルームのアプリ情報</string>
+    <string name="toast_pikmin_not_installed">ピクミン ブルームが見つかりません。先にインストールしてください</string>
+    <string name="toast_no_activity">開けるシステム設定画面が見つかりません</string>
+
+    <!-- ============================ Settings screen ============================ -->
+    <string name="pref_cat_walk">徒歩</string>
+    <string name="pref_orbit_title">到着後、おおきな花の円内を周回</string>
+    <string name="pref_orbit_summary">オン：おおきな花に到着後、40 m の円内を行き来して花を植えます（開花を早めたいとき）。オフ：おおきな花を通過するだけで、そのまま次へ向かいます。</string>
+    <string name="hc_priority_warning_title">歩数がカウントされていません</string>
+    <!-- verify: Health Connect Japanese menu names 「データを管理」「データソースと優先度」「データソースを追加」 -->
+    <string name="hc_priority_warning_msg">このアプリは %1$d 歩を書き込みましたが、ヘルスコネクトの今日の合計は %2$d 歩しかありません。このアプリが「データソース」に入っていないため、ゲームがこの歩数を読み取れません。
+
+ヘルスコネクト →「データを管理」→「データソースと優先度」→「データソースを追加」→「Pikmin Bloom GPS」を選んでください。</string>
+    <string name="action_open_hc_sources">ヘルスコネクトを開く</string>
+    <string name="pref_speed_title">歩く速度</string>
+    <string name="pref_stride_title">歩幅</string>
+    <string name="pref_loop_mode_title">ルートモード</string>
+
+    <string name="pref_cat_vehicle">乗り物の速度</string>
+    <string name="pref_speed_car_title">その他</string>
+    <string name="pref_speed_highway_title">車</string>
+    <string name="pref_stay_ask_title">到着したら待機：何 km を超えたら移動方法を確認するか</string>
+    <string name="pref_stay_ask_summary">徒歩で %1$s km 以上になるときは、歩く（歩数を書き込む）か乗り物を使う（歩数なし）かを先に確認します。0 にすると確認しません</string>
+    <string name="pref_stay_ask_never">確認しない（0 を入力済み）</string>
+    <string name="fmt_km">%1$s km</string>
+    <string name="pref_speed_plane_title">飛行機</string>
+    <string name="pref_speed_vehicle_hint">乗り物では歩数はカウントされません。ゲームは約 15〜20 km/h 以上で花植えが止まり、それより遅ければ花植えが続きます。範囲は 5〜1200 km/h。巡回中に変更すると次の瞬間から反映されます。</string>
+    <string name="toast_vehicle_speed_range">%1$d〜%2$d の数字を入力してください</string>
+    <string name="pref_cat_steps">歩数</string>
+    <string name="pref_inject_steps_title">ヘルスコネクトに歩数を書き込む</string>
+    <string name="pref_inject_steps_summary">オフにすると位置だけを擬似的に変更し、歩数は書き込みません</string>
+    <string name="pref_step_flush_title">歩数の書き込み間隔</string>
+    <string name="pref_speed_hint">初期値は 18 km/h で、実測では最も安定しています。19〜20 km/h では、スマートフォンが発熱して動作が重くなったとき、回復した瞬間に一気に距離が進み、ゲームに乗り物と判定されることがあります。上限は 20 km/h です。ご自身で選んでください。</string>
+    <string name="pref_daily_cap_title">1日の歩数上限</string>
+    <string name="pref_daily_cap_unlimited">制限なし（空欄）</string>
+    <string name="toast_daily_cap_invalid">正の整数を入力してください。空欄にすると制限なしになります</string>
+    <string name="pref_delete_today_title">このアプリが今日書き込んだ歩数を削除</string>
+    <string name="pref_delete_today_summary">このアプリが書き込んだ記録だけを削除します。スマートフォン本来の歩数には影響しません</string>
+    <string name="dlg_delete_steps_title">今日の歩数を削除</string>
+    <string name="dlg_delete_steps_msg">このアプリが今日ヘルスコネクトに書き込んだ歩数と距離の記録を削除します。よろしいですか？</string>
+    <string name="toast_delete_steps_ok">今日書き込んだ記録を削除しました</string>
+    <string name="toast_delete_steps_failed">削除に失敗しました（ヘルスコネクトを利用できないか、権限がありません）</string>
+
+    <string name="pref_cat_location">位置情報</string>
+    <string name="pref_mock_network_title">network provider も擬似位置にする</string>
+    <string name="pref_mock_fused_title">fused provider も擬似位置にする</string>
+    <string name="pref_flp_mock_title">Play 開発者サービスの擬似位置モードを使う（FLP）</string>
+    <string name="pref_notify_arrival_title">おおきな花に到着したら通知</string>
+
+    <string name="pref_cat_about">このアプリについて</string>
+    <string name="pref_version_title">バージョン</string>
+    <string name="pref_disclaimer_title">免責事項</string>
+
+    <string name="fmt_kmh">%1$s km/h</string>
+    <string name="fmt_cm">%1$s cm</string>
+    <string name="fmt_second">%1$s 秒</string>
+    <string name="fmt_step">%1$s 歩</string>
+
+    <!-- ============================ Floating bar ============================ -->
+    <string name="menu_overlay">フローティングバー</string>
+    <string name="pref_cat_overlay">フローティングバー</string>
+    <string name="pref_overlay_title">巡回中にフローティングバーを表示</string>
+    <string name="pref_overlay_summary">ピクミン ブルームの上に小さなフローティングウィンドウを表示し、その場で一時停止／帰宅／停止ができます。「他のアプリの上に重ねて表示」の権限が必要です。</string>
+    <string name="dlg_overlay_permission_title">重ねて表示の権限が必要です</string>
+    <!-- verify: Xiaomi Japanese permission name 「バックグラウンドで実行中にポップアップウィンドウを表示」 -->
+    <string name="dlg_overlay_permission_msg">フローティングバーには「他のアプリの上に重ねて表示」の権限が必要です。\nHyperOS / Xiaomi では「バックグラウンドで実行中にポップアップウィンドウを表示」もオンにしないと、フローティングバーがゲームの上に表示されません。今すぐ設定しますか？</string>
+    <string name="toast_overlay_shown">フローティングバーを表示しました（花を長押しで固定／固定解除）</string>
+    <string name="toast_overlay_hidden">フローティングバーを非表示にしました</string>
+    <string name="toast_overlay_denied">重ねて表示の権限がまだありません</string>
+    <string name="toast_overlay_pinned">固定しました：巡回が終わっても自動で非表示になりません</string>
+    <string name="toast_overlay_unpinned">固定を解除しました：巡回が終わると自動で非表示になります</string>
+
+    <string name="ovl_phase_idle">待機</string>
+    <string name="ovl_phase_starting">準備中</string>
+    <string name="ovl_phase_walking">巡回中</string>
+    <string name="ovl_phase_dwelling">花植え中</string>
+    <string name="ovl_phase_paused">一時停止中</string>
+    <string name="ovl_phase_returning">帰宅中</string>
+    <string name="ovl_phase_stopping">停止中</string>
+    <string name="ovl_stopped">停止済み</string>
+    <string name="ovl_target">%1$s %2$s</string>
+    <string name="ovl_steps">今日 %1$d 歩</string>
+    <string name="ovl_separator">·</string>
+    <string name="ovl_arrived">%1$s に到着、ミツを集められます</string>
+    <string name="ovl_returned_home">帰宅しました</string>
+    <string name="ovl_cd_handle">フローティングバー</string>
+    <!-- The bar's Location / Go home dialog could not be shown (overlay permission revoked meanwhile), T18b. -->
+    <string name="ovl_dialog_failed">メイン画面で操作してください</string>
+    <string name="ovl_cd_pause">一時停止</string>
+    <string name="ovl_cd_resume">再開</string>
+    <string name="ovl_cd_home">帰宅</string>
+    <string name="ovl_cd_stop">停止</string>
+    <string name="ovl_cd_open">メイン画面を開く</string>
+
+    <string-array name="loop_mode_entries">
+        <item>ループ</item>
+        <item>往復</item>
+        <item>1回で帰宅</item>
+    </string-array>
+</resources>

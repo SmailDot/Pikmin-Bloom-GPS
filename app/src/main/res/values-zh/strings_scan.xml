@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 俯瞰模式大花掃描（vision/ScreenCaptureService, vision/FlowerScanner）。獨立檔案以避免合併衝突。 -->
+<resources>
+    <string name="menu_scan_flowers">掃描俯瞰模式大花</string>
+
+    <!-- 螢幕擷取常駐通知 -->
+    <string name="scan_channel_name">畫面掃描</string>
+    <string name="scan_channel_desc">掃描俯瞰模式大花時的螢幕擷取常駐通知</string>
+    <string name="scan_notif_title">掃描俯瞰模式大花中</string>
+    <string name="scan_notif_text">畫面只在手機上分析，不會上傳</string>
+    <string name="scan_notif_stop">停止掃描</string>
+
+    <!-- 錯誤 -->
+    <string name="scan_err_projection_stopped">螢幕擷取已被系統停止</string>
+    <string name="scan_err_projection_denied">未取得螢幕擷取授權</string>
+    <string name="scan_err_foreground">無法啟動螢幕擷取服務：%1$s</string>
+    <string name="scan_err_display">無法建立擷取畫面：%1$s</string>
+    <string name="scan_err_capture_failed">連續無法擷取畫面，掃描已停止</string>
+
+    <!-- 等待中 -->
+    <string name="scan_wait_wrong_view">請切換到俯瞰模式</string>
+    <string name="scan_wait_no_flowers">畫面上沒有大花，請把地圖移到有大花的地方</string>
+    <string name="scan_wait_patrol">等待巡邏開始</string>
+    <string name="scan_wait_blank">擷取到全黑畫面：遊戲載入中請稍等；若一直黑，請重開遊戲</string>
+    <string name="dlg_scan_blank_title">擷取到的畫面全黑</string>
+    <string name="dlg_scan_blank_msg">螢幕擷取拿到的是全黑畫面。兩種可能：\n\n1. 遊戲正在冷啟動：開場動畫前約一分鐘是全黑的，等它進到大廳就好。\n\n2. 遊戲把自己的畫面標成「禁止側錄」：這不是擷取造成的（擷取開著在大廳或俯瞰模式放幾分鐘都不會黑），而是你在遊戲裡開到某個頁面（商店、付款一類）觸發的，之後整個遊戲都會黑到重開為止。解法：把 Pikmin Bloom 從最近工作清單滑掉，按下面的「開啟 Pikmin Bloom」重開，切到俯瞰模式，掃描會自動繼續；掃描期間避免再開那個頁面。</string>
+
+    <!-- 浮動控制列的一行狀態 -->
+    <string name="scan_status_need_projection">需要螢幕擷取授權</string>
+    <string name="scan_status_calibrating">校準中 %1$d m</string>
+    <string name="scan_status_scanning">已找到 %1$d 朵</string>
+    <string name="scan_status_done">掃描完成 %1$d 朵</string>
+    <string name="scan_status_error">掃描錯誤：%1$s</string>
+    <string name="ovl_cd_scan">掃描</string>
+
+    <!-- 主畫面流程 -->
+    <string name="dlg_scan_title">掃描俯瞰模式大花</string>
+    <string name="dlg_scan_msg">這個功能會擷取 Pikmin Bloom 的俯瞰模式畫面，辨識畫面上的大花並換算成座標，加進巡邏路線。\n\n步驟：\n1. 需要有進行中的巡邏，巡邏走動的距離就是比例尺。走約 40 公尺後完成校準，過程中不會暫停巡邏。\n2. 重要：先在遊戲裡把結算畫面（做得好、挑戰獎勵、回憶卡片…）全部點完，停在俯瞰模式再回來開掃描；那些畫面會誤導校準。遊戲不用重開。\n3. 授權後切回 Pikmin Bloom，按底部中央的地圖按鈕切到「俯瞰模式」，再按右下角的「回到目前位置」。\n4. 掃描期間狀態列會顯示螢幕錄製圖示；畫面只在手機上分析，不會上傳，也不會代替你點擊遊戲。\n5. 進度會顯示在浮動控制列，回到本畫面即可查看結果。\n\n接下來系統會詢問螢幕擷取授權，請選擇「整個螢幕」。</string>
+    <string name="dlg_scan_need_patrol_title">需要進行中的巡邏</string>
+    <string name="dlg_scan_need_patrol_msg">掃描用巡邏的走動距離當比例尺，所以要先開始巡邏。開始巡邏後再回來按一次「掃描俯瞰模式大花」。</string>
+    <string name="action_scan_start_patrol">先開始巡邏</string>
+    <string name="action_scan_start">開始掃描</string>
+    <string name="action_scan_stop">停止掃描</string>
+    <string name="action_scan_view_results">查看結果</string>
+    <string name="dlg_scan_running_title">掃描進行中</string>
+    <string name="dlg_scan_running_msg">目前狀態：%1$s</string>
+    <string name="toast_scan_started">掃描已開始</string>
+    <string name="dlg_scan_launch_title">授權完成，現在開啟遊戲</string>
+    <string name="dlg_scan_launch_msg">遊戲開著也沒關係，不用重開。切到遊戲，按底部中央的地圖按鈕進入俯瞰模式，掃描會自動進行。開始掃描前請先把遊戲的結算畫面（做得好、挑戰獎勵、回憶卡片…）全部點完，停在俯瞰模式，否則校準會被那些畫面誤導。</string>
+    <string name="action_scan_launch_game">切到 Pikmin Bloom</string>
+    <string name="action_scan_launch_later">稍後自己開</string>
+    <string name="toast_scan_stopped">掃描已停止</string>
+    <string name="toast_scan_denied">未取得螢幕擷取授權，無法掃描</string>
+    <string name="toast_scan_no_results">這次掃描沒有找到大花</string>
+
+    <!-- 結果對話框 -->
+    <string name="dlg_scan_results_title">掃描結果（%1$d 朵）</string>
+    <string name="scan_result_item">%1$s · 距離 %2$s · %3$s</string>
+    <string name="scan_confidence_high">有莖，位置較準</string>
+    <string name="scan_confidence_low">無莖，位置為估計</string>
+    <string name="action_scan_add_current">加入目前路線</string>
+    <string name="action_scan_new_route">建立新路線「掃描結果」</string>
+    <string name="scan_route_name">掃描結果</string>
+    <string name="toast_scan_added">已加入 %1$d 朵大花</string>
+    <string name="toast_scan_nothing_selected">沒有勾選任何大花</string>
+</resources>

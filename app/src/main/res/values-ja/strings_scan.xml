@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bird's-eye view Big Flower scan (vision/ScreenCaptureService, vision/FlowerScanner). Separate file to avoid merge conflicts. -->
+<resources>
+    <string name="menu_scan_flowers">俯瞰表示でおおきな花をスキャン</string>
+
+    <!-- Persistent screen capture notification -->
+    <string name="scan_channel_name">画面スキャン</string>
+    <string name="scan_channel_desc">俯瞰表示でおおきな花をスキャンしている間の画面キャプチャ常駐通知</string>
+    <string name="scan_notif_title">俯瞰表示のおおきな花をスキャン中</string>
+    <string name="scan_notif_text">画面はスマホ内だけで解析され、アップロードされません</string>
+    <string name="scan_notif_stop">スキャン停止</string>
+
+    <!-- Errors -->
+    <string name="scan_err_projection_stopped">画面キャプチャがシステムによって停止されました</string>
+    <string name="scan_err_projection_denied">画面キャプチャが許可されていません</string>
+    <string name="scan_err_foreground">画面キャプチャサービスを開始できません：%1$s</string>
+    <string name="scan_err_display">キャプチャ画面を作成できません：%1$s</string>
+    <string name="scan_err_capture_failed">画面のキャプチャに続けて失敗したため、スキャンを停止しました</string>
+
+    <!-- Waiting -->
+    <string name="scan_wait_wrong_view">俯瞰表示に切り替えてください</string>
+    <string name="scan_wait_no_flowers">画面におおきな花がありません。おおきな花がある場所へ地図を動かしてください</string>
+    <string name="scan_wait_patrol">巡回の開始を待っています</string>
+    <string name="scan_wait_blank">真っ黒な画面をキャプチャしました。ゲームの読み込み中ならお待ちください。黒いままならゲームを再起動してください</string>
+    <string name="dlg_scan_blank_title">キャプチャした画面が真っ黒です</string>
+    <string name="dlg_scan_blank_msg">画面キャプチャで真っ黒な画面しか取得できていません。考えられる原因は 2 つです。\n\n1. ゲームがコールドスタート中：オープニングアニメーションの前の約 1 分間は真っ黒です。メインのマップ画面に入るまでお待ちください。\n\n2. ゲームが自分の画面を「録画禁止」にした：これはキャプチャが原因ではありません（キャプチャをオンにしたままメインのマップ画面や俯瞰表示で数分置いても黒くなりません）。ゲーム内で特定の画面（ショップや支払いなど）を開いたことがきっかけで、その後はゲームを再起動するまで全体が真っ黒になります。対処法：ピクミン ブルームを最近使ったアプリの一覧からスワイプして閉じ、下の「ピクミン ブルームを開く」で再起動して俯瞰表示に切り替えると、スキャンが自動で再開します。スキャン中はその画面を再び開かないようにしてください。</string>
+
+    <!-- One-line status on the floating bar -->
+    <string name="scan_status_need_projection">画面キャプチャの許可が必要</string>
+    <string name="scan_status_calibrating">校正中 %1$d m</string>
+    <string name="scan_status_scanning">%1$d 輪を発見</string>
+    <string name="scan_status_done">スキャン完了 %1$d 輪</string>
+    <string name="scan_status_error">スキャンエラー：%1$s</string>
+    <string name="ovl_cd_scan">スキャン</string>
+
+    <!-- Main screen flow -->
+    <string name="dlg_scan_title">俯瞰表示でおおきな花をスキャン</string>
+    <!-- verify: in-game Japanese names of the result screens (「よくできました」, challenge rewards, memory cards), the game's bird's-eye view mode, its 「現在地に戻る」 button, and Android's 「画面全体」 capture option -->
+    <string name="dlg_scan_msg">この機能はピクミン ブルームの俯瞰表示の画面をキャプチャし、画面上のおおきな花を認識して座標に変換し、巡回ルートに追加します。\n\n手順：\n1. 巡回中である必要があります。巡回で歩いた距離を縮尺として使います。約 40 m 歩くと校正が完了し、その間も巡回は止まりません。\n2. 重要：先にゲーム内の結果画面（よくできました、チャレンジ報酬、思い出カード…）をすべてタップして閉じ、俯瞰表示にしてから戻ってスキャンを開始してください。これらの画面があると校正がずれます。ゲームの再起動は不要です。\n3. 許可したらピクミン ブルームに戻り、画面下中央の地図ボタンで「俯瞰表示」に切り替えてから、右下の「現在地に戻る」をタップしてください。\n4. スキャン中はステータスバーに画面録画のアイコンが表示されます。画面はスマホ内だけで解析され、アップロードされることも、あなたの代わりにゲームをタップすることもありません。\n5. 進行状況はフローティングバーに表示されます。この画面に戻ると結果を確認できます。\n\nこのあとシステムが画面キャプチャの許可を求めるので、「画面全体」を選んでください。</string>
+    <string name="dlg_scan_need_patrol_title">巡回が必要です</string>
+    <string name="dlg_scan_need_patrol_msg">スキャンは巡回で歩いた距離を縮尺として使うため、先に巡回を開始してください。巡回を開始したら、ここに戻ってもう一度「俯瞰表示でおおきな花をスキャン」をタップしてください。</string>
+    <string name="action_scan_start_patrol">先に巡回開始</string>
+    <string name="action_scan_start">スキャン開始</string>
+    <string name="action_scan_stop">スキャン停止</string>
+    <string name="action_scan_view_results">結果を見る</string>
+    <string name="dlg_scan_running_title">スキャン中</string>
+    <string name="dlg_scan_running_msg">現在の状態：%1$s</string>
+    <string name="toast_scan_started">スキャンを開始しました</string>
+    <string name="dlg_scan_launch_title">許可されました。ゲームを開きましょう</string>
+    <!-- verify: in-game Japanese names of the result screens (「よくできました」, challenge rewards, memory cards) -->
+    <string name="dlg_scan_launch_msg">ゲームが開いたままでも大丈夫です。再起動は不要です。ゲームに切り替えて画面下中央の地図ボタンで俯瞰表示にすると、スキャンが自動で進みます。スキャンを始める前に、ゲームの結果画面（よくできました、チャレンジ報酬、思い出カード…）をすべてタップして閉じ、俯瞰表示にしておいてください。そうしないと、これらの画面のせいで校正がずれます。</string>
+    <string name="action_scan_launch_game">ピクミン ブルームに切り替え</string>
+    <string name="action_scan_launch_later">あとで自分で開く</string>
+    <string name="toast_scan_stopped">スキャンを停止しました</string>
+    <string name="toast_scan_denied">画面キャプチャが許可されていないため、スキャンできません</string>
+    <string name="toast_scan_no_results">今回のスキャンではおおきな花が見つかりませんでした</string>
+
+    <!-- Results dialog -->
+    <string name="dlg_scan_results_title">スキャン結果（%1$d 輪）</string>
+    <string name="scan_result_item">%1$s · 距離 %2$s · %3$s</string>
+    <string name="scan_confidence_high">茎あり、位置は比較的正確</string>
+    <string name="scan_confidence_low">茎なし、位置は推定</string>
+    <string name="action_scan_add_current">現在のルートに追加</string>
+    <string name="action_scan_new_route">新しいルート「スキャン結果」を作成</string>
+    <string name="scan_route_name">スキャン結果</string>
+    <string name="toast_scan_added">おおきな花を %1$d 輪追加しました</string>
+    <string name="toast_scan_nothing_selected">おおきな花が選択されていません</string>
+</resources>

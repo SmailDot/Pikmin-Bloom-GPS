@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-10-08: keeping the mock in place, and what happens when it slipped anyway (service/MockGuard). -->
+<resources>
+    <string name="svc_err_mock_permission_lost">システムが擬似位置の権限をオフにしたため、ゲームに実際の位置が見えている可能性があります。開発者向けオプションでこのアプリをもう一度選択してください。</string>
+    <string name="svc_mock_lost_title">擬似位置の権限がオフになりました</string>
+    <string name="svc_mock_lost_text">システムが「仮の現在地情報アプリを選択」の設定を変更しました。開発者向けオプション → 仮の現在地情報アプリを選択 →「Pikmin Bloom GPS」を選んでください。またはパソコンで adb shell appops set app.pikminbloom.gps android:mock_location allow を実行してください。ゲームにすでに実際の位置が見えている場合、アプリは実際の位置のまま止まり、自動では戻りません。</string>
+    <string name="svc_maps_ask_text">Google マップが開いていますが、ゲームにもマップにも仮想位置が見えています。実際の位置に切り替えるにはここをタップしてください（ゲームは1回ジャンプします）。お店を調べたり口コミを見たりするだけなら、無視してかまいません。</string>
+    <string name="dlg_accuracy_title">先に「Google 位置情報の精度」をオフにすることをおすすめします</string>
+    <!-- verify: Google Play services is shown as 「Google Play 開発者サービス」 in Japanese; Settings path names 「位置情報」→「位置情報サービス」 -->
+    <string name="dlg_accuracy_msg">オンのままだと、Play 開発者サービスが周辺の Wi-Fi や基地局から実際の位置を独自に割り出します。擬似位置にほんの少しでもすき間があると、ゲームに実際の位置が見えてしまう可能性があります（本当の場所へ飛んで戻ってしまいます）。オフにすると GPS だけになり、巡回中の GPS はこのアプリが擬似的に提供します。\n\n場所：設定 → 位置情報 → 位置情報サービス → Google 位置情報の精度（名称は機種によって多少異なります）。\n\nデメリット：巡回していないときは、マップなどのアプリの屋内での位置測定が遅く、不正確になります。巡回開始時の実際の位置の取得に数秒多くかかることがあります（窓際だと早くなります）。</string>
+    <string name="action_accuracy_open">オフにする</string>
+    <string name="action_accuracy_start_anyway">このまま開始</string>
+    <string name="action_accuracy_mute">今後表示しない</string>
+    <string name="svc_leak_title">ゲームに実際の位置が見えました</string>
+    <string name="svc_leak_text">擬似位置が失敗し、ゲームに実際の位置が見えました（仮想位置から %1$s）。2地点の間を行ったり来たりしないよう「実際の位置」に切り替え、仮想の巡回はその場で待機しています。戻るときはアプリを開いて「仮想位置に戻る…」をタップしてください（もう一度ジャンプします）。</string>
+    <string name="ovl_real_on_leak">ゲームに実際の位置が見えたため、実際の位置で止まっています（自動では戻りません）。戻るには位置ボタンをタップしてください</string>
+    <string name="snack_real_on_leak">擬似位置が失敗し、ゲームに実際の位置が見えたため、「実際の位置」に切り替えて行ったり来たりを防ぎました。戻るには「仮想位置に戻る…」をタップしてください</string>
+</resources>

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the live controls added 2026-09-12: custom home, vehicle override, joystick,
+     Go now, and the settings / waypoint edits that now apply mid-patrol. -->
+<resources>
+    <!-- phases -->
+    <string name="phase_parked">登録した家に戻りました（擬似位置は維持中。「停止」で実際の位置に戻ります）</string>
+    <string name="phase_manual">ジョイスティック操作中</string>
+    <string name="ovl_phase_parked">家で待機</string>
+    <string name="ovl_phase_manual">ジョイスティック</string>
+    <string name="btn_resume_lap">もう1周</string>
+
+    <!-- custom home -->
+    <string name="menu_home">家の位置…</string>
+    <string name="dlg_home_title">家の位置</string>
+    <string name="dlg_home_msg">巡回は基本的に「現在の実際の GPS 位置」から出発します（ここに登録した家は「帰宅」の行き先としてのみ使われます）。ワープするのは、自分で「ワープ」をタップしたときだけです。自動の帰宅や通知の「帰宅」は必ず歩いて戻ります。\n\nここには「家」を複数登録できます（家 1、家 2…）。「帰宅」をタップすると、行き先ごとに「歩く」か「ワープ」を選べます。行き先は実際の位置（擬似位置を解除）か、登録した家のどれか（そこで待機し、擬似位置は維持。「停止」で実際の位置に戻ります）です。\n\n登録した家をタップすると、地図の中央に表示したり削除したりできます。</string>
+    <string name="action_home_help">ヘルプ…</string>
+    <string name="action_home_add_map_center">＋ 追加：地図の中心</string>
+    <string name="action_home_add_coords">＋ 追加：座標を入力</string>
+    <string name="pick_home_title">地図を動かして、照準を家の位置に合わせてください</string>
+    <string name="pick_cd_crosshair">地図の中心の照準</string>
+    <string name="action_home_enter_coords">座標を入力</string>
+    <string name="action_next">次へ</string>
+    <string name="dlg_home_name_title">この家の名前</string>
+    <string name="dlg_home_coords_hint">緯度, 経度（例：35.6812, 139.7671）</string>
+    <string name="action_home_center_map">地図の中央に表示</string>
+    <string name="action_home_delete">この家を削除</string>
+    <string name="toast_home_added">%1$s を追加しました：%2$s</string>
+    <string name="toast_home_deleted">%1$s を削除しました</string>
+    <string name="toast_home_coords_invalid">座標の形式が正しくありません。「緯度, 経度」で入力してください</string>
+    <string name="dlg_return_pick_title">どこに戻りますか？</string>
+    <string name="return_real_position">実際の位置まで歩いて戻る（到着後に擬似位置を解除）</string>
+    <string name="return_real_teleport">実際の位置にワープ（すぐに擬似位置を解除）</string>
+    <string name="return_saved_home">%1$s まで歩く（そこで待機、擬似位置は維持）</string>
+    <string name="return_saved_home_teleport">%1$s にワープ（そこで待機、擬似位置は維持）</string>
+    <string name="status_home_custom">帰宅先：登録した家</string>
+    <string name="dlg_stop_parked_title">実際の位置に戻りますか？</string>
+    <string name="dlg_stop_parked_msg">停止すると擬似位置が解除され、ゲームは登録した家から実際の GPS 位置へすぐにジャンプします。停止しますか？</string>
+    <string name="dlg_stop_plain_title">巡回を停止しますか？</string>
+    <string name="dlg_stop_returning_msg">帰宅中です。今停止すると、ゲームは現在地から実際の GPS 位置へすぐにジャンプします。</string>
+    <string name="dlg_stop_real_msg">ゲームにはすでに実際の位置が見えているため、停止してもジャンプは起きません。仮想位置とこの巡回の進行状況は終了します。</string>
+    <string name="dlg_stop_starting_msg">巡回はまだ開始処理中です。停止すると擬似位置は開始されません。</string>
+    <string name="snack_parked">登録した家に戻りました。擬似位置は維持中です</string>
+
+    <!-- Auto Nectar -->
+    <string name="nectar_service_label">Pikmin Bloom GPS：自動ミツ集め</string>
+    <string name="pref_auto_nectar_title">おおきな花に着いたら自動でミツを集める（実験的）</string>
+    <string name="pref_auto_nectar_summary">俯瞰表示で：巡回を一時停止 → おおきな花をタップ → 名前ラベルをタップ → 情報画面で下にスワイプ → 閉じる → 歩き続ける。各ステップで画面キャプチャにより画面の変化を確認してから次に進みます。スキャン（画面キャプチャ）の実行中であることと、システム設定で「Pikmin Bloom GPS：自動ミツ集め」ユーザー補助サービスをオンにすることが必要です。注意：オンになっているユーザー補助サービスはどのアプリからでも確認できるため、ゲームが検出に使う可能性があります。必要なときだけオンにしてください。</string>
+    <string name="toast_nectar_enable_service">ユーザー補助の設定で「Pikmin Bloom GPS：自動ミツ集め」をオンにしてください</string>
+    <string name="snack_nectar_ok">%1$s：花をタップしてスワイプで集めました</string>
+    <string name="snack_nectar_failed">%1$s：自動ミツ集めが完了しませんでした（%2$s）</string>
+
+    <!-- travel mode override -->
+    <string name="label_travel_mode">移動方法</string>
+    <string name="travel_walk_configured">徒歩（設定速度 %1$s km/h）</string>
+    <string name="travel_item">%1$s（%2$s km/h）</string>
+    <string name="travel_item_no_steps">%1$s（%2$s km/h、歩数なし）</string>
+    <string name="dlg_travel_title">移動方法</string>
+    <string name="dlg_travel_msg">乗り物はその速度で「次の」おおきな花へ向かい、到着すると自動で徒歩に戻ります。約 20 km/h を超えるとゲームは花を植えず、歩数も書き込まれません。キノコに急いで向かうときや別のエリアへの移動に便利です。</string>
+    <string name="snack_travel_changed">移動方法：%1$s</string>
+    <string name="snack_travel_auto_walk">到着したので徒歩に戻しました</string>
+    <string name="snack_speed_changed">速度を更新しました：%1$s km/h</string>
+    <string name="ovl_travel_flash">移動方法：%1$s</string>
+    <string name="ovl_cd_vehicle">移動方法を切り替え</string>
+    <string name="travel_short_walk">徒歩</string>
+    <string name="ovl_cd_speed_down">減速</string>
+    <string name="ovl_cd_speed_up">加速</string>
+    <string name="ovl_speed_flash">速度：%1$s %2$s km/h</string>
+    <string name="ovl_cd_speed">速度を調整（－／＋ を表示）</string>
+
+    <!-- joystick -->
+    <string name="label_joystick">ジョイスティック</string>
+    <string name="ovl_cd_joystick">ジョイスティック</string>
+    <string name="toast_joystick_on">ジョイスティック ON：上＝北。オフにすると現在地から元のルートを続けます</string>
+    <string name="toast_joystick_off">ジョイスティック OFF。ルートに戻ります</string>
+    <string name="toast_joystick_need_patrol">ジョイスティックを使うには、先に巡回を開始してください</string>
+    <string name="toast_joystick_need_overlay">ジョイスティックはフローティングバーに表示されます。先にフローティングバーをオンにしてください</string>
+    <string name="ovl_cd_cruise">クルーズ（方向を固定）</string>
+    <string name="ovl_cd_joystick_move">長押ししてドラッグでジョイスティックを移動</string>
+    <string name="ovl_cd_joystick_size">ジョイスティックのサイズを切り替え</string>
+    <string name="toast_joystick_size">ジョイスティックのサイズ：%1$s</string>
+    <string name="toast_cruise_on">クルーズ：ジョイスティックを離しても最後の方向に歩き続けます。もう一度タップするか、「帰宅」「停止」「今すぐ向かう」で止まります</string>
+    <string name="toast_cruise_off">クルーズをオフにしました</string>
+    <string name="toast_cruise_need_heading">先にジョイスティックで方向を決めてから、ロックをタップしてください</string>
+    <string name="snack_replanned">ルートを更新しました。現在地から続けます</string>
+
+    <!-- Go now -->
+    <string name="action_go_now">今すぐ向かう</string>
+    <!-- Go and stay there (2026-10-08) -->
+    <string name="action_go_and_stay">到着したら待機</string>
+    <string name="action_start_and_stay">実際の位置から出発し、到着したら待機</string>
+    <string name="toast_go_and_stay">%1$s へ向かいます。到着したら待機します</string>
+    <string name="status_stay_at">「%1$s」に到着したら待機</string>
+    <string name="ovl_stay_at">着いたら待機</string>
+    <string name="svc_stayed_title">「%1$s」に到着、ここで待機中</string>
+    <string name="svc_stayed_text">巡回はこの花のそばで一時停止しています。報酬を受け取ったら「再開」をタップして巡回を続けてください。</string>
+    <string name="snack_stayed">%1$s に到着、ここで待機中（「再開」で巡回を続けます）</string>
+    <string name="toast_go_now">%1$s へ向かいます</string>
+
+    <!-- Real location (PatrolPhase.SUSPENDED), 2026-10-03; the switch's own labels and dialogs are in ui/RealModeCopy (T18) -->
+    <string name="phase_suspended">実際の位置：スマホのすべてのアプリに実際の GPS が見えています。仮想の巡回はその場で待機中です。「仮想位置に戻る…」をタップすると戻ります</string>
+    <string name="ovl_phase_suspended">実際の位置（実際の GPS）</string>
+    <string name="ovl_real_on">実際の位置に切り替えました：すべてのアプリ（ゲームを含む）に実際の GPS が見えています。戻るには位置ボタンをもう一度タップしてください</string>
+    <string name="ovl_virtual_back">仮想位置に戻りました</string>
+    <string name="snack_real_on">実際の位置に切り替えました。仮想の巡回はその場で待機しています。戻るには「仮想位置に戻る…」をタップしてください</string>
+    <string name="snack_virtual_back">仮想位置に戻りました。巡回は切り替え前の状態に戻っています</string>
+    <string name="scan_wait_real">実際の位置：「仮想位置に戻る…」をタップするとスキャンを再開します</string>
+
+    <!-- Switch to real location when Google Maps opens (opt-in), 2026-10-03 -->
+    <string name="pref_auto_real_maps_title">Google マップを開いたときに実際の位置への切り替えを確認</string>
+    <string name="pref_auto_real_maps_summary">Google マップが前面に来ると、小さなウィンドウで確認します（外側をタップするか「いいえ」をタップすると何もしません）。「実際の位置に切り替え」をタップしたときだけ擬似位置を解除します（巡回の状態は保持）。その瞬間、ゲームにも実際の位置が見えます。戻るときは必ずご自身で「仮想位置に戻る…」をタップしてください。お店を調べたり口コミを見たりするだけなら切り替えは不要です。「使用状況へのアクセス」が必要です。「他のアプリの上に重ねて表示」の権限がない場合は通知で確認します。</string>
+    <!-- verify: Android JP name of the Usage access setting (「使用状況へのアクセス」) -->
+    <string name="toast_usage_access_needed">「使用状況へのアクセス」で「Pikmin Bloom GPS」を許可してください</string>
+</resources>

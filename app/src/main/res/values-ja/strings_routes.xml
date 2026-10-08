@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Saved patrol routes and the newer patrol options. Separate file to keep merges simple. -->
+<resources>
+    <string name="route_picker_title">巡回ルートを選択</string>
+    <string name="route_item">%1$s（おおきな花 %2$d 輪）</string>
+    <string name="route_new">新規ルート</string>
+    <string name="route_manage">ルート管理</string>
+    <string name="route_rename">名前を変更</string>
+    <string name="route_duplicate">複製</string>
+    <string name="route_delete">ルートを削除</string>
+    <string name="route_delete_msg">ルート「%1$s」を削除しますか？含まれるおおきな花 %2$d 輪もすべて削除され、元に戻せません。</string>
+    <string name="route_copy_name">%1$s のコピー</string>
+    <string name="route_name_hint">ルート名（例：「会社の近く」）</string>
+    <string name="fmt_lap">%1$s 周</string>
+
+    <!-- Patrol options added 2026-09-10 -->
+    <string name="pref_cat_alerts">通知と省電力</string>
+    <string name="pref_vibrate_title">おおきな花に着いたらバイブ</string>
+    <string name="pref_vibrate_summary">オフにすると電池を節約できます。バイブレーションは擬似位置そのものよりも電力を使い、ルート上のおおきな花が多いほど影響が大きくなります。オフにしても通知は届きます。</string>
+    <string name="pref_alert_gap_title">通知の最短間隔（秒）</string>
+    <string name="pref_alert_gap_summary">おおきな花を続けて通過するときは、少なくともこの時間をあけてから再びバイブします。</string>
+    <string name="pref_auto_return_title">指定周回後に自動で帰宅</string>
+    <string name="pref_auto_return_summary">設定した周回数を歩き終えると、自動で実際の位置まで歩いて戻り、擬似位置を解除します。0 にすると制限なしで、自分で「帰宅」をタップするまで続けます。</string>
+</resources>
