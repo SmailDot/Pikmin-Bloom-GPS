@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Map tiles (OpenStreetMap) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Real position ("home") capture + mock providers -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Declaring this makes the app appear in Developer options > "Select mock location app". -->
+    <uses-permission
+        android:name="android.permission.ACCESS_MOCK_LOCATION"
+        tools:ignore="MockLocation,ProtectedPermissions" />
+
+    <!-- Foreground patrol service -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- Bird's-eye Big Flower scan: screen capture via MediaProjection (vision/ScreenCaptureService) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Health Connect: steps / distance written while patrolling -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.WRITE_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <uses-permission android:name="android.permission.health.WRITE_DISTANCE" />
+    <!-- Lets us verify our steps are actually counted while the game is in the foreground. -->
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
+
+    <!-- Floating controls drawn over Pikmin Bloom -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- 9c (opt-in): which app is in front, to switch to the real position when Google Maps opens. -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <queries>
+        <!-- Health Connect app (Android 13-) and system module (Android 14+) -->
+        <package android:name="com.google.android.apps.healthdata" />
+        <package android:name="com.google.android.healthconnect.controller" />
+        <!-- Pikmin Bloom, so we can offer a "open the game" shortcut -->
+        <package android:name="com.nianticlabs.pikmin" />
+    </queries>
+
+    <application
+        android:name=".PikminGpsApp"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PikminGps"
+        tools:targetApi="31">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustPan">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:exported="false"
+            android:label="@string/title_settings"
+            android:parentActivityName=".ui.MainActivity" />
+
+        <activity
+            android:name=".ui.SetupActivity"
+            android:exported="false"
+            android:label="@string/title_setup"
+            android:parentActivityName=".ui.MainActivity" />
+
+        <!-- Health Connect permission rationale (Android 13 and below open this via the HC app) -->
+        <activity
+            android:name=".ui.HealthRationaleActivity"
+            android:exported="true"
+            android:label="@string/title_health_rationale">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Android 14+ opens the rationale through this alias -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+            android:targetActivity=".ui.HealthRationaleActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
+
+        <service
+            android:name=".service.PatrolService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- Screen capture for the bird's-eye Big Flower scan. Only lives while a scan runs; the
+             projection is released (cast icon gone) as soon as the scan stops. Reads pixels only,
+             never injects input. -->
+        <service
+            android:name=".vision.ScreenCaptureService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
+        <!-- Floating control bar. NOT a foreground service on purpose: PatrolService already is one
+             and keeps the process alive while a patrol runs. -->
+        <service
+            android:name=".ui.OverlayService"
+            android:exported="false" />
+
+        <!-- 自動拉花's accessibility service is declared in src/debug/AndroidManifest.xml only (2026-10-08): release
+             builds do not have the feature, and do not list a service in the system's accessibility settings. -->
+    </application>
+
+</manifest>

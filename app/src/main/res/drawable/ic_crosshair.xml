@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Map-centre crosshair for picking a home: a dark halo under a red cross so it reads on any tile. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path android:strokeColor="#99000000" android:strokeWidth="5" android:strokeLineCap="round"
+        android:pathData="M24,4 L24,18 M24,30 L24,44 M4,24 L18,24 M30,24 L44,24" />
+    <path android:strokeColor="#FFE53935" android:strokeWidth="2.5" android:strokeLineCap="round"
+        android:pathData="M24,4 L24,18 M24,30 L24,44 M4,24 L18,24 M30,24 L44,24" />
+    <path android:fillColor="#FFE53935" android:pathData="M22.5,24 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0" />
+</vector>

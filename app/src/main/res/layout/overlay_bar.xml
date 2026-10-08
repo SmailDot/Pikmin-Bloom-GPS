@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Floating control bar drawn over Pikmin Bloom (ui/OverlayService).
+  Collapsed = only [handle]; tapping the handle shows [bar]. Every colour is explicit because an
+  overlay window is inflated without an activity theme.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <FrameLayout
+        android:id="@+id/handle"
+        android:layout_width="@dimen/overlay_handle"
+        android:layout_height="@dimen/overlay_handle"
+        android:alpha="0.88"
+        android:background="@drawable/bg_overlay_handle">
+
+        <ImageView
+            android:id="@+id/handleIcon"
+            android:layout_width="@dimen/overlay_icon"
+            android:layout_height="@dimen/overlay_icon"
+            android:layout_gravity="center"
+            android:contentDescription="@string/ovl_cd_handle"
+            android:src="@drawable/ic_flower"
+            android:tint="@color/overlay_icon" />
+    </FrameLayout>
+
+    <!-- Three rows (status line, patrol buttons, tools) so the bar stays narrower than any phone. -->
+    <LinearLayout
+        android:id="@+id/bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_xs"
+        android:background="@drawable/bg_overlay_bar"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/space_s"
+        android:paddingTop="@dimen/space_xs"
+        android:paddingEnd="@dimen/space_s"
+        android:paddingBottom="@dimen/space_xs"
+        android:visibility="gone">
+
+        <!-- Fixed width + uniform auto-sizing: the bar keeps one predictable size and the line
+             shrinks instead of being truncated when the user runs a large system font scale. -->
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="@dimen/overlay_status_max"
+            android:layout_height="20dp"
+            android:gravity="center_vertical"
+            android:autoSizeMaxTextSize="11sp"
+            android:autoSizeMinTextSize="7sp"
+            android:autoSizeStepGranularity="1sp"
+            android:autoSizeTextType="uniform"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textColor="@color/overlay_text"
+            android:textSize="11sp" />
+
+        <!-- Row 1: the patrol itself (5 x 32dp, 7 with 速度 open: inside the 224dp status line). -->
+        <LinearLayout
+            android:id="@+id/buttons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btnToggle"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_pause"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_pause"
+            android:tint="@color/overlay_icon" />
+
+        <ImageButton
+            android:id="@+id/btnHome"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_home"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_home"
+            android:tint="@color/overlay_icon" />
+
+        <ImageButton
+            android:id="@+id/btnStop"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_stop"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_stop"
+            android:tint="@color/overlay_icon" />
+
+        <!-- Vehicle override: each tap cycles 步行 → 其他 → 汽車 → 飛機. -->
+        <ImageButton
+            android:id="@+id/btnVehicle"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_vehicle"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_walk"
+            android:tint="@color/overlay_icon" />
+
+        <!-- 速度: opens －／＋ next to it only while wanted ("沒有要使用的時候很占位子", 2026-10-08); they close
+             again a few seconds after the last tap or with the bar. Open, the row is 7 x 32dp = the 224dp status line. -->
+        <ImageButton
+            android:id="@+id/btnSpeed"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_speed"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_speed"
+            android:tint="@color/overlay_icon" />
+
+        <!-- 速度 －／＋ for whatever the vehicle button says is in force (ui/SpeedStepper). -->
+        <ImageButton
+            android:id="@+id/btnSpeedDown"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_speed_down"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_remove"
+            android:tint="@color/overlay_icon"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/btnSpeedUp"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_speed_up"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_add"
+            android:tint="@color/overlay_icon"
+            android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Row 2: tools. -->
+        <LinearLayout
+            android:id="@+id/buttons2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+        <!-- Joystick on/off; the pad itself is a second window (overlay_joystick.xml). -->
+        <ImageButton
+            android:id="@+id/btnJoystick"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_joystick"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_gamepad"
+            android:tint="@color/overlay_icon" />
+
+        <!-- Bird's-eye Big Flower scan toggle (vision/FlowerScanner). -->
+        <ImageButton
+            android:id="@+id/btnScan"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_scan"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_scan"
+            android:tint="@color/overlay_icon" />
+
+        <!-- 定位鈕 (PatrolPhase.SUSPENDED, T18): the icon is the state (pin = 虛擬位置, off = 真實位置) and a
+             tap opens the confirm dialog (PatrolDialogs), never a jump. Its description comes from RealModeCopy
+             in OverlayService.render. -->
+        <ImageButton
+            android:id="@+id/btnReal"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_location_on"
+            android:tint="@color/overlay_icon"
+            tools:ignore="ContentDescription" />
+
+        <ImageButton
+            android:id="@+id/btnOpen"
+            android:layout_width="@dimen/overlay_button"
+            android:layout_height="@dimen/overlay_button"
+            android:background="@drawable/bg_overlay_button"
+            android:contentDescription="@string/ovl_cd_open"
+            android:padding="@dimen/space_xs"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_my_location"
+            android:tint="@color/overlay_icon" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

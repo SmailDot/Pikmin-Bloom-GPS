@@ -1,0 +1,99 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+// Release signing lives OUTSIDE the repository (../keystore/keystore.properties). Without it the
+// release APK is left UNSIGNED (app-release-unsigned.apk, which no phone installs). It used to fall
+// back to this computer's debug key, and such a 1.3.2 could not update the 1.1.0 already on another
+// phone: "應用程式套件與現有套件衝突" (2026-10-08). A wrong key must fail here, not on her phone.
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file('../keystore/keystore.properties')
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+} else {
+    logger.warn("No ../keystore/keystore.properties: the release APK will be UNSIGNED (see README).")
+}
+
+android {
+    signingConfigs {
+        if (keystoreProps['storeFile']) {
+            release {
+                storeFile file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
+    namespace 'app.pikminbloom.gps'
+    compileSdk 37
+
+    defaultConfig {
+        applicationId "app.pikminbloom.gps"
+        minSdk 28
+        targetSdk 36
+        versionCode 6
+        versionName "1.4.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // No fallback to the debug key, ever (see the top of this file).
+            signingConfig keystoreProps['storeFile'] ? signingConfigs.release : null
+        }
+        debug {
+            minifyEnabled false
+            applicationIdSuffix ""
+        }
+    }
+    buildFeatures {
+        buildConfig true
+        viewBinding true
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/INDEX.LIST', 'META-INF/DEPENDENCIES']
+        }
+    }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.18.0'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.activity:activity-ktx:1.13.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'androidx.preference:preference-ktx:1.2.1'
+    implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.11.0'
+    implementation 'androidx.lifecycle:lifecycle-service:2.11.0'
+    implementation 'com.google.android.material:material:1.13.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
+
+    // Location: mock providers via LocationManager + Fused Location Provider mock mode
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
+    // Health Connect: step / distance injection that Pikmin Bloom reads
+    implementation 'androidx.health.connect:connect-client:1.1.0'
+    // Map (OpenStreetMap, no API key)
+    implementation 'org.osmdroid:osmdroid-android:6.1.20'
+
+    testImplementation 'junit:junit:4.13.2'
+    // android.jar ships org.json as method stubs, so JSON parsing returns nothing in unit tests.
+    // The real implementation is needed to test OverpassClient / WaypointStore parsing.
+    testImplementation 'org.json:json:20250517'
+}

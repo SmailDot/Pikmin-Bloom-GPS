@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/pref_cat_walk">
+
+        <EditTextPreference
+            app:defaultValue="18"
+            app:icon="@drawable/ic_flower"
+            app:key="speed_kmh"
+            app:title="@string/pref_speed_title" />
+
+        <Preference
+            app:key="speed_hint"
+            app:selectable="false"
+            app:summary="@string/pref_speed_hint" />
+
+        <EditTextPreference
+            app:defaultValue="70"
+            app:key="stride_cm"
+            app:title="@string/pref_stride_title" />
+
+        <ListPreference
+            app:defaultValue="LOOP"
+            app:entries="@array/loop_mode_entries"
+            app:entryValues="@array/loop_mode_values"
+            app:icon="@drawable/ic_flag"
+            app:key="loop_mode"
+            app:title="@string/pref_loop_mode_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="orbit_at_waypoints"
+            app:summary="@string/pref_orbit_summary"
+            app:title="@string/pref_orbit_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_cat_vehicle">
+
+        <Preference
+            app:key="vehicle_hint"
+            app:selectable="false"
+            app:summary="@string/pref_speed_vehicle_hint" />
+
+        <EditTextPreference
+            app:defaultValue="45"
+            app:key="speed_car_kmh"
+            app:title="@string/pref_speed_car_title" />
+
+        <EditTextPreference
+            app:defaultValue="90"
+            app:key="speed_highway_kmh"
+            app:title="@string/pref_speed_highway_title" />
+
+        <EditTextPreference
+            app:defaultValue="600"
+            app:key="speed_plane_kmh"
+            app:title="@string/pref_speed_plane_title" />
+
+        <!-- 前往後停在這裡 over a long way asks how to get there (ui/TripChoices, 2026-10-08). -->
+        <EditTextPreference
+            app:defaultValue="15"
+            app:key="stay_ask_km"
+            app:title="@string/pref_stay_ask_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_cat_steps">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="inject_steps"
+            app:summary="@string/pref_inject_steps_summary"
+            app:title="@string/pref_inject_steps_title" />
+
+        <EditTextPreference
+            app:defaultValue="60"
+            app:dependency="inject_steps"
+            app:key="step_flush_sec"
+            app:title="@string/pref_step_flush_title" />
+
+        <!-- No default: an empty field means no cap (2026-10-08). -->
+        <EditTextPreference
+            app:dependency="inject_steps"
+            app:key="daily_step_cap"
+            app:title="@string/pref_daily_cap_title" />
+
+        <Preference
+            app:icon="@drawable/ic_delete"
+            app:key="delete_today_steps"
+            app:persistent="false"
+            app:summary="@string/pref_delete_today_summary"
+            app:title="@string/pref_delete_today_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_cat_location">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="mock_network"
+            app:title="@string/pref_mock_network_title" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="mock_fused"
+            app:title="@string/pref_mock_fused_title" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="flp_mock_mode"
+            app:title="@string/pref_flp_mock_title" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="notify_on_arrival"
+            app:title="@string/pref_notify_arrival_title" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="auto_real_for_maps"
+            app:summary="@string/pref_auto_real_maps_summary"
+            app:title="@string/pref_auto_real_maps_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_cat_overlay">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:icon="@drawable/ic_flower"
+            app:key="overlay_enabled"
+            app:summary="@string/pref_overlay_summary"
+            app:title="@string/pref_overlay_title" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="auto_nectar"
+            app:summary="@string/pref_auto_nectar_summary"
+            app:title="@string/pref_auto_nectar_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_cat_about">
+
+        <Preference
+            app:key="app_version"
+            app:persistent="false"
+            app:selectable="false"
+            app:title="@string/pref_version_title" />
+
+        <Preference
+            app:icon="@drawable/ic_warning"
+            app:key="disclaimer"
+            app:persistent="false"
+            app:title="@string/pref_disclaimer_title" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

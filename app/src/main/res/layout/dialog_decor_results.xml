@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Decor search results (ui/DecorHunt.kt): one explanatory line, then rows of item_decor_hit whose
+     purity marker is updated in place as the checks come back. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/tvExplain"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/space_xl"
+        android:paddingTop="@dimen/space_xs"
+        android:paddingEnd="@dimen/space_xl"
+        android:paddingBottom="@dimen/space_s"
+        android:text="@string/decor_results_explain"
+        android:textAppearance="?attr/textAppearanceBodySmall" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:id="@+id/listContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+</LinearLayout>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Floating joystick window (ui/OverlayService), shown next to the control bar while 搖桿 is on: the pad, the
+     定速巡航 lock (top right), the drag handle (top left) and the size button (bottom right). Its window is sized by
+     ui/JoystickLayout; slightly see-through so it hides less of the game. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/joystick_size"
+    android:layout_height="@dimen/joystick_size"
+    android:alpha="0.85">
+
+    <app.pikminbloom.gps.ui.JoystickView
+        android:id="@+id/pad"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ImageButton
+        android:id="@+id/btnCruise"
+        android:layout_width="@dimen/joystick_button"
+        android:layout_height="@dimen/joystick_button"
+        android:layout_gravity="top|end"
+        android:background="@drawable/bg_overlay_button"
+        android:contentDescription="@string/ovl_cd_cruise"
+        android:padding="@dimen/space_xs"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_lock"
+        android:tint="@color/overlay_icon" />
+
+    <ImageButton
+        android:id="@+id/btnMove"
+        android:layout_width="@dimen/joystick_button"
+        android:layout_height="@dimen/joystick_button"
+        android:layout_gravity="top|start"
+        android:background="@drawable/bg_overlay_button"
+        android:contentDescription="@string/ovl_cd_joystick_move"
+        android:padding="@dimen/space_xs"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_open_with"
+        android:tint="@color/overlay_icon" />
+
+    <ImageButton
+        android:id="@+id/btnSize"
+        android:layout_width="@dimen/joystick_button"
+        android:layout_height="@dimen/joystick_button"
+        android:layout_gravity="bottom|end"
+        android:background="@drawable/bg_overlay_button"
+        android:contentDescription="@string/ovl_cd_joystick_size"
+        android:padding="@dimen/space_xs"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_zoom_out_map"
+        android:tint="@color/overlay_icon" />
+</FrameLayout>
