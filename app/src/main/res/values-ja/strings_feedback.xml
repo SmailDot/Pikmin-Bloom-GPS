@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Report a bug / suggest something (ui/FeedbackDialog) and the offer after a crash (support/CrashLog). -->
+<resources>
+    <string name="menu_feedback">不具合の報告・提案</string>
+    <string name="pref_feedback_title">不具合の報告・提案</string>
+    <string name="pref_feedback_summary">メールか GitHub で開発者に送れます。アプリのバージョンとエラー情報を自動で添付します（位置情報は含みません）。送信前に内容を確認・編集できます。</string>
+    <string name="dlg_feedback_title">不具合の報告・提案</string>
+    <string name="feedback_kind_bug">不具合を報告（エラー情報を添付）</string>
+    <string name="feedback_kind_idea">機能の提案</string>
+    <string name="feedback_via_email">メール</string>
+    <string name="feedback_via_github">GitHub</string>
+    <string name="toast_feedback_copied">開けるアプリがないため、内容をコピーしました。%1$s に貼り付けてください</string>
+    <string name="snack_last_crash">前回アプリが異常終了しました。開発者に報告しますか？</string>
+    <string name="action_report">報告</string>
+</resources>

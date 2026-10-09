@@ -130,6 +130,9 @@ class SettingsActivity : AppCompatActivity() {
                 confirmDeleteTodaySteps(); true
             }
             findPreference<Preference>(KEY_VERSION)?.summary = BuildConfig.VERSION_NAME
+            findPreference<Preference>(KEY_FEEDBACK)?.setOnPreferenceClickListener {
+                FeedbackDialog.show(requireActivity()); true
+            }
             findPreference<Preference>(KEY_DISCLAIMER)?.setOnPreferenceClickListener {
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle(R.string.dlg_disclaimer_title)
@@ -207,6 +210,7 @@ class SettingsActivity : AppCompatActivity() {
         companion object {
             private const val KEY_DELETE_TODAY = "delete_today_steps"
             private const val KEY_VERSION = "app_version"
+            private const val KEY_FEEDBACK = "feedback"
             private const val KEY_DISCLAIMER = "disclaimer"
         }
     }

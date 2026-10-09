@@ -67,6 +67,11 @@ Niantic 不公開大花座標。大花長在 Wayspot 上，所以 App 用 OpenSt
 （紀念物、公共藝術、廟宇教堂、遊戲場等）當作**候選點**，大概三到六成真的有大花，留下有的就好。
 OpenStreetMap 資料採 ODbL 授權。
 
+## 回報問題／建議
+App 內：選單 →「**回報問題／建議**」（設定頁最下面也有）。選 Email 或 GitHub，內容會自動帶好 App 和 Android 版本、手機型號、
+最後的錯誤或閃退紀錄，不含任何位置，送出前都看得到、可以修改。也可以直接到
+[GitHub Issues](https://github.com/SmailDot/Pikmin-Bloom-GPS/issues) 或寄信到 smaildot@aidot.me。
+
 ## 免責聲明
 本 App 與 Niantic、Scopely、任天堂沒有任何關係。修改定位與步數違反 Pikmin Bloom 使用條款（三振政策：
 警告 7 天 → 停權 30 天 → 永久停權），風險由使用者自行承擔。請保持合理速度，避免瞬移。

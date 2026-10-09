@@ -150,6 +150,13 @@
             app:key="disclaimer"
             app:persistent="false"
             app:title="@string/pref_disclaimer_title" />
+
+        <Preference
+            app:icon="@drawable/ic_bug"
+            app:key="feedback"
+            app:persistent="false"
+            app:summary="@string/pref_feedback_summary"
+            app:title="@string/pref_feedback_title" />
     </PreferenceCategory>
 
 </PreferenceScreen>

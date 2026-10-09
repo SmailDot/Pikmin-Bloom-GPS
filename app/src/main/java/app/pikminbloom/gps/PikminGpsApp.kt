@@ -8,6 +8,7 @@ import android.util.Log
 import app.pikminbloom.gps.i18n.Lang
 import app.pikminbloom.gps.mock.MockLocationController
 import app.pikminbloom.gps.service.PatrolService
+import app.pikminbloom.gps.support.CrashLog
 import com.google.android.material.color.DynamicColors
 import org.osmdroid.config.Configuration
 
@@ -15,6 +16,7 @@ class PikminGpsApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashLog.install(this)
         Lang.refresh(this)
         DynamicColors.applyToActivitiesIfAvailable(this)
 

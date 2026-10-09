@@ -70,6 +70,12 @@ Overpass API for nearby landmarks (memorials, public art, temples and churches, 
 **candidates**. Roughly 30–60% of them really have a Big Flower; keep the ones that do.
 OpenStreetMap data is licensed under the ODbL.
 
+## Bug reports and suggestions
+In the app: menu → **Report a bug / suggest** (also at the bottom of Settings). Pick email or GitHub; the report opens
+already filled in with the app and Android versions, the phone model and the last error or crash. It never includes
+your location, and you can read and edit everything before sending. You can also write directly:
+[GitHub Issues](https://github.com/SmailDot/Pikmin-Bloom-GPS/issues) or smaildot@aidot.me.
+
 ## Disclaimer
 This app has nothing to do with Niantic, Scopely or Nintendo. Changing your location and steps breaks the Pikmin Bloom
 terms of service (three strikes: a 7-day warning → a 30-day suspension → a permanent ban). You use it at your own risk.

@@ -62,4 +62,10 @@
         android:title="@string/menu_export_gpx"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_feedback"
+        android:icon="@drawable/ic_bug"
+        android:title="@string/menu_feedback"
+        app:showAsAction="never" />
+
 </menu>

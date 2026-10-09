@@ -47,6 +47,8 @@ import app.pikminbloom.gps.service.PatrolEvent
 import app.pikminbloom.gps.service.PatrolService
 import app.pikminbloom.gps.service.RealMode
 import app.pikminbloom.gps.steps.StepInjector
+import app.pikminbloom.gps.support.CrashLog
+import app.pikminbloom.gps.support.FeedbackKind
 import app.pikminbloom.gps.vision.FlowerScanPlan
 import app.pikminbloom.gps.vision.FlowerScanner
 import app.pikminbloom.gps.vision.ScreenCaptureService
@@ -154,6 +156,20 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         handleScanIntent(intent)
         // A recreation (rotation, process restore) re-delivers the launch intent: never ask twice.
         if (savedInstanceState == null) handleSwitchIntent(intent)
+        if (savedInstanceState == null) offerCrashReport()
+    }
+
+    /**
+     * The app crashed since it was last open (CrashLog): offer, once, to report it. A snackbar rather than a dialog, so it
+     * never stacks on the resume-from-checkpoint question that usually follows a crash; the menu's 回報問題 still attaches it.
+     */
+    private fun offerCrashReport() {
+        val crash = CrashLog.unoffered(this, System.currentTimeMillis()) ?: return
+        CrashLog.markOffered(this, crash)
+        Snackbar.make(binding.root, R.string.snack_last_crash, CRASH_OFFER_MS)
+            .setAnchorView(binding.bottomCard)
+            .setAction(R.string.action_report) { FeedbackDialog.show(this, FeedbackKind.BUG) }
+            .show()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -1012,6 +1028,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         R.id.action_import -> { importLauncher.launch(arrayOf(MIME_ANY)); true }
         R.id.action_export_json -> { exportJsonLauncher.launch(getString(R.string.export_json_filename)); true }
         R.id.action_export_gpx -> { exportGpxLauncher.launch(getString(R.string.export_gpx_filename)); true }
+        R.id.action_feedback -> { FeedbackDialog.show(this); true }
         else -> super.onOptionsItemSelected(item)
     }
 
@@ -1415,6 +1432,8 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     }
 
     companion object {
+        /** How long the crash-report offer stays up. */
+        private const val CRASH_OFFER_MS = 10_000
         private const val DEFAULT_ZOOM = 17.0
         private const val TRAIL_LIMIT = 2000
         private const val TRAIL_MIN_STEP_M = 1.0
