@@ -3,7 +3,7 @@
     <!-- Auto expedition (ExpeditionRunner, overlay bar button, Settings switch). -->
     <string name="accessibility_service_desc">自動探検の実行中だけ、ゲーム画面のスクリーンショットを撮り、タップとスワイプを行います（デバッグ版では自動ミツ集めのタップにも使います）。ウィンドウの内容は読み取らず、スクリーンショットは保存も送信もしません。どのアプリからもユーザー補助の一覧が見えるため、不要なときはオフにしてください。</string>
     <string name="pref_auto_expedition_title">自動探検（実験的）</string>
-    <string name="pref_auto_expedition_summary">フローティングバーから果実と苗の探検に一度で派遣します。Android 11 以上と、本アプリのユーザー補助サービスのオンが必要です。実行中だけゲーム画面を読み取り、その中でタップします。赤いギフトとキノコには触れません。ゲーム側からユーザー補助がオンだと分かる可能性があり、リスクはご自身の判断でお願いします。</string>
+    <string name="pref_auto_expedition_summary">フローティングバーから果実と苗の探検に一度で派遣したり、餵精華の画面でミツを自動で与えたりします。Android 11 以上と、本アプリのユーザー補助サービスのオンが必要です。実行中だけゲーム画面を読み取り、その中でタップとスワイプをします。赤いギフトとキノコには触れません。ゲーム側からユーザー補助がオンだと分かる可能性があり、リスクはご自身の判断でお願いします。</string>
     <string name="ovl_cd_expedition">自動探検</string>
     <string name="expedition_channel_name">自動探検</string>
     <string name="expedition_running">自動探検を実行中</string>
@@ -13,6 +13,7 @@
     <string name="expedition_target_fruit">果実</string>
     <string name="expedition_target_pot">苗</string>
     <string name="expedition_target_both">果実＋苗</string>
+    <string name="expedition_target_feed">ミツをあげる</string>
     <string name="expedition_max_label">最大派遣回数（1〜50）</string>
     <string name="expedition_max_invalid">1〜50 の数字を入力してください</string>
     <string name="expedition_start">開始</string>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 自動餵精華 (FeedRunner): the run notification title, the result toast, its reasons, and the rounds label. -->
+    <string name="feed_running">自動餵精華進行中</string>
+    <string name="feed_result">餵了 %1$d 輪（%2$s）</string>
+    <string name="feed_reason_done">全部輪次完成</string>
+    <string name="feed_reason_not_feed">請先打開餵精華畫面</string>
+    <string name="feed_reason_no_bloom">沒有可採收的花</string>
+    <string name="feed_reason_lost">畫面不符預期，已停止</string>
+    <string name="feed_reason_cancelled">已手動停止</string>
+    <string name="feed_rounds_label">幾輪（1–50）</string>
+</resources>

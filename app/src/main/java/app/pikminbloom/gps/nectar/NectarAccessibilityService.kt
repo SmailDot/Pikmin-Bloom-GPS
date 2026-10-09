@@ -13,12 +13,14 @@ import android.util.Log
 import android.view.Display
 import android.view.accessibility.AccessibilityEvent
 import androidx.annotation.RequiresApi
+import app.pikminbloom.gps.feed.FeedGestures
 import app.pikminbloom.gps.vision.RgbImage
 import app.pikminbloom.gps.vision.fromBitmap
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.math.ceil
 
 /**
  * What only an accessibility service can do here: inject taps and swipes into the game, and take one-off
@@ -65,6 +67,51 @@ class NectarAccessibilityService : AccessibilityService() {
     }
 
     fun back(): Boolean = performGlobalAction(GLOBAL_ACTION_BACK)
+
+    /** 自動餵精華 zoom out: two strokes dispatched together, see [FeedGestures.pinch]. */
+    suspend fun pinch(w: Int, h: Int): Boolean {
+        val builder = GestureDescription.Builder()
+        for (s in FeedGestures.pinch(w, h)) {
+            builder.addStroke(GestureDescription.StrokeDescription(line(s.fromX, s.fromY, s.toX, s.toY), 0, s.durationMs))
+        }
+        return dispatch(builder.build())
+    }
+
+    /**
+     * 自動餵精華 hold: a drag from the nectar bubble to the start of a circle, then that circle repeated for [holdMs].
+     * The drag is held open (willContinue), and each one-second circle continues from where the last one ended, so
+     * the whole hold is one unbroken touch. Every piece is dispatched and awaited before the next.
+     */
+    suspend fun dragHoldCircle(fromX: Int, fromY: Int, toX: Int, toY: Int, radius: Int, holdMs: Long): Boolean {
+        val drag = Path().apply {
+            moveTo(fromX.toFloat(), fromY.toFloat())
+            lineTo((toX + radius).toFloat(), toY.toFloat()) // where the circle starts
+        }
+        var stroke = GestureDescription.StrokeDescription(drag, 0, DRAG_MS, true)
+        if (!dispatch(GestureDescription.Builder().addStroke(stroke).build())) return false
+        val circle = pathOf(FeedGestures.circle(toX, toY, radius))
+        val segments = ceil(holdMs / CIRCLE_MS.toDouble()).toInt().coerceAtLeast(1)
+        for (i in 1..segments) {
+            stroke = stroke.continueStroke(circle, 0, CIRCLE_MS, i < segments)
+            if (!dispatch(GestureDescription.Builder().addStroke(stroke).build())) return false
+        }
+        return true
+    }
+
+    /** 自動餵精華 harvest: one continuous stroke through [points], taking [durationMs]. */
+    suspend fun path(points: List<Pair<Int, Int>>, durationMs: Long): Boolean =
+        dispatch(GestureDescription.Builder().addStroke(GestureDescription.StrokeDescription(pathOf(points), 0, durationMs)).build())
+
+    private fun line(fromX: Int, fromY: Int, toX: Int, toY: Int): Path = Path().apply {
+        moveTo(fromX.toFloat(), fromY.toFloat())
+        lineTo(toX.toFloat(), toY.toFloat())
+    }
+
+    private fun pathOf(points: List<Pair<Int, Int>>): Path = Path().apply {
+        val (x0, y0) = points.first()
+        moveTo(x0.toFloat(), y0.toFloat())
+        for ((x, y) in points.drop(1)) lineTo(x.toFloat(), y.toFloat())
+    }
 
     /**
      * One screenshot of the game's screen for 自動探險, or null when none can be had: Android below 11, or the
@@ -135,6 +182,8 @@ class NectarAccessibilityService : AccessibilityService() {
         private const val TAG = "PikminGPS"
         private const val TAP_MS = 60L
         private const val SCREENSHOT_RETRY_MS = 400L
+        private const val DRAG_MS = 700L
+        private const val CIRCLE_MS = 1000L
 
         @Volatile var instance: NectarAccessibilityService? = null
             private set

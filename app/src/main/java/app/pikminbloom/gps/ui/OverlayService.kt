@@ -28,6 +28,7 @@ import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import app.pikminbloom.gps.R
+import app.pikminbloom.gps.auto.AutoRuns
 import app.pikminbloom.gps.data.LocationJump
 import app.pikminbloom.gps.data.PatrolPhase
 import app.pikminbloom.gps.data.PatrolState
@@ -38,6 +39,7 @@ import app.pikminbloom.gps.databinding.OverlayJoystickBinding
 import app.pikminbloom.gps.expedition.ExpeditionLimits
 import app.pikminbloom.gps.expedition.ExpeditionRunner
 import app.pikminbloom.gps.expedition.ExpeditionTarget
+import app.pikminbloom.gps.feed.FeedRunner
 import app.pikminbloom.gps.nectar.NectarAccessibilityService
 import app.pikminbloom.gps.service.PatrolEvent
 import app.pikminbloom.gps.service.PatrolNotifications
@@ -45,6 +47,7 @@ import app.pikminbloom.gps.service.PatrolService
 import app.pikminbloom.gps.service.RealMode
 import app.pikminbloom.gps.vision.FlowerScanner
 import app.pikminbloom.gps.vision.ScreenCaptureService
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -499,7 +502,7 @@ class OverlayService : Service() {
     /** 自動探險 button: stop a running run; else fix what is missing (accessibility, Android 11); else ask what to send. */
     private fun onExpeditionClicked() {
         when {
-            ExpeditionRunner.isBusy -> ExpeditionRunner.cancel()
+            AutoRuns.isBusy -> AutoRuns.cancel()
             !NectarAccessibilityService.isEnabled -> {
                 Toast.makeText(this, R.string.toast_nectar_enable_service, Toast.LENGTH_LONG).show()
                 NectarAccessibilityService.openSettings(this)
@@ -516,6 +519,11 @@ class OverlayService : Service() {
         val targets = view.findViewById<RadioGroup>(R.id.expeditionTarget)
         val maxField = view.findViewById<EditText>(R.id.expeditionMax)
         maxField.setText(ExpeditionLimits.DEFAULT_DISPATCH.toString())
+        val maxLayout = view.findViewById<TextInputLayout>(R.id.expeditionMaxLayout)
+        // The number means expeditions for the item choices, and rounds for 餵精華.
+        targets.setOnCheckedChangeListener { _, id ->
+            maxLayout.hint = getString(if (id == R.id.expeditionFeed) R.string.feed_rounds_label else R.string.expedition_max_label)
+        }
         val dialog = AlertDialog.Builder(ctx)
             .setTitle(R.string.expedition_title)
             .setView(view)
@@ -529,13 +537,17 @@ class OverlayService : Service() {
                     Toast.makeText(this, R.string.expedition_max_invalid, Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
-                val target = when (targets.checkedRadioButtonId) {
-                    R.id.expeditionPot -> ExpeditionTarget.POT
-                    R.id.expeditionBoth -> ExpeditionTarget.BOTH
-                    else -> ExpeditionTarget.FRUIT
-                }
                 dialog.dismiss()
-                ExpeditionRunner.start(this, target, max, ::setBarHidden)
+                if (targets.checkedRadioButtonId == R.id.expeditionFeed) {
+                    FeedRunner.start(this, max, ::setBarHidden)
+                } else {
+                    val target = when (targets.checkedRadioButtonId) {
+                        R.id.expeditionPot -> ExpeditionTarget.POT
+                        R.id.expeditionBoth -> ExpeditionTarget.BOTH
+                        else -> ExpeditionTarget.FRUIT
+                    }
+                    ExpeditionRunner.start(this, target, max, ::setBarHidden)
+                }
             }
         }
         showOverlayDialog(dialog)
@@ -800,7 +812,7 @@ class OverlayService : Service() {
         // 自動探險 is opt-in in Settings: its button shows only then, and reads as "on" while a run goes.
         b.btnExpedition.visibility = if (prefs.autoExpedition) View.VISIBLE else View.GONE
         b.btnExpedition.imageTintList = ColorStateList.valueOf(
-            ContextCompat.getColor(this, if (ExpeditionRunner.isBusy) R.color.overlay_phase_paused else R.color.overlay_icon),
+            ContextCompat.getColor(this, if (AutoRuns.isBusy) R.color.overlay_phase_paused else R.color.overlay_icon),
         )
     }
 
