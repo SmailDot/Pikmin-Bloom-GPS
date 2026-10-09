@@ -125,8 +125,20 @@
             android:name=".ui.OverlayService"
             android:exported="false" />
 
-        <!-- 自動拉花's accessibility service is declared in src/debug/AndroidManifest.xml only (2026-10-08): release
-             builds do not have the feature, and do not list a service in the system's accessibility settings. -->
+        <!-- Accessibility service for 自動探險 (and 自動拉花 in debug builds): gesture injection only, off until the
+             user enables it in system settings. Listed in every build; the feature switches in Settings decide. -->
+        <service
+            android:name=".nectar.NectarAccessibilityService"
+            android:exported="true"
+            android:label="@string/nectar_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_nectar" />
+        </service>
     </application>
 
 </manifest>

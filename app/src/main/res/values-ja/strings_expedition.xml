@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Auto expedition (ExpeditionRunner, overlay bar button, Settings switch). -->
+    <string name="accessibility_service_desc">タップとスワイプのみを行い、画面の内容は読み取りません。自動探検に使用します（デバッグ版では自動ミツ集めも）。どのアプリからも有効なユーザー補助の一覧が見えるため、不要なときはオフにしてください。</string>
+    <string name="pref_auto_expedition_title">自動探検（実験的）</string>
+    <string name="pref_auto_expedition_summary">フローティングバーから果実と苗の探検に一度で派遣します。「スキャン」（画面キャプチャ）の実行と、本アプリのユーザー補助サービスのオンが必要です。赤いギフトとキノコには触れません。ゲーム側からユーザー補助がオンだと分かる可能性があり、リスクはご自身の判断でお願いします。</string>
+    <string name="ovl_cd_expedition">自動探検</string>
+    <string name="toast_expedition_stopped">自動探検を停止しました</string>
+    <string name="expedition_title">自動探検</string>
+    <string name="expedition_target_fruit">果実</string>
+    <string name="expedition_target_pot">苗</string>
+    <string name="expedition_target_both">果実＋苗</string>
+    <string name="expedition_max_label">最大派遣回数（1〜50）</string>
+    <string name="expedition_max_invalid">1〜50 の数字を入力してください</string>
+    <string name="expedition_start">開始</string>
+    <string name="expedition_result">%1$d 回派遣しました（%2$s）</string>
+    <string name="expedition_reason_end">リストの最後まで見終えました</string>
+    <string name="expedition_reason_limit">上限に達しました</string>
+    <string name="expedition_reason_no_pikmin">派遣できるピクミンがいません</string>
+    <string name="expedition_reason_not_list">先に探検リストを開いてください</string>
+    <string name="expedition_reason_lost">画面が想定と違うため停止しました</string>
+    <string name="expedition_reason_cancelled">手動で停止しました</string>
+</resources>

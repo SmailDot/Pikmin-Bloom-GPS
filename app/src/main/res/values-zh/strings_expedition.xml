@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Auto expedition (ExpeditionRunner, overlay bar button, Settings switch). -->
+    <string name="accessibility_service_desc">只做點擊與滑動，不讀取畫面上的任何內容。用於自動探險（除錯版另含自動拉花）。任何 App 都看得到哪些無障礙服務已開啟，不需要時請關閉。</string>
+    <string name="pref_auto_expedition_title">自動探險（實驗）</string>
+    <string name="pref_auto_expedition_summary">在浮動列上直接派出果實與花苗的探險。需要「掃描」（螢幕擷取）正在執行，並開啟本 App 的無障礙服務。紅色禮品與蘑菇不會被點擊。遊戲可能看得出無障礙服務已開啟，風險自負。</string>
+    <string name="ovl_cd_expedition">自動探險</string>
+    <string name="toast_expedition_stopped">已停止自動探險</string>
+    <string name="expedition_title">自動探險</string>
+    <string name="expedition_target_fruit">果實</string>
+    <string name="expedition_target_pot">花苗</string>
+    <string name="expedition_target_both">果實＋花苗</string>
+    <string name="expedition_max_label">最多派幾次（1–50）</string>
+    <string name="expedition_max_invalid">請輸入 1 到 50 的數字</string>
+    <string name="expedition_start">開始</string>
+    <string name="expedition_result">派出 %1$d 次（%2$s）</string>
+    <string name="expedition_reason_end">列表已看完</string>
+    <string name="expedition_reason_limit">已達上限</string>
+    <string name="expedition_reason_no_pikmin">沒有可派出的皮克敏</string>
+    <string name="expedition_reason_not_list">請先打開探險列表</string>
+    <string name="expedition_reason_lost">畫面不符預期，已停止</string>
+    <string name="expedition_reason_cancelled">已手動停止</string>
+</resources>

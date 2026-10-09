@@ -42,10 +42,10 @@
     <string name="snack_parked">已回到自訂的家，模擬定位維持中</string>
 
     <!-- 自動拉花 -->
-    <string name="nectar_service_label">皮克敏巡花助手：自動拉花</string>
+    <string name="nectar_service_label">皮克敏巡花助手：自動操作</string>
     <string name="pref_auto_nectar_title">抵達大花時自動領花蜜（實驗）</string>
     <string name="pref_auto_nectar_summary">俯瞰模式下：暫停巡邏 → 點大花 → 點名稱標籤 → 在資訊頁下滑 → 關閉 → 繼續走。每一步都用螢幕擷取確認有畫面變化才做下一步。需要掃描（螢幕擷取）進行中，以及在系統設定開啟「皮克敏巡花助手：自動拉花」無障礙服務。注意：任何 App 都能查到哪些無障礙服務開著，這是遊戲可用的偵測手段；只在需要時開。</string>
-    <string name="toast_nectar_enable_service">請在無障礙設定中開啟「皮克敏巡花助手：自動拉花」</string>
+    <string name="toast_nectar_enable_service">請在無障礙設定中開啟「皮克敏巡花助手：自動操作」</string>
     <string name="snack_nectar_ok">%1$s：已點花並下滑領取</string>
     <string name="snack_nectar_failed">%1$s：自動拉花未完成（%2$s）</string>
 

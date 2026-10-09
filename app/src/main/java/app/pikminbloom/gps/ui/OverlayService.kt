@@ -19,6 +19,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
+import android.widget.EditText
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.annotation.ColorRes
 import androidx.appcompat.app.AlertDialog
@@ -33,6 +35,10 @@ import app.pikminbloom.gps.data.Prefs
 import app.pikminbloom.gps.data.TravelMode
 import app.pikminbloom.gps.databinding.OverlayBarBinding
 import app.pikminbloom.gps.databinding.OverlayJoystickBinding
+import app.pikminbloom.gps.expedition.ExpeditionLimits
+import app.pikminbloom.gps.expedition.ExpeditionRunner
+import app.pikminbloom.gps.expedition.ExpeditionTarget
+import app.pikminbloom.gps.nectar.NectarAccessibilityService
 import app.pikminbloom.gps.service.PatrolEvent
 import app.pikminbloom.gps.service.PatrolNotifications
 import app.pikminbloom.gps.service.PatrolService
@@ -238,6 +244,7 @@ class OverlayService : Service() {
         // Square 停止 next to 回家 was too easy to hit (2026-10-08): it only ever opens the confirmation.
         b.btnStop.setOnClickListener { confirmStop() }
         b.btnScan.setOnClickListener { onScanClicked() }
+        b.btnExpedition.setOnClickListener { onExpeditionClicked() }
         b.btnVehicle.setOnClickListener { onVehicleClicked() }
         b.btnSpeed.setOnClickListener { setSpeedOpen(!speedOpen); if (speedOpen) flashSpeed() }
         b.btnSpeedDown.setOnClickListener { onSpeedStep(up = false) }
@@ -486,6 +493,60 @@ class OverlayService : Service() {
         }
     }
 
+    /** 自動探險 button: stop a running run; else fix what is missing (capture, then accessibility); else ask what to send. */
+    private fun onExpeditionClicked() {
+        when {
+            ExpeditionRunner.isBusy -> {
+                ExpeditionRunner.cancel()
+                toast(R.string.toast_expedition_stopped)
+            }
+            !ScreenCaptureService.isRunning.value -> openMainActivity(startScan = true)
+            !NectarAccessibilityService.isEnabled -> {
+                Toast.makeText(this, R.string.toast_nectar_enable_service, Toast.LENGTH_LONG).show()
+                NectarAccessibilityService.openSettings(this)
+            }
+            else -> showExpeditionDialog()
+        }
+    }
+
+    /** Which items to send and at most how many expeditions. A number outside 1..50 keeps the dialog open. */
+    private fun showExpeditionDialog() {
+        val ctx = dialogContext()
+        val view = LayoutInflater.from(ctx).inflate(R.layout.dialog_expedition, null)
+        val targets = view.findViewById<RadioGroup>(R.id.expeditionTarget)
+        val maxField = view.findViewById<EditText>(R.id.expeditionMax)
+        maxField.setText(ExpeditionLimits.DEFAULT_DISPATCH.toString())
+        val dialog = AlertDialog.Builder(ctx)
+            .setTitle(R.string.expedition_title)
+            .setView(view)
+            .setPositiveButton(R.string.expedition_start, null)
+            .setNegativeButton(R.string.action_cancel, null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val max = ExpeditionLimits.parseMax(maxField.text.toString())
+                if (max == null) {
+                    Toast.makeText(this, R.string.expedition_max_invalid, Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                val target = when (targets.checkedRadioButtonId) {
+                    R.id.expeditionPot -> ExpeditionTarget.POT
+                    R.id.expeditionBoth -> ExpeditionTarget.BOTH
+                    else -> ExpeditionTarget.FRUIT
+                }
+                dialog.dismiss()
+                ExpeditionRunner.start(this, target, max, ::setBarHidden)
+            }
+        }
+        showOverlayDialog(dialog)
+    }
+
+    /** Hides the whole bar (handle included) while an expedition runs, so its taps reach the game. GONE, not INVISIBLE: an invisible root still holds its window. */
+    private fun setBarHidden(hidden: Boolean) {
+        val b = binding ?: return
+        b.root.visibility = if (hidden) View.GONE else View.VISIBLE
+    }
+
     /** Drag with a slop threshold so a tap still expands/collapses; long press toggles the pin. */
     private fun onHandleTouch(event: MotionEvent): Boolean = when (event.actionMasked) {
         MotionEvent.ACTION_DOWN -> {
@@ -731,6 +792,11 @@ class OverlayService : Service() {
             ContextCompat.getColor(this, if (scanning) R.color.overlay_phase_paused else R.color.overlay_icon),
         )
         b.btnScan.alpha = if (scanning || scan.isActive) 1f else 0.7f
+        // 自動探險 is opt-in in Settings: its button shows only then, and reads as "on" while a run goes.
+        b.btnExpedition.visibility = if (prefs.autoExpedition) View.VISIBLE else View.GONE
+        b.btnExpedition.imageTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(this, if (ExpeditionRunner.isBusy) R.color.overlay_phase_paused else R.color.overlay_icon),
+        )
     }
 
     /** The scan's one-liner while a scan is in progress (校準中 12 m / 已找到 3 朵 / 請切到俯瞰模式), else null. */

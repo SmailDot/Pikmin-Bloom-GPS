@@ -42,10 +42,10 @@
     <string name="snack_parked">登録した家に戻りました。擬似位置は維持中です</string>
 
     <!-- Auto Nectar -->
-    <string name="nectar_service_label">Pikmin Bloom GPS：自動ミツ集め</string>
+    <string name="nectar_service_label">Pikmin Bloom GPS：自動操作</string>
     <string name="pref_auto_nectar_title">おおきな花に着いたら自動でミツを集める（実験的）</string>
     <string name="pref_auto_nectar_summary">俯瞰表示で：巡回を一時停止 → おおきな花をタップ → 名前ラベルをタップ → 情報画面で下にスワイプ → 閉じる → 歩き続ける。各ステップで画面キャプチャにより画面の変化を確認してから次に進みます。スキャン（画面キャプチャ）の実行中であることと、システム設定で「Pikmin Bloom GPS：自動ミツ集め」ユーザー補助サービスをオンにすることが必要です。注意：オンになっているユーザー補助サービスはどのアプリからでも確認できるため、ゲームが検出に使う可能性があります。必要なときだけオンにしてください。</string>
-    <string name="toast_nectar_enable_service">ユーザー補助の設定で「Pikmin Bloom GPS：自動ミツ集め」をオンにしてください</string>
+    <string name="toast_nectar_enable_service">ユーザー補助の設定で「Pikmin Bloom GPS：自動操作」をオンにしてください</string>
     <string name="snack_nectar_ok">%1$s：花をタップしてスワイプで集めました</string>
     <string name="snack_nectar_failed">%1$s：自動ミツ集めが完了しませんでした（%2$s）</string>
 

@@ -101,6 +101,11 @@ class Prefs(context: Context) {
         get() = AUTO_NECTAR_AVAILABLE && sp.getBoolean(KEY_AUTO_NECTAR, false)
         set(v) = sp.edit { putBoolean(KEY_AUTO_NECTAR, v) }
 
+    /** 自動探險 (experimental): the floating bar's expedition button shows and works. Off by default. */
+    var autoExpedition: Boolean
+        get() = sp.getBoolean(KEY_AUTO_EXPEDITION, false)
+        set(v) = sp.edit { putBoolean(KEY_AUTO_EXPEDITION, v) }
+
     /** 開 Google 地圖時自動切到真實位置 (9c). Off by default; needs usage access. */
     var autoRealForMaps: Boolean
         get() = sp.getBoolean(KEY_AUTO_REAL_FOR_MAPS, false)
@@ -267,6 +272,7 @@ class Prefs(context: Context) {
         const val KEY_ACCURACY_ADVICE_MUTED = "accuracy_advice_muted"
         const val KEY_STAY_ASK_KM = "stay_ask_km"
         const val KEY_AUTO_NECTAR = "auto_nectar"
+        const val KEY_AUTO_EXPEDITION = "auto_expedition"
 
         /**
          * 自動拉花 still has never collected nectar (PLAN I): debug builds only (2026-10-08, "release把它隱藏起來 除了debug版").

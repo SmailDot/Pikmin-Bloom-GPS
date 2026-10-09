@@ -26,6 +26,9 @@ class ExpeditionSession(
 ) {
     private var dispatched = 0
 
+    /** Dispatches made so far in this run. Still readable after a cancellation, when [run] throws. */
+    val dispatchedSoFar: Int get() = dispatched
+
     suspend fun run(target: ExpeditionTarget, maxDispatch: Int): ExpeditionResult {
         require(maxDispatch >= 1) { "maxDispatch must be at least 1, was $maxDispatch" }
         val stop = try {

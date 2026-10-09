@@ -42,10 +42,10 @@
     <string name="snack_parked">Back at your saved home; mock location still on</string>
 
     <!-- Auto Nectar -->
-    <string name="nectar_service_label">Pikmin Bloom GPS: Auto Nectar</string>
+    <string name="nectar_service_label">Pikmin Bloom GPS: Auto actions</string>
     <string name="pref_auto_nectar_title">Auto-collect Nectar at Big Flowers (experimental)</string>
     <string name="pref_auto_nectar_summary">In bird\'s-eye view: pause patrol → tap the Big Flower → tap its name label → swipe down on the info page → close → walk on. Each step checks with screen capture that the screen changed before doing the next. Needs a scan (screen capture) running, and the \"Pikmin Bloom GPS: Auto Nectar\" accessibility service turned on in system settings. Note: any app can see which accessibility services are on, so the game could use this to detect it. Only turn it on when you need it.</string>
-    <string name="toast_nectar_enable_service">Turn on \"Pikmin Bloom GPS: Auto Nectar\" in Accessibility settings</string>
+    <string name="toast_nectar_enable_service">Turn on \"Pikmin Bloom GPS: Auto actions\" in Accessibility settings</string>
     <string name="snack_nectar_ok">%1$s: tapped the flower and swiped to collect</string>
     <string name="snack_nectar_failed">%1$s: Auto Nectar didn\'t finish (%2$s)</string>
 

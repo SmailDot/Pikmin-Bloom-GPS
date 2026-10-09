@@ -181,4 +181,32 @@ class ExpeditionSessionTest {
         assertThrows(CancellationException::class.java) { runSession(io, ExpeditionTarget.POT, maxDispatch = 1) }
         assertEquals(listOf(226 to 1000), io.taps)
     }
+
+    @Test
+    fun `dispatchedSoFar matches the dispatch count after a limit-reached run`() {
+        val io = FakeIo(
+            listOf(
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        val session = session(io)
+        runBlocking { session.run(ExpeditionTarget.POT, maxDispatch = 1) }
+        assertEquals(1, session.dispatchedSoFar)
+    }
+
+    @Test
+    fun `dispatchedSoFar still counts the dispatches made before a cancellation`() {
+        val io = FakeIo(
+            listOf(
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen),
+                Scene(list(Cell(226, 1500, ItemKind.POT))),
+            ),
+            cancelAfterTaps = 6,
+        )
+        val session = session(io)
+        assertThrows(CancellationException::class.java) { runBlocking { session.run(ExpeditionTarget.POT, maxDispatch = 5) } }
+        assertEquals(1, session.dispatchedSoFar)
+    }
 }

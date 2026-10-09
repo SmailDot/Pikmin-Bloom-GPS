@@ -10,20 +10,5 @@
                 <action android:name="app.pikminbloom.gps.DEBUG_CMD" />
             </intent-filter>
         </receiver>
-
-        <!-- 自動拉花 (experimental, debug builds only - Prefs.AUTO_NECTAR_AVAILABLE): gesture injection only. Off until
-             the user enables it in system settings. -->
-        <service
-            android:name=".nectar.NectarAccessibilityService"
-            android:exported="true"
-            android:label="@string/nectar_service_label"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_nectar" />
-        </service>
     </application>
 </manifest>
