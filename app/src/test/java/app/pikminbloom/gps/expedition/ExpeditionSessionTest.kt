@@ -66,7 +66,7 @@ class ExpeditionSessionTest {
         }
     }
 
-    private fun list(vararg cells: Cell) = ExpFrame(ExpScreen.LIST, cells = cells.toList())
+    private fun list(vararg cells: Cell, tabY: Int? = null) = ExpFrame(ExpScreen.LIST, cells = cells.toList(), tabY = tabY)
 
     private fun select(goActive: Boolean) = ExpFrame(ExpScreen.SELECT, selectRowY = 1031, goActive = goActive)
 
@@ -115,6 +115,33 @@ class ExpeditionSessionTest {
         )
         assertEquals(ExpeditionResult(1, ExpeditionStop.LIMIT_REACHED), runSession(io, ExpeditionTarget.POT, maxDispatch = 1))
         assertEquals(226 to 1000, io.taps.first())
+    }
+
+    @Test
+    fun `a sheet whose tab row sits in the gesture zone is swiped from just above that row`() {
+        // tabY 2620 on a 2712-high screen: 2620 - 94 (0.035H) = 2526, to 0.40H.
+        val io = FakeIo(
+            listOf(
+                Scene(list(tabY = 2620), shade = BLACK),
+                Scene(list(Cell(226, 1000, ItemKind.POT)), shade = WHITE),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        assertEquals(ExpeditionResult(1, ExpeditionStop.LIMIT_REACHED), runSession(io, ExpeditionTarget.POT, maxDispatch = 1))
+        assertEquals(Swipe(610, 2526, 1084, 600L), io.swipes.first())
+    }
+
+    @Test
+    fun `a sheet whose tab row is higher up is swiped from 0_85H as before`() {
+        val io = FakeIo(
+            listOf(
+                Scene(list(tabY = 1232), shade = BLACK),
+                Scene(list(Cell(226, 1000, ItemKind.POT)), shade = WHITE),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        assertEquals(ExpeditionResult(1, ExpeditionStop.LIMIT_REACHED), runSession(io, ExpeditionTarget.POT, maxDispatch = 1))
+        assertEquals(Swipe(610, 2305, 1084, 600L), io.swipes.first())
     }
 
     @Test

@@ -59,7 +59,13 @@ class ExpeditionSession(
                 if (swipes == MAX_SWIPES) return ExpeditionStop.DONE_END_OF_LIST
                 swipes++
                 val before = list.img
-                io.swipe((0.5 * before.width).toInt(), (0.85 * before.height).toInt(), (0.40 * before.height).toInt(), SWIPE_MS)
+                // A fully collapsed sheet puts its tab row in the gesture-navigation zone at the bottom: grab the
+                // sheet just above its tabs (its drag handle) instead, or the swipe moves the map.
+                val fromY = list.frame.tabY
+                    ?.takeIf { it > (0.85 * before.height).toInt() }
+                    ?.let { it - (0.035 * before.height).toInt() }
+                    ?: (0.85 * before.height).toInt()
+                io.swipe((0.5 * before.width).toInt(), fromY, (0.40 * before.height).toInt(), SWIPE_MS)
                 io.wait(SWIPE_SETTLE_MS)
                 // The sheet bounces for a moment after a swipe: take the first look that is the list, then compare.
                 val after = poll(LIST_LOOKS, LIST_LOOK_MS, ExpScreen.LIST) ?: return ExpeditionStop.LOST

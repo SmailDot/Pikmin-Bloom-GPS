@@ -13,8 +13,9 @@ enum class ItemKind { POT, FRUIT, GIFT, UNKNOWN, COVERED, IN_PROGRESS }
 data class Cell(val x: Int, val y: Int, val kind: ItemKind)
 
 /**
- * What one captured frame shows. [cells] is only filled on LIST, [goExploreY] only on DETAIL,
- * [selectRowY] and [goActive] only on SELECT.
+ * What one captured frame shows. [cells] and [tabY] are only filled on LIST, [goExploreY] only on DETAIL,
+ * [selectRowY] and [goActive] only on SELECT. [tabY] is the centre row of the 探險 tab pill, which is where the
+ * sheet is grabbed to move it.
  */
 data class ExpFrame(
     val screen: ExpScreen,
@@ -22,6 +23,7 @@ data class ExpFrame(
     val goExploreY: Int? = null,
     val selectRowY: Int? = null,
     val goActive: Boolean = false,
+    val tabY: Int? = null,
 )
 
 /**
@@ -39,8 +41,8 @@ object ExpeditionVision {
         if (isResult(img, hsv)) return ExpFrame(ExpScreen.RESULT)
         selectRowY(img, hsv)?.let { return ExpFrame(ExpScreen.SELECT, selectRowY = it, goActive = isGoActive(img, hsv)) }
         goExploreY(img, hsv)?.let { return ExpFrame(ExpScreen.DETAIL, goExploreY = it) }
-        val tabBottom = listTabBottom(img, hsv) ?: return ExpFrame(ExpScreen.OTHER)
-        return ExpFrame(ExpScreen.LIST, cells = listCells(img, tabBottom, hsv))
+        val tab = listTab(img, hsv) ?: return ExpFrame(ExpScreen.OTHER)
+        return ExpFrame(ExpScreen.LIST, cells = listCells(img, tab.last, hsv), tabY = (tab.first + tab.last) / 2)
     }
 
     /** GO bubble, bottom-right of the SELECT screen. */
@@ -137,9 +139,9 @@ object ExpeditionVision {
 
     /**
      * The selected 探險 tab: a green pill covering most of [0.57W, 0.72W], 0.02H–0.045H tall, with
-     * near-white rows 0.008H above and below it. Returns the pill's last row.
+     * near-white rows 0.008H above and below it. Returns the pill's rows.
      */
-    private fun listTabBottom(img: RgbImage, hsv: DoubleArray): Int? {
+    private fun listTab(img: RgbImage, hsv: DoubleArray): IntRange? {
         val w = img.width
         val h = img.height
         val x0 = (0.57 * w).toInt()
@@ -154,7 +156,7 @@ object ExpeditionVision {
             val len = run.last - run.first + 1
             len in minLen..maxLen && run.first - pad >= 0 && run.last + pad < h &&
                 isWhiteRow(img, x0, x1, run.first - pad, hsv) && isWhiteRow(img, x0, x1, run.last + pad, hsv)
-        }?.last
+        }
     }
 
     private fun isWhiteRow(img: RgbImage, x0: Int, x1: Int, y: Int, hsv: DoubleArray): Boolean =

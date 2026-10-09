@@ -85,11 +85,18 @@ class PikminGpsApp : Application() {
                 setShowBadge(false)
             }
         )
+        // 自動探險 runs with no foreground service: its stop button lives in this quiet notification.
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_EXPEDITION, getString(R.string.expedition_channel_name), NotificationManager.IMPORTANCE_LOW).apply {
+                setShowBadge(false)
+            }
+        )
     }
 
     companion object {
         const val CHANNEL_PATROL = "patrol"
         const val CHANNEL_EVENTS = "events"
         const val CHANNEL_SCREEN_SCAN = "screen_scan"
+        const val CHANNEL_EXPEDITION = "expedition"
     }
 }

@@ -1,8 +1,13 @@
 package app.pikminbloom.gps.expedition
 
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import app.pikminbloom.gps.PikminGpsApp
 import app.pikminbloom.gps.R
 import app.pikminbloom.gps.nectar.NectarAccessibilityService
 import app.pikminbloom.gps.nectar.NectarIo
@@ -19,10 +24,12 @@ import kotlinx.coroutines.withContext
 
 /**
  * Glue for 自動探險, like [app.pikminbloom.gps.nectar.NectarRunner]: one run at a time on a background scope,
- * screenshots and taps from [NectarAccessibilityService], and one toast with the result.
+ * screenshots and taps from [NectarAccessibilityService], one toast with the result, and an ongoing notification
+ * whose Stop action cancels the run (the bar is hidden during a run, so the notification is the way to stop it).
  */
 object ExpeditionRunner {
     private const val TAG = "PikminGPS"
+    private const val NOTICE_ID = 22
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
 
@@ -40,6 +47,7 @@ object ExpeditionRunner {
         if (svc == null) { Log.i(TAG, "expedition: skipped, accessibility service off"); return }
         job = scope.launch {
             val session = ExpeditionSession(io(svc), log = { Log.i(TAG, "expedition: $it") })
+            showNotice(app)
             var stop = ExpeditionStop.CANCELLED
             var count = 0
             try {
@@ -51,6 +59,7 @@ object ExpeditionRunner {
                 count = session.dispatchedSoFar
                 throw e
             } finally {
+                cancelNotice(app)
                 // NonCancellable: after a cancel the bar must still come back and the result must still show.
                 withContext(NonCancellable + Dispatchers.Main) {
                     setBarHidden(false)
@@ -58,6 +67,33 @@ object ExpeditionRunner {
                 }
             }
         }
+    }
+
+    /**
+     * The run's notification: ongoing and quiet, with a Stop action that broadcasts to [ExpeditionStopReceiver].
+     * Posting is best-effort (the user may have turned notifications off); the run does not depend on it.
+     */
+    private fun showNotice(app: Context) {
+        val stop = PendingIntent.getBroadcast(
+            app,
+            0,
+            Intent(app, ExpeditionStopReceiver::class.java).setAction(ExpeditionStopReceiver.ACTION_STOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val notice = NotificationCompat.Builder(app, PikminGpsApp.CHANNEL_EXPEDITION)
+            .setSmallIcon(R.drawable.ic_flower)
+            .setContentTitle(app.getString(R.string.expedition_running))
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .addAction(0, app.getString(R.string.expedition_stop), stop)
+            .build()
+        val nm = app.getSystemService(NotificationManager::class.java)
+        runCatching { nm.notify(NOTICE_ID, notice) }
+    }
+
+    private fun cancelNotice(app: Context) {
+        app.getSystemService(NotificationManager::class.java).cancel(NOTICE_ID)
     }
 
     /** Stops the run now. The result toast still reports how many expeditions went out before the stop. */

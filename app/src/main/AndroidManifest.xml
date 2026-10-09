@@ -119,6 +119,12 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
+        <!-- Stop action on the 自動探險 notification (expedition/ExpeditionStopReceiver). Not exported: only our own
+             PendingIntent reaches it. -->
+        <receiver
+            android:name=".expedition.ExpeditionStopReceiver"
+            android:exported="false" />
+
         <!-- Floating control bar. NOT a foreground service on purpose: PatrolService already is one
              and keeps the process alive while a patrol runs. -->
         <service

@@ -5,7 +5,9 @@
     <string name="pref_auto_expedition_title">自動探検（実験的）</string>
     <string name="pref_auto_expedition_summary">フローティングバーから果実と苗の探検に一度で派遣します。Android 11 以上と、本アプリのユーザー補助サービスのオンが必要です。実行中だけゲーム画面を読み取り、その中でタップします。赤いギフトとキノコには触れません。ゲーム側からユーザー補助がオンだと分かる可能性があり、リスクはご自身の判断でお願いします。</string>
     <string name="ovl_cd_expedition">自動探検</string>
-    <string name="expedition_stop_chip">■ 自動探検を停止</string>
+    <string name="expedition_channel_name">自動探検</string>
+    <string name="expedition_running">自動探検を実行中</string>
+    <string name="expedition_stop">停止</string>
     <string name="expedition_needs_android11">自動探検には Android 11 以上が必要です</string>
     <string name="expedition_title">自動探検</string>
     <string name="expedition_target_fruit">果実</string>

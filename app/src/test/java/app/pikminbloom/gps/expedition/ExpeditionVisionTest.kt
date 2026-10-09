@@ -2,6 +2,7 @@ package app.pikminbloom.gps.expedition
 
 import app.pikminbloom.gps.vision.RgbImage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -147,8 +148,8 @@ class ExpeditionVisionTest {
         assertTrue("unexpected cells ${frame.cells}", frame.cells.isEmpty())
     }
 
-    @Test
-    fun `thin green pill on white at 0_12H is the LIST tab with no cells`() {
+    /** A 1220x2712 white frame with the thin green tab pill: 0.03H tall at 0.12H, rows 325..405. */
+    private fun thinPillFrame(): RgbImage {
         val w = 1220
         val h = 2712
         val img = RgbImage.blank(w, h, 0xFFFFFFFF.toInt())
@@ -156,7 +157,36 @@ class ExpeditionVisionTest {
         val top = (0.12 * h).toInt()
         val bottom = top + (0.03 * h).toInt() - 1
         for (y in top..bottom) for (x in (0.5 * w).toInt()..(0.8 * w).toInt()) img.pixels[y * w + x] = green
-        val frame = ExpeditionVision.analyze(img)
+        return img
+    }
+
+    @Test
+    fun `list_top - the tab pill centre row is reported as tabY`() {
+        // Expected 367, tolerance 6 px.
+        val tabY = checkNotNull(ExpeditionVision.analyze(fixture("list_top.png")).tabY)
+        assertTrue("tabY $tabY, expected 367 +-6", abs(tabY - 367) <= 6)
+    }
+
+    @Test
+    fun `list_collapsed - the collapsed tab pill centre row is reported as tabY`() {
+        // Expected 1232, tolerance 6 px.
+        val tabY = checkNotNull(ExpeditionVision.analyze(fixture("list_collapsed.png")).tabY)
+        assertTrue("tabY $tabY, expected 1232 +-6", abs(tabY - 1232) <= 6)
+    }
+
+    @Test
+    fun `detail - a screen that is not the list has no tabY`() {
+        assertNull(ExpeditionVision.analyze(fixture("detail.png")).tabY)
+    }
+
+    @Test
+    fun `thin green pill on white reports its centre row 365 as tabY`() {
+        assertEquals(365, ExpeditionVision.analyze(thinPillFrame()).tabY)
+    }
+
+    @Test
+    fun `thin green pill on white at 0_12H is the LIST tab with no cells`() {
+        val frame = ExpeditionVision.analyze(thinPillFrame())
         assertEquals(ExpScreen.LIST, frame.screen)
         assertTrue("unexpected cells ${frame.cells}", frame.cells.isEmpty())
     }

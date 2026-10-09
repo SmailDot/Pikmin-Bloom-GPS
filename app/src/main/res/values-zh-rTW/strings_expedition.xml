@@ -5,7 +5,9 @@
     <string name="pref_auto_expedition_title">自動探險（實驗）</string>
     <string name="pref_auto_expedition_summary">在浮動列上直接派出果實與花苗的探險。需要 Android 11 以上，並開啟本 App 的無障礙服務。執行期間才會讀取遊戲畫面並在其中點擊。紅色禮品與蘑菇不會被點擊。遊戲可能看得出無障礙服務已開啟，風險自負。</string>
     <string name="ovl_cd_expedition">自動探險</string>
-    <string name="expedition_stop_chip">■ 停止自動探險</string>
+    <string name="expedition_channel_name">自動探險</string>
+    <string name="expedition_running">自動探險進行中</string>
+    <string name="expedition_stop">停止</string>
     <string name="expedition_needs_android11">自動探險需要 Android 11 以上</string>
     <string name="expedition_title">自動探險</string>
     <string name="expedition_target_fruit">果實</string>
