@@ -1,0 +1,133 @@
+package app.pikminbloom.gps.feed
+
+import app.pikminbloom.gps.vision.RgbImage
+import kotlinx.coroutines.CancellationException
+
+/**
+ * What the feed run can do to the phone. The Android implementation is the accessibility service (gestures) and
+ * its screenshot (frames).
+ */
+interface FeedIo {
+    suspend fun frame(): RgbImage?
+
+    /** Zoom out: two strokes together, see [FeedGestures.pinch]. */
+    suspend fun pinch(w: Int, h: Int): Boolean
+
+    /**
+     * Drags from ([fromX], [fromY]) to the start of a circle of [radius] around ([toX], [toY]), then holds there:
+     * the circle is repeated for [holdMs]. The drag ends at (toX + radius, toY), where the circle starts and ends.
+     */
+    suspend fun dragHoldCircle(fromX: Int, fromY: Int, toX: Int, toY: Int, radius: Int, holdMs: Long): Boolean
+
+    /** One continuous stroke through [points], taking [durationMs]. */
+    suspend fun path(points: List<Pair<Int, Int>>, durationMs: Long): Boolean
+
+    suspend fun wait(ms: Long)
+}
+
+enum class FeedStop { DONE, NOT_ON_FEED, NO_BLOOM, LOST, CANCELLED }
+
+data class FeedResult(val rounds: Int, val stop: FeedStop)
+
+/**
+ * 自動餵精華: [run] feeds rounds on the feed screen. Each round: poll for the feed screen, zoom out, check the
+ * zoomed frame is still the feed screen, drag the nectar to the feed point and hold, then look for blooms and
+ * harvest from the first one. Every gesture comes after a fresh frame showed the screen it belongs to.
+ *
+ * Single use per run: [run] resets the count, and [roundsSoFar] stays readable after a cancellation.
+ */
+class FeedSession(
+    private val io: FeedIo,
+    private val isFeed: (RgbImage) -> Boolean = FeedVision::isFeedScreen,
+    private val blooms: (RgbImage, RgbImage) -> List<Pair<Int, Int>> = FeedVision::findBlooms,
+    private val log: (String) -> Unit = {},
+) {
+    private var rounds = 0
+
+    /** Rounds fed so far in this run. */
+    val roundsSoFar: Int get() = rounds
+
+    suspend fun run(target: Int): FeedResult {
+        require(target >= 1) { "rounds must be at least 1, was $target" }
+        rounds = 0
+        val stop = try {
+            drive(target)
+        } catch (e: CancellationException) {
+            log("feed cancelled after $rounds")
+            throw e
+        }
+        log("feed stopped: $stop after $rounds")
+        return FeedResult(rounds, stop)
+    }
+
+    private suspend fun drive(target: Int): FeedStop {
+        var misses = 0 // rounds in a row whose look found no bloom
+        while (rounds < target) {
+            val feed = feedFrame()
+            if (feed == null) {
+                log("the feed screen did not show")
+                return if (rounds == 0) FeedStop.NOT_ON_FEED else FeedStop.LOST
+            }
+            val w = feed.width
+            val h = feed.height
+            if (!io.pinch(w, h)) return FeedStop.LOST
+            io.wait(PINCH_SETTLE_MS)
+            val before = io.frame()
+            if (before == null || !isFeed(before)) return FeedStop.LOST
+            val feedX = (0.50 * w).toInt()
+            val feedY = (0.54 * h).toInt()
+            val bubbleY = (0.895 * h).toInt()
+            if (!io.dragHoldCircle(feedX, bubbleY, feedX, feedY, (0.04 * w).toInt(), HOLD_MS)) return FeedStop.LOST
+            io.wait(AFTER_DRAG_MS)
+            val start = firstBloom(before)
+            if (start == null) {
+                misses++
+                if (rounds == 0 || misses >= 2) {
+                    log("no bloom: stopping")
+                    return FeedStop.NO_BLOOM
+                }
+                log("round ${rounds + 1}: no bloom, carrying on")
+            } else {
+                misses = 0
+                if (!io.path(FeedGestures.spiral(w, h, start), HARVEST_MS)) return FeedStop.LOST
+                io.wait(HARVEST_SETTLE_MS)
+            }
+            rounds++
+            log("fed round $rounds")
+        }
+        return FeedStop.DONE
+    }
+
+    /** The first frame that is the feed screen, looking up to [FEED_LOOKS] times, [FEED_LOOK_MS] apart. */
+    private suspend fun feedFrame(): RgbImage? {
+        repeat(FEED_LOOKS) {
+            io.wait(FEED_LOOK_MS)
+            val img = io.frame()
+            if (img != null && isFeed(img)) return img
+        }
+        return null
+    }
+
+    /** The strongest bloom from the first look that finds any, up to [BLOOM_LOOKS] looks, [BLOOM_LOOK_MS] apart. */
+    private suspend fun firstBloom(before: RgbImage): Pair<Int, Int>? {
+        repeat(BLOOM_LOOKS) {
+            io.wait(BLOOM_LOOK_MS)
+            val after = io.frame() ?: return@repeat
+            val found = blooms(before, after)
+            if (found.isNotEmpty()) return found.first()
+        }
+        return null
+    }
+
+    private companion object {
+        const val FEED_LOOKS = 3
+        const val FEED_LOOK_MS = 700L
+        const val PINCH_SETTLE_MS = 1000L
+        const val HOLD_MS = 4000L
+        const val AFTER_DRAG_MS = 1500L
+        const val BLOOM_LOOKS = 3
+        const val BLOOM_LOOK_MS = 1000L
+        const val HARVEST_MS = 6000L
+        const val HARVEST_SETTLE_MS = 1500L
+    }
+}
