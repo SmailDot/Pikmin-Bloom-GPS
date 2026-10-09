@@ -193,7 +193,7 @@
             android:contentDescription="@string/ovl_cd_expedition"
             android:padding="@dimen/space_xs"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_flag"
+            android:src="@drawable/ic_auto"
             android:tint="@color/overlay_icon"
             android:visibility="gone" />
 
