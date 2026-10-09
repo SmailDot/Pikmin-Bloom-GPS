@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 自動拉花: gesture injection only. No window content, events limited to the game and ignored. -->
+<!-- 自動拉花 / 自動探險: gesture injection and one-off screenshots only (takeScreenshot, never a recording). No window
+     content; events limited to the game and ignored. -->
+<!-- canTakeScreenshot: 自動探險 reads its frames with AccessibilityService.takeScreenshot (API 30+). A screen
+     recording (MediaProjection) makes the game paint its screens black, so the scan's capture cannot be used. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagDefault"
     android:canPerformGestures="true"
     android:canRetrieveWindowContent="false"
+    android:canTakeScreenshot="true"
     android:description="@string/accessibility_service_desc"
     android:notificationTimeout="1000"
     android:packageNames="com.nianticlabs.pikmin" />

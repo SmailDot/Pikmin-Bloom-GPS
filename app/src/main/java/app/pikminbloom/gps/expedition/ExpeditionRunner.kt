@@ -7,7 +7,6 @@ import app.pikminbloom.gps.R
 import app.pikminbloom.gps.nectar.NectarAccessibilityService
 import app.pikminbloom.gps.nectar.NectarIo
 import app.pikminbloom.gps.vision.RgbImage
-import app.pikminbloom.gps.vision.ScreenCaptureService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +19,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * Glue for 自動探險, like [app.pikminbloom.gps.nectar.NectarRunner]: one run at a time on a background scope,
- * frames from [ScreenCaptureService], taps from [NectarAccessibilityService], and one toast with the result.
+ * screenshots and taps from [NectarAccessibilityService], and one toast with the result.
  */
 object ExpeditionRunner {
     private const val TAG = "PikminGPS"
@@ -32,14 +31,13 @@ object ExpeditionRunner {
     /**
      * Starts a run and returns at once. [setBarHidden] is called on the main thread: true before the first tap,
      * so the bar never sits over the game's taps, and false when the run ends, however it ends.
-     * Does nothing when a run is already going, the accessibility service is off, or no capture is running.
+     * Does nothing when a run is already going or the accessibility service is off.
      */
     fun start(context: Context, target: ExpeditionTarget, maxDispatch: Int, setBarHidden: (Boolean) -> Unit) {
         val app = context.applicationContext
         if (isBusy) return
         val svc = NectarAccessibilityService.instance
         if (svc == null) { Log.i(TAG, "expedition: skipped, accessibility service off"); return }
-        if (!ScreenCaptureService.isRunning.value) { Log.i(TAG, "expedition: skipped, no screen capture"); return }
         job = scope.launch {
             val session = ExpeditionSession(io(svc), log = { Log.i(TAG, "expedition: $it") })
             var stop = ExpeditionStop.CANCELLED
@@ -68,7 +66,7 @@ object ExpeditionRunner {
     }
 
     private fun io(svc: NectarAccessibilityService): NectarIo = object : NectarIo {
-        override suspend fun frame(): RgbImage? = ScreenCaptureService.captureFrame()
+        override suspend fun frame(): RgbImage? = svc.screenshot()
         override suspend fun tap(x: Int, y: Int) = svc.tap(x, y)
         override suspend fun swipe(x: Int, fromY: Int, toY: Int, durationMs: Long) = svc.swipe(x, fromY, toY, durationMs)
         override suspend fun back() = svc.back()

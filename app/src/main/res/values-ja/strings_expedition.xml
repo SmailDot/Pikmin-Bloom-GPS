@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Auto expedition (ExpeditionRunner, overlay bar button, Settings switch). -->
-    <string name="accessibility_service_desc">タップとスワイプのみを行い、画面の内容は読み取りません。自動探検に使用します（デバッグ版では自動ミツ集めも）。どのアプリからも有効なユーザー補助の一覧が見えるため、不要なときはオフにしてください。</string>
+    <string name="accessibility_service_desc">自動探検の実行中だけ、ゲーム画面のスクリーンショットを撮り、タップとスワイプを行います（デバッグ版では自動ミツ集めのタップにも使います）。ウィンドウの内容は読み取らず、スクリーンショットは保存も送信もしません。どのアプリからもユーザー補助の一覧が見えるため、不要なときはオフにしてください。</string>
     <string name="pref_auto_expedition_title">自動探検（実験的）</string>
-    <string name="pref_auto_expedition_summary">フローティングバーから果実と苗の探検に一度で派遣します。「スキャン」（画面キャプチャ）の実行と、本アプリのユーザー補助サービスのオンが必要です。赤いギフトとキノコには触れません。ゲーム側からユーザー補助がオンだと分かる可能性があり、リスクはご自身の判断でお願いします。</string>
+    <string name="pref_auto_expedition_summary">フローティングバーから果実と苗の探検に一度で派遣します。Android 11 以上と、本アプリのユーザー補助サービスのオンが必要です。実行中だけゲーム画面を読み取り、その中でタップします。赤いギフトとキノコには触れません。ゲーム側からユーザー補助がオンだと分かる可能性があり、リスクはご自身の判断でお願いします。</string>
     <string name="ovl_cd_expedition">自動探検</string>
     <string name="expedition_stop_chip">■ 自動探検を停止</string>
+    <string name="expedition_needs_android11">自動探検には Android 11 以上が必要です</string>
     <string name="expedition_title">自動探検</string>
     <string name="expedition_target_fruit">果実</string>
     <string name="expedition_target_pot">苗</string>

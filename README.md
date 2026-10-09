@@ -13,7 +13,7 @@ Settings → Apps → Language).
 - **Go now / Go and stay there**: tap a Big Flower to head straight there. "Go and stay there" pauses on arrival, handy for leaving it running overnight and collecting in the morning. If the trip is longer than a set distance (15 km by default), the app first asks whether to walk (writes steps) or take a vehicle (no steps).
 - **Vehicles**: Other, Car and Plane, with speeds you can set. Vehicles write no steps and switch back to walking at the next Big Flower.
 - **Floating bar and joystick**: control the patrol on top of the game (pause, go home, change vehicle). The joystick can be dragged anywhere and comes in three sizes.
-- **Auto expedition (experimental, off by default)**: one tap on the floating bar sends Pikmin on every fruit and seedling-pot expedition in the Expedition list, using the game's own auto team picker. Red gifts and mushrooms are never touched. Needs Scan running and the accessibility service turned on.
+- **Auto expedition (experimental, off by default)**: one tap on the floating bar sends Pikmin on every fruit and seedling-pot expedition in the Expedition list, using the game's own auto team picker. Red gifts and mushrooms are never touched. Needs Android 11 or newer and the accessibility service turned on. While a run goes, it reads the game's screen (screenshots are never saved) and taps in it.
 - **Real location switch**: hand the real GPS back to the phone for a while (for Google Maps, say), then switch back to the virtual location.
 - **Find nearby candidate Big Flowers**: pulls nearby landmarks from OpenStreetMap as candidates.
 - **Resume from checkpoint**: if the system closes the app, carry on from the same spot and state.
@@ -49,7 +49,7 @@ Settings → Apps → Language).
 | Circle the Big Flower after arriving | Off by default. Turn it on only to push one Big Flower to bloom (300 flowers). |
 | Stride | 70 cm. Steps = distance ÷ stride. |
 | Daily step cap | Empty means no cap. Enter 50000 to follow the game's seedling growth cap. |
-| Auto expedition (experimental) | Off by default. It taps and swipes in the game through the accessibility service; any app can see that the service is on, and the game may notice too. Use at your own risk. |
+| Auto expedition (experimental) | Off by default. It reads the game's screen and taps in it through the accessibility service, only while a run goes; any app can see that the service is on, and the game may notice too. Use at your own risk. |
 
 ## Build
 Needs JDK 21 and the Android SDK (platform 37).

@@ -499,15 +499,15 @@ class OverlayService : Service() {
         }
     }
 
-    /** 自動探險 button: stop a running run; else fix what is missing (capture, then accessibility); else ask what to send. */
+    /** 自動探險 button: stop a running run; else fix what is missing (accessibility, Android 11); else ask what to send. */
     private fun onExpeditionClicked() {
         when {
             ExpeditionRunner.isBusy -> ExpeditionRunner.cancel()
-            !ScreenCaptureService.isRunning.value -> openMainActivity(startScan = true)
             !NectarAccessibilityService.isEnabled -> {
                 Toast.makeText(this, R.string.toast_nectar_enable_service, Toast.LENGTH_LONG).show()
                 NectarAccessibilityService.openSettings(this)
             }
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.R -> toast(R.string.expedition_needs_android11)
             else -> showExpeditionDialog()
         }
     }

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Auto expedition (ExpeditionRunner, overlay bar button, Settings switch). -->
-    <string name="accessibility_service_desc">只做點擊與滑動，不讀取畫面上的任何內容。用於自動探險（除錯版另含自動拉花）。任何 App 都看得到哪些無障礙服務已開啟，不需要時請關閉。</string>
+    <string name="accessibility_service_desc">只在自動探險執行時擷取遊戲畫面並在遊戲中點擊與滑動（除錯版的自動拉花也用它點擊）。不讀取視窗內容，截圖不會被儲存或傳送。任何 App 都看得到哪些無障礙服務已開啟，不需要時請關閉。</string>
     <string name="pref_auto_expedition_title">自動探險（實驗）</string>
-    <string name="pref_auto_expedition_summary">在浮動列上直接派出果實與花苗的探險。需要「掃描」（螢幕擷取）正在執行，並開啟本 App 的無障礙服務。紅色禮品與蘑菇不會被點擊。遊戲可能看得出無障礙服務已開啟，風險自負。</string>
+    <string name="pref_auto_expedition_summary">在浮動列上直接派出果實與花苗的探險。需要 Android 11 以上，並開啟本 App 的無障礙服務。執行期間才會讀取遊戲畫面並在其中點擊。紅色禮品與蘑菇不會被點擊。遊戲可能看得出無障礙服務已開啟，風險自負。</string>
     <string name="ovl_cd_expedition">自動探險</string>
     <string name="expedition_stop_chip">■ 停止自動探險</string>
+    <string name="expedition_needs_android11">自動探險需要 Android 11 以上</string>
     <string name="expedition_title">自動探險</string>
     <string name="expedition_target_fruit">果實</string>
     <string name="expedition_target_pot">花苗</string>
