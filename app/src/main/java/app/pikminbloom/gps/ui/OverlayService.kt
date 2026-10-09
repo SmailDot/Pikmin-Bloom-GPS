@@ -82,6 +82,8 @@ class OverlayService : Service() {
 
     private var expanded = false
     private var pinned = false
+    /** True while 自動探險 hides the bar; the idle auto-hide must not stop the service then (it holds the cancel button). */
+    private var barHiddenForRun = false
     private var touchSlop = 24
 
     private var lastPhase: PatrolPhase? = null
@@ -541,10 +543,14 @@ class OverlayService : Service() {
         showOverlayDialog(dialog)
     }
 
-    /** Hides the whole bar (handle included) while an expedition runs, so its taps reach the game. GONE, not INVISIBLE: an invisible root still holds its window. */
+    /**
+     * Hides the whole bar (handle included) while an expedition runs, so its taps reach the game. GONE, not
+     * INVISIBLE: an invisible root still holds its window. The idle auto-hide waits for the run to end.
+     */
     private fun setBarHidden(hidden: Boolean) {
-        val b = binding ?: return
-        b.root.visibility = if (hidden) View.GONE else View.VISIBLE
+        barHiddenForRun = hidden
+        if (hidden) handler.removeCallbacks(hideRunnable) else scheduleIdleHideIfNeeded(PatrolService.state.value.phase)
+        binding?.let { it.root.visibility = if (hidden) View.GONE else View.VISIBLE }
     }
 
     /** Drag with a slop threshold so a tap still expands/collapses; long press toggles the pin. */
@@ -730,7 +736,7 @@ class OverlayService : Service() {
 
     private fun scheduleIdleHideIfNeeded(phase: PatrolPhase) {
         handler.removeCallbacks(hideRunnable)
-        if (phase == PatrolPhase.IDLE && !pinned) handler.postDelayed(hideRunnable, IDLE_HIDE_MS)
+        if (phase == PatrolPhase.IDLE && !pinned && !barHiddenForRun) handler.postDelayed(hideRunnable, IDLE_HIDE_MS)
     }
 
     private fun flash(text: String) {
