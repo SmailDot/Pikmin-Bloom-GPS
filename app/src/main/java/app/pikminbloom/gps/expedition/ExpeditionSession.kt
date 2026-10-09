@@ -46,9 +46,9 @@ class ExpeditionSession(
 
     private suspend fun drive(target: ExpeditionTarget, maxDispatch: Int): ExpeditionStop {
         // The screen can still be fading in when the run starts (a dialog's scrim, say): look a few times first.
-        val first = poll(FIRST_LOOKS, FIRST_LOOK_MS, ExpScreen.LIST)
+        val first = poll(LIST_LOOKS, LIST_LOOK_MS, ExpScreen.LIST)
         if (first == null) {
-            log("not on the 探險 list after $FIRST_LOOKS looks")
+            log("not on the 探險 list after $LIST_LOOKS looks")
             return ExpeditionStop.NOT_ON_LIST
         }
         var list: Look = first
@@ -61,9 +61,9 @@ class ExpeditionSession(
                 val before = list.img
                 io.swipe((0.5 * before.width).toInt(), (0.85 * before.height).toInt(), (0.40 * before.height).toInt(), SWIPE_MS)
                 io.wait(SWIPE_SETTLE_MS)
-                val after = look(ExpScreen.LIST) ?: return ExpeditionStop.LOST
+                // The sheet bounces for a moment after a swipe: take the first look that is the list, then compare.
+                val after = poll(LIST_LOOKS, LIST_LOOK_MS, ExpScreen.LIST) ?: return ExpeditionStop.LOST
                 if (FrameDiff.changedFraction(before, after.img) < 0.01) return ExpeditionStop.DONE_END_OF_LIST
-                if (after.frame.screen != ExpScreen.LIST) return ExpeditionStop.LOST
                 list = after
                 continue
             }
@@ -157,7 +157,8 @@ class ExpeditionSession(
         const val RESULT_POLL_MS = 1500L
         const val CLOSE_SETTLE_MS = 2000L
         const val BACK_TAPS = 3
-        const val FIRST_LOOKS = 3
-        const val FIRST_LOOK_MS = 700L
+        /** Looks for the list when a screen should be it: at the start of a run, and after each swipe (the sheet bounces). */
+        const val LIST_LOOKS = 3
+        const val LIST_LOOK_MS = 700L
     }
 }

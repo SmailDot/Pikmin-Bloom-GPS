@@ -118,6 +118,30 @@ class ExpeditionSessionTest {
     }
 
     @Test
+    fun `a swipe that leaves the list bouncing still finds the fruit once the list settles`() {
+        val io = FakeIo(
+            listOf(
+                Scene(list(), shade = BLACK),
+                Scene(other, shade = WHITE), Scene(other, shade = WHITE),
+                Scene(list(Cell(993, 1632, ItemKind.FRUIT)), shade = WHITE),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        assertEquals(ExpeditionResult(1, ExpeditionStop.LIMIT_REACHED), runSession(io, ExpeditionTarget.FRUIT, maxDispatch = 1))
+        assertEquals(993 to 1632, io.taps.first())
+    }
+
+    @Test
+    fun `a swipe followed by three looks that are not the list stops at LOST, not at the end of the list`() {
+        // The OTHER frames are the same pixels as before the swipe: only a LIST frame may be compared, so a
+        // screen that is not the list must not read as "unchanged, end of list".
+        val io = FakeIo(listOf(Scene(list(), shade = BLACK), Scene(other, shade = BLACK)))
+        assertEquals(ExpeditionResult(0, ExpeditionStop.LOST), runSession(io, ExpeditionTarget.POT, maxDispatch = 1))
+        assertEquals(emptyList<Pair<Int, Int>>(), io.taps)
+        assertEquals(1, io.swipes.size)
+    }
+
+    @Test
     fun `a look that misses the list logs the screen it saw and the frame size`() {
         val lines = mutableListOf<String>()
         val io = FakeIo(
