@@ -237,17 +237,23 @@ object ExpeditionVision {
         }
     }
 
-    /** A mushroom photo card spills colour into the gutter beside it; a real cell has white there. */
+    /**
+     * A mushroom photo card spills colour into the gutter beside it; a real cell has white there. The strip is
+     * narrow (±0.005W) so a running card's border, drawn in its own grid slot, does not reach it.
+     */
     private fun gutterClear(img: RgbImage, cx: Int, run: IntRange, hsv: DoubleArray): Boolean {
         val w = img.width
-        val half = (0.01 * w).toInt()
+        val half = (0.005 * w).toInt()
         for (fg in listOf(0.3428, 0.6572)) {
             val g = (fg * w).toInt()
             if (abs(g - cx).toDouble() > 0.2 * w) continue
-            if (fraction(img, g - half, run.first, g + half, run.last, hsv) { isWhite(it) } < 0.85) return false
+            if (fraction(img, g - half, run.first, g + half, run.last, hsv) { isGutterWhite(it) } < 0.85) return false
         }
         return true
     }
+
+    /** White for the gutter check only: looser than [isWhite], so a faint tint in the gutter still counts as white. */
+    private fun isGutterWhite(c: DoubleArray): Boolean = c[2] > 0.93 && c[1] < 0.13
 
     /** The game's flower button covers the top-right cell; that cell is never tapped. */
     private fun isCovered(cx: Int, cy: Int, w: Int, h: Int): Boolean =

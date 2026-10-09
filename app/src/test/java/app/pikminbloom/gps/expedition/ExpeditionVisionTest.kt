@@ -91,6 +91,21 @@ class ExpeditionVisionTest {
     }
 
     @Test
+    fun `list_inprogress - a running card in its grid slot does not hide the pots beside it`() {
+        // The running card's pink border falls inside the neighbours' gutter strips; the pots either side stay cells.
+        val frame = ExpeditionVision.analyze(fixture("list_inprogress.png"))
+        assertEquals(ExpScreen.LIST, frame.screen)
+        assertCells(
+            listOf(
+                Expect(610, 1726, ItemKind.POT), Expect(993, 1726, ItemKind.POT),
+                Expect(226, 1747, ItemKind.POT), Expect(226, 2207, ItemKind.POT),
+                Expect(993, 2207, ItemKind.POT), Expect(610, 2349, ItemKind.IN_PROGRESS),
+            ),
+            frame.cells,
+        )
+    }
+
+    @Test
     fun `detail - the outlined go-explore button is found at y 2003`() {
         val frame = ExpeditionVision.analyze(fixture("detail.png"))
         assertEquals(ExpScreen.DETAIL, frame.screen)
