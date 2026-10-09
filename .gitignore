@@ -26,6 +26,7 @@ local.properties
 /docs/
 /app/src/test/resources/birdseye/
 /app/src/test/resources/expedition/
+/app/src/test/resources/feed/
 
 # Release signing key lives one directory up; never inside the repo
 /keystore/
