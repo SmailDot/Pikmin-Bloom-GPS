@@ -33,3 +33,8 @@ local.properties
 
 # Private notes and plans moved out of the public repo
 /oldocs/
+
+# Signing material must never be committed, wherever it is dropped
+*.jks
+*.keystore
+keystore.properties
