@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Pikmin Bloom GPS</string>
-    <!-- Which language the resources resolved to (values/ en, values-zh/ zh, values-ja/ ja): i18n.Lang reads it so the
+    <!-- Which language the resources resolved to (values/ en, values-zh-rTW/ zh, values-ja/ ja): i18n.Lang reads it so the
          texts built in Kotlin always match the XML ones. -->
     <string name="lang_code">en</string>
     <string name="title_settings">Settings</string>

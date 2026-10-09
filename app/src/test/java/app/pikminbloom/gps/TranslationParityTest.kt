@@ -1,6 +1,7 @@
 package app.pikminbloom.gps
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.w3c.dom.Element
@@ -9,12 +10,12 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 /**
  * The three languages (2026-10-08) hold the same strings: English in values/ (also every other phone language),
- * Traditional Chinese in values-zh/, Japanese in values-ja/. A string missing from one of them shows English in the
+ * Traditional Chinese in values-zh-rTW/, Japanese in values-ja/. A string missing from one of them shows English in the
  * middle of a Chinese screen (or fails the release build), and a format specifier that differs crashes getString.
  */
 class TranslationParityTest {
     private val res: File = listOf(File("src/main/res"), File("app/src/main/res")).first { it.isDirectory }
-    private val folders = listOf("values", "values-zh", "values-ja")
+    private val folders = listOf("values", "values-zh-rTW", "values-ja")
     private val fmt = Regex("""%(?:\d+\$)?[-#+ 0,(]*\d*(?:\.\d+)?[sdfxXcbeEgGoh%]""")
 
     /** name -> text of every translatable <string>, plus "name[i]" for string-array items. */
@@ -42,7 +43,7 @@ class TranslationParityTest {
 
     @Test
     fun everyLanguageHasTheSameStrings() {
-        val zh = strings("values-zh")
+        val zh = strings("values-zh-rTW")
         assertTrue("found the Chinese strings", zh.size > 400)
         for (folder in listOf("values", "values-ja")) {
             val other = strings(folder)
@@ -53,7 +54,7 @@ class TranslationParityTest {
 
     @Test
     fun formatSpecifiersMatch() {
-        val zh = strings("values-zh")
+        val zh = strings("values-zh-rTW")
         for (folder in listOf("values", "values-ja")) {
             val other = strings(folder)
             for ((key, text) in zh) {
@@ -75,5 +76,18 @@ class TranslationParityTest {
         val han = Regex("[\\u4e00-\\u9fff]")
         val left = strings("values").filterValues { han.containsMatchIn(it) }
         assertEquals(emptyMap<String, String>(), left)
+    }
+
+    @Test
+    fun chineseFolderNamesTheTraditionalScript() {
+        assertTrue(
+            "src/main/res/values-zh-rTW is missing: the Traditional Chinese strings belong there",
+            File(res, "values-zh-rTW").isDirectory,
+        )
+        assertFalse(
+            "src/main/res/values-zh exists: Android reads a bare values-zh as Simplified Chinese, so a zh-TW " +
+                "(Traditional) phone never matches it and falls back to English. Rename it to values-zh-rTW.",
+            File(res, "values-zh").exists(),
+        )
     }
 }
