@@ -77,6 +77,9 @@ class OverlayService : Service() {
     private var binding: OverlayBarBinding? = null
     private var joystick: OverlayJoystickBinding? = null
     private lateinit var joystickParams: WindowManager.LayoutParams
+
+    /** The 自動探險 stop chip window: only while a run goes (see addStopChip). */
+    private var stopChip: View? = null
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val handler = Handler(Looper.getMainLooper())
 
@@ -183,6 +186,7 @@ class OverlayService : Service() {
         }
         binding = null
         removeJoystickWindow()
+        removeStopChip()
         super.onDestroy()
     }
 
@@ -498,10 +502,7 @@ class OverlayService : Service() {
     /** 自動探險 button: stop a running run; else fix what is missing (capture, then accessibility); else ask what to send. */
     private fun onExpeditionClicked() {
         when {
-            ExpeditionRunner.isBusy -> {
-                ExpeditionRunner.cancel()
-                toast(R.string.toast_expedition_stopped)
-            }
+            ExpeditionRunner.isBusy -> ExpeditionRunner.cancel()
             !ScreenCaptureService.isRunning.value -> openMainActivity(startScan = true)
             !NectarAccessibilityService.isEnabled -> {
                 Toast.makeText(this, R.string.toast_nectar_enable_service, Toast.LENGTH_LONG).show()
@@ -545,12 +546,56 @@ class OverlayService : Service() {
 
     /**
      * Hides the whole bar (handle included) while an expedition runs, so its taps reach the game. GONE, not
-     * INVISIBLE: an invisible root still holds its window. The idle auto-hide waits for the run to end.
+     * INVISIBLE: an invisible root still holds its window. The idle auto-hide waits for the run to end, and the
+     * stop chip stands in for the bar's cancel button while the bar is hidden.
      */
     private fun setBarHidden(hidden: Boolean) {
         barHiddenForRun = hidden
         if (hidden) handler.removeCallbacks(hideRunnable) else scheduleIdleHideIfNeeded(PatrolService.state.value.phase)
         binding?.let { it.root.visibility = if (hidden) View.GONE else View.VISIBLE }
+        if (hidden) addStopChip() else removeStopChip()
+    }
+
+    /**
+     * The stop chip: its own small window while a run goes, top centre under the status bar. No expedition tap
+     * and no vision rule uses the top tenth of the screen, so it covers nothing the run needs.
+     */
+    private fun addStopChip() {
+        if (stopChip != null) return
+        try {
+            val themed = ContextThemeWrapper(this, R.style.Theme_PikminGps)
+            val chip = LayoutInflater.from(themed).inflate(R.layout.overlay_stop, null)
+            chip.setOnClickListener { ExpeditionRunner.cancel() }
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                PixelFormat.TRANSLUCENT,
+            ).apply {
+                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                y = statusBarHeight()
+            }
+            windowManager.addView(chip, params)
+            stopChip = chip
+        } catch (t: Throwable) {
+            // Same failures as the bar: the permission revoked meanwhile, or a BadTokenException on some OEM builds.
+            Log.w(TAG, "cannot add the stop chip", t)
+        }
+    }
+
+    private fun removeStopChip() {
+        stopChip?.let { chip ->
+            runCatching { windowManager.removeViewImmediate(chip) }
+                .onFailure { Log.w(TAG, "removeViewImmediate(stop chip) failed", it) }
+        }
+        stopChip = null
+    }
+
+    /** The status bar's height, so the chip sits just under it; 24 dp when the system reports none. */
+    private fun statusBarHeight(): Int {
+        val id = resources.getIdentifier("status_bar_height", "dimen", "android")
+        return if (id > 0) resources.getDimensionPixelSize(id) else dp(24)
     }
 
     /** Drag with a slop threshold so a tap still expands/collapses; long press toggles the pin. */

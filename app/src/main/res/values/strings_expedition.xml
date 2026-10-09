@@ -5,7 +5,7 @@
     <string name="pref_auto_expedition_title">Auto expedition (experimental)</string>
     <string name="pref_auto_expedition_summary">Sends Pikmin on fruit and seedling-pot expeditions from the floating bar. Needs Scan (screen capture) running and this app\'s accessibility service turned on. Red gifts and mushrooms are never touched. The game can see that accessibility is on, so use it at your own risk.</string>
     <string name="ovl_cd_expedition">Auto expedition</string>
-    <string name="toast_expedition_stopped">Auto expedition stopped</string>
+    <string name="expedition_stop_chip">■ Stop auto expedition</string>
     <string name="expedition_title">Auto expedition</string>
     <string name="expedition_target_fruit">Fruit</string>
     <string name="expedition_target_pot">Seedlings</string>
