@@ -1,0 +1,301 @@
+package app.pikminbloom.gps.expedition
+
+import app.pikminbloom.gps.vision.ColorMath
+import app.pikminbloom.gps.vision.RgbImage
+import kotlin.math.abs
+
+enum class ExpScreen { LIST, DETAIL, SELECT, RESULT, OTHER }
+
+/** What a list cell holds. The session only ever taps POT or FRUIT. */
+enum class ItemKind { POT, FRUIT, GIFT, UNKNOWN, COVERED, IN_PROGRESS }
+
+/** A list cell: [x] is the column centre, [y] the centre of its icon. */
+data class Cell(val x: Int, val y: Int, val kind: ItemKind)
+
+/**
+ * What one captured frame shows. [cells] is only filled on LIST, [goExploreY] only on DETAIL,
+ * [selectRowY] and [goActive] only on SELECT.
+ */
+data class ExpFrame(
+    val screen: ExpScreen,
+    val cells: List<Cell> = emptyList(),
+    val goExploreY: Int? = null,
+    val selectRowY: Int? = null,
+    val goActive: Boolean = false,
+)
+
+/**
+ * Recognises the 探險 screens and their list cells from a captured frame. Every rule is a fraction
+ * of the frame's width or height, measured on real screenshots (1220x2712). Pixel positions are
+ * `(fraction * size).toInt()`; "bottom-anchored" means `H - (fraction * W).toInt()`.
+ *
+ * Deliberately free of `android.*`, like the rest of `vision/`, so it runs under plain JUnit.
+ */
+object ExpeditionVision {
+
+    /** Screen priority: RESULT, then SELECT, then DETAIL, then LIST, then OTHER. */
+    fun analyze(img: RgbImage): ExpFrame {
+        val hsv = DoubleArray(3)
+        if (isResult(img, hsv)) return ExpFrame(ExpScreen.RESULT)
+        selectRowY(img, hsv)?.let { return ExpFrame(ExpScreen.SELECT, selectRowY = it, goActive = isGoActive(img, hsv)) }
+        goExploreY(img, hsv)?.let { return ExpFrame(ExpScreen.DETAIL, goExploreY = it) }
+        val tabBottom = listTabBottom(img, hsv) ?: return ExpFrame(ExpScreen.OTHER)
+        return ExpFrame(ExpScreen.LIST, cells = listCells(img, tabBottom, hsv))
+    }
+
+    /** GO bubble, bottom-right of the SELECT screen. */
+    fun goTap(w: Int, h: Int): Pair<Int, Int> = (0.848 * w).toInt() to bottomAnchored(h, 0.152, w)
+
+    /** Solid green ✕ that closes the RESULT screen. */
+    fun closeTap(w: Int, h: Int): Pair<Int, Int> = (0.096 * w).toInt() to bottomAnchored(h, 0.097, w)
+
+    /** Back / 取消, bottom-left on DETAIL and SELECT. */
+    fun backTap(w: Int, h: Int): Pair<Int, Int> = (0.097 * w).toInt() to bottomAnchored(h, 0.097, w)
+
+    /** 自動 pill, on the colour-filter dot row. */
+    fun autoTap(w: Int, selectRowY: Int): Pair<Int, Int> = (0.242 * w).toInt() to selectRowY
+
+    private fun bottomAnchored(h: Int, fraction: Double, w: Int): Int = h - (fraction * w).toInt()
+
+    /** Fraction of pixels in the inclusive rectangle whose HSV satisfies [match]. */
+    private inline fun fraction(
+        img: RgbImage, x0: Int, y0: Int, x1: Int, y1: Int, hsv: DoubleArray, match: (DoubleArray) -> Boolean,
+    ): Double {
+        var total = 0
+        var hit = 0
+        for (y in y0..y1) {
+            for (x in x0..x1) {
+                total++
+                ColorMath.toHsv(img.get(x, y), hsv)
+                if (match(hsv)) hit++
+            }
+        }
+        return if (total == 0) 0.0 else hit.toDouble() / total
+    }
+
+    private inline fun pixelIs(img: RgbImage, x: Int, y: Int, hsv: DoubleArray, match: (DoubleArray) -> Boolean): Boolean {
+        ColorMath.toHsv(img.get(x, y), hsv)
+        return match(hsv)
+    }
+
+    private fun isWhite(c: DoubleArray): Boolean = c[2] > 0.95 && c[1] < 0.05
+
+    /** Dark green ✕ bottom-left: at least 20% of that patch is green-ish and mid-dark. */
+    private fun isResult(img: RgbImage, hsv: DoubleArray): Boolean {
+        val w = img.width
+        val h = img.height
+        val frac = fraction(img, (0.02 * w).toInt(), bottomAnchored(h, 0.166, w), (0.12 * w).toInt(), bottomAnchored(h, 0.022, w), hsv) {
+            it[0] > 120.0 && it[0] < 160.0 && it[1] > 0.35 && it[2] > 0.25 && it[2] < 0.6
+        }
+        return frac >= 0.2
+    }
+
+    /** The colour-filter dot row: first row where a red, yellow, blue and purple dot all sit. */
+    private fun selectRowY(img: RgbImage, hsv: DoubleArray): Int? {
+        val w = img.width
+        val h = img.height
+        val xRed = (0.629 * w).toInt()
+        val xYellow = (0.712 * w).toInt()
+        val xBlue = (0.796 * w).toInt()
+        val xPurple = (0.879 * w).toInt()
+        for (y in (0.2 * h).toInt()..(0.5 * h).toInt()) {
+            if (pixelIs(img, xRed, y, hsv) { (it[0] < 15.0 || it[0] > 345.0) && it[1] > 0.45 } &&
+                pixelIs(img, xYellow, y, hsv) { it[0] > 40.0 && it[0] < 60.0 && it[1] > 0.5 } &&
+                pixelIs(img, xBlue, y, hsv) { it[0] > 200.0 && it[0] < 225.0 && it[1] > 0.45 } &&
+                pixelIs(img, xPurple, y, hsv) { it[0] > 285.0 && it[0] < 310.0 && it[1] > 0.45 }
+            ) return y
+        }
+        return null
+    }
+
+    /** The GO bubble is bright once 自動 is picked, and faded before. */
+    private fun isGoActive(img: RgbImage, hsv: DoubleArray): Boolean {
+        val w = img.width
+        val h = img.height
+        val frac = fraction(img, (0.767 * w).toInt(), bottomAnchored(h, 0.234, w), (0.933 * w).toInt(), bottomAnchored(h, 0.078, w), hsv) {
+            it[1] > 0.5
+        }
+        return frac >= 0.08
+    }
+
+    /** Outlined green 前往探險 button: first and last green rows on the centre column, a button tall apart. */
+    private fun goExploreY(img: RgbImage, hsv: DoubleArray): Int? {
+        val h = img.height
+        val x = (0.5 * img.width).toInt()
+        var first = -1
+        var last = -1
+        for (y in (0.55 * h).toInt()..(0.85 * h).toInt()) {
+            if (pixelIs(img, x, y, hsv) { it[0] in 140.0..175.0 && it[1] > 0.35 }) {
+                if (first < 0) first = y
+                last = y
+            }
+        }
+        if (first < 0) return null
+        val span = last - first
+        return if (span in (0.03 * h).toInt()..(0.06 * h).toInt()) (first + last) / 2 else null
+    }
+
+    /**
+     * The selected 探險 tab: a green pill covering most of [0.57W, 0.72W], 0.02H–0.045H tall, with
+     * near-white rows 0.008H above and below it. Returns the pill's last row.
+     */
+    private fun listTabBottom(img: RgbImage, hsv: DoubleArray): Int? {
+        val w = img.width
+        val h = img.height
+        val x0 = (0.57 * w).toInt()
+        val x1 = (0.72 * w).toInt()
+        val pad = (0.008 * h).toInt()
+        val minLen = (0.02 * h).toInt()
+        val maxLen = (0.045 * h).toInt()
+        val tabRow = BooleanArray(h) { y ->
+            fraction(img, x0, y, x1, y, hsv) { it[0] in 140.0..175.0 && it[1] > 0.35 && it[2] > 0.4 } >= 0.3
+        }
+        return runs(tabRow).firstOrNull { run ->
+            val len = run.last - run.first + 1
+            len in minLen..maxLen && run.first - pad >= 0 && run.last + pad < h &&
+                isWhiteRow(img, x0, x1, run.first - pad, hsv) && isWhiteRow(img, x0, x1, run.last + pad, hsv)
+        }?.last
+    }
+
+    private fun isWhiteRow(img: RgbImage, x0: Int, x1: Int, y: Int, hsv: DoubleArray): Boolean =
+        fraction(img, x0, y, x1, y, hsv) { isWhite(it) } >= 0.9
+
+    /** Maximal runs of `true` as inclusive index ranges. */
+    private fun runs(flags: BooleanArray): List<IntRange> {
+        val out = ArrayList<IntRange>()
+        var start = -1
+        for (i in 0..flags.size) {
+            val on = i < flags.size && flags[i]
+            if (on && start < 0) start = i
+            if (!on && start >= 0) {
+                out.add(start until i)
+                start = -1
+            }
+        }
+        return out
+    }
+
+    /** Cells of a LIST screen, in reading order. */
+    private fun listCells(img: RgbImage, tabBottom: Int, hsv: DoubleArray): List<Cell> {
+        val w = img.width
+        val h = img.height
+        val bandTop = tabBottom + (0.02 * h).toInt()
+        val bandBottom = bottomAnchored(h, 0.178, w)
+        val cells = ArrayList<Cell>()
+        for (fx in listOf(0.1856, 0.5, 0.8144)) {
+            val cx = (fx * w).toInt()
+            for (run in iconRuns(img, cx, bandTop, bandBottom, hsv)) {
+                if (!gutterClear(img, cx, run, hsv)) continue
+                val cy = (run.first + run.last) / 2
+                val kind = when {
+                    isCovered(cx, cy, w, h) -> ItemKind.COVERED
+                    isInProgress(img, cx, run.first) -> ItemKind.IN_PROGRESS
+                    else -> classify(img, cx, cy, hsv)
+                }
+                cells.add(Cell(cx, cy, kind))
+            }
+        }
+        return cells.sortedWith(compareBy({ it.y }, { it.x }))
+    }
+
+    /**
+     * Icon rows of one column's cell band (rows with ≥6% ink), runs at most 0.004H apart merged,
+     * keeping those 0.035H–0.08H tall and not clipped by the content band. Global y ranges.
+     */
+    private fun iconRuns(img: RgbImage, cx: Int, bandTop: Int, bandBottom: Int, hsv: DoubleArray): List<IntRange> {
+        if (bandBottom <= bandTop) return emptyList()
+        val h = img.height
+        val x0 = cx - (0.0778 * img.width).toInt()
+        val x1 = cx + (0.05 * img.width).toInt()
+        val bandWidth = x1 - x0 + 1
+        val icon = BooleanArray(bandBottom - bandTop + 1) { i ->
+            val y = bandTop + i
+            var ink = 0
+            for (x in x0..x1) {
+                ColorMath.toHsv(img.get(x, y), hsv)
+                if ((hsv[1] > 0.3 && hsv[2] > 0.25) || hsv[2] < 0.75) ink++
+            }
+            ink >= 0.06 * bandWidth
+        }
+        val maxGap = (0.004 * h).toInt()
+        val merged = ArrayList<IntRange>()
+        for (r in runs(icon)) {
+            val prev = merged.lastOrNull()
+            if (prev != null && r.first - prev.last <= maxGap) {
+                merged[merged.size - 1] = prev.first..r.last
+            } else {
+                merged.add(r)
+            }
+        }
+        val minH = (0.035 * h).toInt()
+        val maxH = (0.08 * h).toInt()
+        return merged.map { (it.first + bandTop)..(it.last + bandTop) }.filter { r ->
+            val height = r.last - r.first + 1
+            height in minH..maxH && r.first > bandTop + 1 && r.last < bandBottom - 1
+        }
+    }
+
+    /** A mushroom photo card spills colour into the gutter beside it; a real cell has white there. */
+    private fun gutterClear(img: RgbImage, cx: Int, run: IntRange, hsv: DoubleArray): Boolean {
+        val w = img.width
+        val half = (0.01 * w).toInt()
+        for (fg in listOf(0.3428, 0.6572)) {
+            val g = (fg * w).toInt()
+            if (abs(g - cx).toDouble() > 0.2 * w) continue
+            if (fraction(img, g - half, run.first, g + half, run.last, hsv) { isWhite(it) } < 0.85) return false
+        }
+        return true
+    }
+
+    /** The game's flower button covers the top-right cell; that cell is never tapped. */
+    private fun isCovered(cx: Int, cy: Int, w: Int, h: Int): Boolean =
+        abs(cx - 0.898 * w) < 0.155 * w && abs(cy - 0.284 * h) < 0.075 * w + 0.04 * h
+
+    /** A pale grey (230,231,230) card above the icon means the pot is already growing; never tapped. */
+    private fun isInProgress(img: RgbImage, cx: Int, top: Int): Boolean {
+        val w = img.width
+        val x0 = cx - (0.11 * w).toInt()
+        val x1 = cx + (0.11 * w).toInt()
+        val reach = (0.04 * img.height).toInt()
+        for (y in (top - reach).coerceAtLeast(0) until top) {
+            var near = 0
+            for (x in x0..x1) if (isNearGrey(img.get(x, y))) near++
+            if (near >= 0.5 * (x1 - x0 + 1)) return true
+        }
+        return false
+    }
+
+    private fun isNearGrey(p: Int): Boolean =
+        abs(((p ushr 16) and 0xFF) - 230) <= 8 && abs(((p ushr 8) and 0xFF) - 231) <= 8 && abs((p and 0xFF) - 230) <= 8
+
+    /** GIFT, POT, FRUIT or UNKNOWN, from the colours inside the icon box. */
+    private fun classify(img: RgbImage, cx: Int, cy: Int, hsv: DoubleArray): ItemKind {
+        val w = img.width
+        val h = img.height
+        var total = 0
+        var soil = 0
+        var red = 0
+        var box = 0
+        var saturated = 0
+        for (y in (cy - (0.035 * h).toInt())..(cy + (0.035 * h).toInt())) {
+            for (x in (cx - (0.0778 * w).toInt())..(cx + (0.05 * w).toInt())) {
+                total++
+                ColorMath.toHsv(img.get(x, y), hsv)
+                val hue = hsv[0]
+                val s = hsv[1]
+                val v = hsv[2]
+                if (v > 0.12 && v < 0.42 && s > 0.2 && (hue < 40.0 || hue > 340.0)) soil++
+                if ((hue < 12.0 || hue > 348.0) && s > 0.55 && v > 0.55) red++
+                if (s < 0.07 && v > 0.78 && v < 0.975) box++
+                if (s > 0.3) saturated++
+            }
+        }
+        val n = total.toDouble()
+        return when {
+            box / n >= 0.18 && red / n >= 0.08 -> ItemKind.GIFT
+            soil / n >= 0.012 -> ItemKind.POT
+            saturated / n >= 0.3 -> ItemKind.FRUIT
+            else -> ItemKind.UNKNOWN
+        }
+    }
+}
