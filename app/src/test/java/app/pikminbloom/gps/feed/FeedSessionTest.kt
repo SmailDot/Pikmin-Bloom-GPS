@@ -5,6 +5,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 private const val W = 1220
@@ -71,13 +72,17 @@ class FeedSessionTest {
     private val drag = Call.Drag(610, 2427, 610, 1464, 48, 4000L)
     private val p1 = 500 to 900
     private val p2 = 800 to 1500
+    private val p3 = 300 to 1200
+    private val p4 = 400 to 1300
 
-    private fun session(io: FakeFeedIo, blooms: List<List<Pair<Int, Int>>>): FeedSession {
+    /** Scripted bloom results, one per `blooms` call: the round's look, then the sweep check after each harvest. */
+    private fun session(io: FakeFeedIo, blooms: List<List<Pair<Int, Int>>>, log: (String) -> Unit = {}): FeedSession {
         val queue = blooms.toMutableList()
         return FeedSession(
             io,
             isFeed = { it === feed },
             blooms = { _, _ -> if (queue.isEmpty()) emptyList() else queue.removeAt(0) },
+            log = log,
         )
     }
 
@@ -97,7 +102,7 @@ class FeedSessionTest {
     @Test
     fun `one round pinches, drags and holds on the feed point, then harvests from the first bloom`() {
         val io = FakeFeedIo(listOf(feed))
-        assertEquals(FeedResult(1, FeedStop.DONE), run(io, listOf(listOf(p1, p2)), rounds = 1))
+        assertEquals(FeedResult(1, FeedStop.DONE), run(io, listOf(listOf(p1, p2), emptyList()), rounds = 1))
         assertEquals(listOf(pinch, drag, harvest(p1)), io.gestures())
     }
 
@@ -111,7 +116,7 @@ class FeedSessionTest {
     @Test
     fun `two rounds in a row without a bloom stop at NO_BLOOM, after the rounds that found one`() {
         val io = FakeFeedIo(listOf(feed))
-        val blooms = listOf(listOf(p1)) + List(6) { emptyList() }
+        val blooms = listOf(listOf(p1), emptyList()) + List(6) { emptyList() }
         assertEquals(FeedResult(2, FeedStop.NO_BLOOM), run(io, blooms, rounds = 5))
         assertEquals(listOf(pinch, drag, harvest(p1), pinch, drag, pinch, drag), io.gestures())
     }
@@ -119,7 +124,7 @@ class FeedSessionTest {
     @Test
     fun `a single round without a bloom is skipped and the run carries on`() {
         val io = FakeFeedIo(listOf(feed))
-        val blooms = listOf(listOf(p1)) + List(3) { emptyList() } + listOf(listOf(p2))
+        val blooms = listOf(listOf(p1), emptyList()) + List(3) { emptyList() } + listOf(listOf(p2))
         assertEquals(FeedResult(3, FeedStop.DONE), run(io, blooms, rounds = 3))
         assertEquals(listOf(pinch, drag, harvest(p1), pinch, drag, pinch, drag, harvest(p2)), io.gestures())
     }
@@ -128,7 +133,7 @@ class FeedSessionTest {
     fun `a later round that never shows the feed screen stops at LOST`() {
         // Round 1 completes; round 2 polls three frames that are not the feed screen.
         val io = FakeFeedIo(listOf(feed, feed, feed, other, other, other))
-        assertEquals(FeedResult(1, FeedStop.LOST), run(io, listOf(listOf(p1)), rounds = 2))
+        assertEquals(FeedResult(1, FeedStop.LOST), run(io, listOf(listOf(p1), emptyList()), rounds = 2))
         assertEquals(listOf(pinch, drag, harvest(p1)), io.gestures())
     }
 
@@ -142,7 +147,7 @@ class FeedSessionTest {
     @Test
     fun `the rounds limit stops the run at DONE after exactly that many rounds`() {
         val io = FakeFeedIo(listOf(feed))
-        assertEquals(FeedResult(2, FeedStop.DONE), run(io, listOf(listOf(p1), listOf(p2)), rounds = 2))
+        assertEquals(FeedResult(2, FeedStop.DONE), run(io, listOf(listOf(p1), emptyList(), listOf(p2), emptyList()), rounds = 2))
         assertEquals(listOf(pinch, drag, harvest(p1), pinch, drag, harvest(p2)), io.gestures())
     }
 
@@ -161,11 +166,42 @@ class FeedSessionTest {
     }
 
     @Test
+    fun `blooms left after a harvest start a second pass on the first of them`() {
+        val io = FakeFeedIo(listOf(feed))
+        // Round's look finds p1; the sweep check after the harvest still finds p3; the check after pass 2 finds none.
+        assertEquals(FeedResult(1, FeedStop.DONE), run(io, listOf(listOf(p1), listOf(p3), emptyList()), rounds = 1))
+        assertEquals(listOf(pinch, drag, harvest(p1), harvest(p3)), io.gestures())
+    }
+
+    @Test
+    fun `blooms still left after pass 3 do not start a fourth pass`() {
+        val io = FakeFeedIo(listOf(feed))
+        // Pass 1 starts on p1; the sweep finds p2 (pass 2) and p3 (pass 3); p4 is left but there is no fourth pass.
+        assertEquals(FeedResult(1, FeedStop.DONE), run(io, listOf(listOf(p1), listOf(p2), listOf(p3), listOf(p4)), rounds = 1))
+        assertEquals(listOf(pinch, drag, harvest(p1), harvest(p2), harvest(p3)), io.gestures())
+    }
+
+    @Test
+    fun `no blooms left after the harvest means no extra pass`() {
+        val io = FakeFeedIo(listOf(feed))
+        assertEquals(FeedResult(1, FeedStop.DONE), run(io, listOf(listOf(p1), emptyList()), rounds = 1))
+        assertEquals(listOf(pinch, drag, harvest(p1)), io.gestures())
+    }
+
+    @Test
+    fun `an extra pass is logged as extra harvest pass 1`() {
+        val lines = mutableListOf<String>()
+        val io = FakeFeedIo(listOf(feed))
+        runBlocking { session(io, listOf(listOf(p1), listOf(p3), emptyList())) { lines += it }.run(1) }
+        assertTrue("log was $lines", lines.contains("extra harvest pass 1"))
+    }
+
+    @Test
     fun `a cancel during round 2 keeps the round that finished in roundsSoFar`() {
         // Waits per round: feed poll 700, pinch settle 1000, drag hold 1500, bloom look 1000, harvest settle 1500.
         // The sixth wait is round 2's feed poll.
         val io = FakeFeedIo(listOf(feed), cancelAfterWaits = 6)
-        val session = session(io, listOf(listOf(p1), listOf(p2)))
+        val session = session(io, listOf(listOf(p1), emptyList()))
         assertThrows(CancellationException::class.java) { runBlocking { session.run(3) } }
         assertEquals(1, session.roundsSoFar)
         assertEquals(listOf(pinch, drag, harvest(p1)), io.gestures())

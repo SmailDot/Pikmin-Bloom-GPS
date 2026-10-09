@@ -32,7 +32,8 @@ data class FeedResult(val rounds: Int, val stop: FeedStop)
 /**
  * 自動餵精華: [run] feeds rounds on the feed screen. Each round: poll for the feed screen, zoom out, check the
  * zoomed frame is still the feed screen, drag the nectar to the feed point and hold, then look for blooms and
- * harvest from the first one. Every gesture comes after a fresh frame showed the screen it belongs to.
+ * harvest from the first one, sweeping again while blooms are left. Every gesture comes after a fresh frame showed
+ * the screen it belongs to.
  *
  * Single use per run: [run] resets the count, and [roundsSoFar] stays readable after a cancellation.
  */
@@ -89,13 +90,29 @@ class FeedSession(
                 log("round ${rounds + 1}: no bloom, carrying on")
             } else {
                 misses = 0
-                if (!io.path(FeedGestures.spiral(w, h, start), HARVEST_MS)) return FeedStop.LOST
-                io.wait(HARVEST_SETTLE_MS)
+                if (!harvest(before, w, h, start)) return FeedStop.LOST
             }
             rounds++
             log("fed round $rounds")
         }
         return FeedStop.DONE
+    }
+
+    /**
+     * One harvest from [first], then the sweep: after each pass the flowers are looked at again, and while blooms are
+     * left, another pass starts on the first of them, up to [EXTRA_PASSES] extra passes. False when a stroke was refused.
+     */
+    private suspend fun harvest(before: RgbImage, w: Int, h: Int, first: Pair<Int, Int>): Boolean {
+        var start = first
+        for (pass in 0..EXTRA_PASSES) {
+            if (pass > 0) log("extra harvest pass $pass")
+            if (!io.path(FeedGestures.spiral(w, h, start), HARVEST_MS)) return false
+            io.wait(HARVEST_SETTLE_MS)
+            if (pass == EXTRA_PASSES) break
+            val left = io.frame()?.let { blooms(before, it) }.orEmpty()
+            start = left.firstOrNull() ?: break
+        }
+        return true
     }
 
     /** The first frame that is the feed screen, looking up to [FEED_LOOKS] times, [FEED_LOOK_MS] apart. */
@@ -129,5 +146,6 @@ class FeedSession(
         const val BLOOM_LOOK_MS = 1000L
         const val HARVEST_MS = 6000L
         const val HARVEST_SETTLE_MS = 1500L
+        const val EXTRA_PASSES = 2
     }
 }
