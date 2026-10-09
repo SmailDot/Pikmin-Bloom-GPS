@@ -14,6 +14,7 @@ Settings → Apps → Language).
 - **Vehicles**: Other, Car and Plane, with speeds you can set. Vehicles write no steps and switch back to walking at the next Big Flower.
 - **Floating bar and joystick**: control the patrol on top of the game (pause, go home, change vehicle). The joystick can be dragged anywhere and comes in three sizes.
 - **Auto expedition (experimental, off by default)**: one tap on the floating bar sends Pikmin on every fruit and seedling-pot expedition in the Expedition list, using the game's own auto team picker. Red gifts and mushrooms are never touched. Needs Android 11 or newer and the accessibility service turned on. While a run goes, it reads the game's screen (screenshots are never saved) and taps in it.
+- **Auto feed (experimental, off by default)**: on the game's feed screen, start it from the floating bar's flag button (choose Feed nectar and the number of rounds). Each round feeds the nectar shown in the bubble to your current squad, then harvests the petals, sweeping again while flowers are left. Stop it from the notification. Same detection risk as auto expedition: the game can see that the accessibility service is on, so use it at your own risk.
 - **Real location switch**: hand the real GPS back to the phone for a while (for Google Maps, say), then switch back to the virtual location.
 - **Find nearby candidate Big Flowers**: pulls nearby landmarks from OpenStreetMap as candidates.
 - **Resume from checkpoint**: if the system closes the app, carry on from the same spot and state.
