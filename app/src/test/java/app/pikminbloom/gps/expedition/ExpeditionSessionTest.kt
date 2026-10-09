@@ -6,6 +6,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 private const val W = 1220
@@ -20,21 +21,24 @@ private val WHITE = 0xFFFFFFFF.toInt()
  */
 class ExpeditionSessionTest {
 
-    private data class Scene(val frame: ExpFrame, val shade: Int = BLACK)
+    /** [missing]: io.frame() gives no image for this look (the capture had none). */
+    private data class Scene(val frame: ExpFrame, val shade: Int = BLACK, val missing: Boolean = false)
 
     private data class Swipe(val x: Int, val fromY: Int, val toY: Int, val durationMs: Long)
 
     private class FakeIo(private val scenes: List<Scene>, private val cancelAfterTaps: Int? = null) : NectarIo {
         val taps = mutableListOf<Pair<Int, Int>>()
         val swipes = mutableListOf<Swipe>()
+        val waits = mutableListOf<Long>()
         var backs = 0
         var shown: ExpFrame? = null
         private var cursor = 0
         private val images = HashMap<Int, RgbImage>()
 
-        override suspend fun frame(): RgbImage {
+        override suspend fun frame(): RgbImage? {
             val scene = scenes[minOf(cursor, scenes.lastIndex)]
             cursor++
+            if (scene.missing) return null
             shown = scene.frame
             return images.getOrPut(scene.shade) { RgbImage.blank(W, H, scene.shade) }
         }
@@ -55,6 +59,7 @@ class ExpeditionSessionTest {
         }
 
         override suspend fun wait(ms: Long) {
+            waits += ms
             if (cancelAfterTaps != null && taps.size >= cancelAfterTaps) {
                 throw CancellationException("test: cancelled while waiting")
             }
@@ -69,7 +74,10 @@ class ExpeditionSessionTest {
 
     private val resultScreen = ExpFrame(ExpScreen.RESULT)
 
-    private fun session(io: FakeIo) = ExpeditionSession(io, analyze = { _ -> checkNotNull(io.shown) })
+    private val other = ExpFrame(ExpScreen.OTHER)
+
+    private fun session(io: FakeIo, log: (String) -> Unit = {}) =
+        ExpeditionSession(io, analyze = { _ -> checkNotNull(io.shown) }, log = log)
 
     private fun runSession(io: FakeIo, target: ExpeditionTarget, maxDispatch: Int): ExpeditionResult =
         runBlocking { session(io).run(target, maxDispatch) }
@@ -82,11 +90,60 @@ class ExpeditionSessionTest {
     private val backTap = 118 to 2594
 
     @Test
-    fun `first frame not on the list stops at NOT_ON_LIST without any tap`() {
+    fun `a screen that is never the list stops at NOT_ON_LIST without any tap`() {
         val io = FakeIo(listOf(Scene(detail)))
         val result = runSession(io, ExpeditionTarget.BOTH, maxDispatch = 1)
         assertEquals(ExpeditionResult(0, ExpeditionStop.NOT_ON_LIST), result)
         assertEquals(emptyList<Pair<Int, Int>>(), io.taps)
+    }
+
+    @Test
+    fun `three looks that are not the list stop at NOT_ON_LIST after exactly three waits of 700 ms`() {
+        val io = FakeIo(listOf(Scene(other)))
+        assertEquals(ExpeditionResult(0, ExpeditionStop.NOT_ON_LIST), runSession(io, ExpeditionTarget.POT, maxDispatch = 1))
+        assertEquals(listOf(700L, 700L, 700L), io.waits)
+    }
+
+    @Test
+    fun `a screen still fading in is looked at again and the run goes on once it is the list`() {
+        val io = FakeIo(
+            listOf(
+                Scene(other), Scene(other),
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        assertEquals(ExpeditionResult(1, ExpeditionStop.LIMIT_REACHED), runSession(io, ExpeditionTarget.POT, maxDispatch = 1))
+        assertEquals(226 to 1000, io.taps.first())
+    }
+
+    @Test
+    fun `a look that misses the list logs the screen it saw and the frame size`() {
+        val lines = mutableListOf<String>()
+        val io = FakeIo(
+            listOf(
+                Scene(other),
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        runBlocking { session(io) { lines += it }.run(ExpeditionTarget.POT, maxDispatch = 1) }
+        assertTrue("log was $lines", lines.contains("looked for LIST, saw OTHER (1220x2712)"))
+    }
+
+    @Test
+    fun `a look that gives no frame is logged as no frame and the run goes on`() {
+        val lines = mutableListOf<String>()
+        val io = FakeIo(
+            listOf(
+                Scene(other, missing = true),
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        val result = runBlocking { session(io) { lines += it }.run(ExpeditionTarget.POT, maxDispatch = 1) }
+        assertEquals(ExpeditionResult(1, ExpeditionStop.LIMIT_REACHED), result)
+        assertTrue("log was $lines", lines.contains("no frame"))
     }
 
     @Test

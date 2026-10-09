@@ -96,12 +96,16 @@ class NectarAccessibilityService : AccessibilityService() {
         takeScreenshot(Display.DEFAULT_DISPLAY, mainExecutor, object : TakeScreenshotCallback {
             override fun onSuccess(screenshot: ScreenshotResult) {
                 val frame = runCatching { toRgbImage(screenshot) }
-                    .onFailure { Log.w(TAG, "screenshot copy failed", it) }
-                    .getOrNull()
+                    .getOrElse {
+                        Log.w(TAG, "screenshot copy failed", it)
+                        null
+                    }
+                if (frame == null) Log.w(TAG, "screenshot gave no frame")
                 cont.resume(frame)
             }
 
             override fun onFailure(errorCode: Int) {
+                Log.w(TAG, "takeScreenshot failed, error code $errorCode")
                 cont.resumeWithException(ScreenshotFailed(errorCode))
             }
         })

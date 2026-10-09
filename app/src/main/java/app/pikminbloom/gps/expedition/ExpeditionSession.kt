@@ -45,9 +45,10 @@ class ExpeditionSession(
     private class Look(val img: RgbImage, val frame: ExpFrame)
 
     private suspend fun drive(target: ExpeditionTarget, maxDispatch: Int): ExpeditionStop {
-        val first = look()
-        if (first == null || first.frame.screen != ExpScreen.LIST) {
-            log("first frame is not the 探險 list")
+        // The screen can still be fading in when the run starts (a dialog's scrim, say): look a few times first.
+        val first = poll(FIRST_LOOKS, FIRST_LOOK_MS, ExpScreen.LIST)
+        if (first == null) {
+            log("not on the 探險 list after $FIRST_LOOKS looks")
             return ExpeditionStop.NOT_ON_LIST
         }
         var list: Look = first
@@ -60,7 +61,7 @@ class ExpeditionSession(
                 val before = list.img
                 io.swipe((0.5 * before.width).toInt(), (0.85 * before.height).toInt(), (0.40 * before.height).toInt(), SWIPE_MS)
                 io.wait(SWIPE_SETTLE_MS)
-                val after = look() ?: return ExpeditionStop.LOST
+                val after = look(ExpScreen.LIST) ?: return ExpeditionStop.LOST
                 if (FrameDiff.changedFraction(before, after.img) < 0.01) return ExpeditionStop.DONE_END_OF_LIST
                 if (after.frame.screen != ExpScreen.LIST) return ExpeditionStop.LOST
                 list = after
@@ -81,7 +82,7 @@ class ExpeditionSession(
             val (autoX, autoY) = ExpeditionVision.autoTap(select.img.width, selectRowY)
             io.tap(autoX, autoY)
             io.wait(SELECT_SETTLE_MS)
-            val picked = look()
+            val picked = look(ExpScreen.SELECT)
             if (picked == null || picked.frame.screen != ExpScreen.SELECT) return ExpeditionStop.LOST
             if (!picked.frame.goActive) return backToList(picked)
             val (goX, goY) = ExpeditionVision.goTap(picked.img.width, picked.img.height)
@@ -114,22 +115,32 @@ class ExpeditionSession(
             val (x, y) = ExpeditionVision.backTap(at.img.width, at.img.height)
             io.tap(x, y)
             io.wait(POLL_MS)
-            at = look() ?: return ExpeditionStop.LOST
+            at = look(ExpScreen.LIST) ?: return ExpeditionStop.LOST
             if (at.frame.screen == ExpScreen.LIST) return ExpeditionStop.NO_PIKMIN
         }
         return ExpeditionStop.LOST
     }
 
-    private suspend fun look(): Look? {
-        val img = io.frame() ?: return null
-        return Look(img, analyze(img))
+    /**
+     * One fresh look at the screen. A look that does not show [expect] is logged with the screen it did see and
+     * the frame size; a look with no frame is logged as such. Pixels and coordinates are never logged.
+     */
+    private suspend fun look(expect: ExpScreen): Look? {
+        val img = io.frame()
+        if (img == null) {
+            log("no frame")
+            return null
+        }
+        val now = Look(img, analyze(img))
+        if (now.frame.screen != expect) log("looked for $expect, saw ${now.frame.screen} (${img.width}x${img.height})")
+        return now
     }
 
     /** Up to [frames] fresh looks, each after its own [gapMs] wait; the first one showing [screen], or null. */
     private suspend fun poll(frames: Int, gapMs: Long, screen: ExpScreen): Look? {
         repeat(frames) {
             io.wait(gapMs)
-            val now = look()
+            val now = look(screen)
             if (now != null && now.frame.screen == screen) return now
         }
         return null
@@ -146,5 +157,7 @@ class ExpeditionSession(
         const val RESULT_POLL_MS = 1500L
         const val CLOSE_SETTLE_MS = 2000L
         const val BACK_TAPS = 3
+        const val FIRST_LOOKS = 3
+        const val FIRST_LOOK_MS = 700L
     }
 }
