@@ -184,7 +184,7 @@
             android:src="@drawable/ic_scan"
             android:tint="@color/overlay_icon" />
 
-        <!-- 自動探險 (ExpeditionRunner). Shown only while Settings has auto_expedition on (OverlayService.render). -->
+        <!-- 自動操作 (the robot button): always on the bar. Expedition and feed runs start from its dialog. -->
         <ImageButton
             android:id="@+id/btnExpedition"
             android:layout_width="@dimen/overlay_button"
@@ -194,8 +194,7 @@
             android:padding="@dimen/space_xs"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_auto"
-            android:tint="@color/overlay_icon"
-            android:visibility="gone" />
+            android:tint="@color/overlay_icon" />
 
         <!-- 定位鈕 (PatrolPhase.SUSPENDED, T18): the icon is the state (pin = 虛擬位置, off = 真實位置) and a
              tap opens the confirm dialog (PatrolDialogs), never a jump. Its description comes from RealModeCopy

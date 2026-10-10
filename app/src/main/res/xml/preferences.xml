@@ -135,12 +135,6 @@
             app:key="auto_nectar"
             app:summary="@string/pref_auto_nectar_summary"
             app:title="@string/pref_auto_nectar_title" />
-
-        <SwitchPreferenceCompat
-            app:defaultValue="false"
-            app:key="auto_expedition"
-            app:summary="@string/pref_auto_expedition_summary"
-            app:title="@string/pref_auto_expedition_title" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/pref_cat_about">

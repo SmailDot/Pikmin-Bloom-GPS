@@ -132,7 +132,7 @@
             android:exported="false" />
 
         <!-- Accessibility service for 自動探險 (and 自動拉花 in debug builds): gesture injection only, off until the
-             user enables it in system settings. Listed in every build; the feature switches in Settings decide. -->
+             user enables it in system settings. Listed in every build; the robot button on the bar explains what it needs. -->
         <service
             android:name=".nectar.NectarAccessibilityService"
             android:exported="true"

@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Auto expedition (ExpeditionRunner, overlay bar button, Settings switch). -->
+    <!-- Auto actions (ExpeditionRunner, FeedRunner, the robot button on the overlay bar). -->
     <string name="accessibility_service_desc">只在自動探險執行時擷取遊戲畫面並在遊戲中點擊與滑動（除錯版的自動拉花也用它點擊）。不讀取視窗內容，截圖不會被儲存或傳送。任何 App 都看得到哪些無障礙服務已開啟，不需要時請關閉。</string>
-    <string name="pref_auto_expedition_title">自動探險（實驗）</string>
-    <string name="pref_auto_expedition_summary">在浮動列上直接派出果實與花苗的探險，或在餵精華畫面自動餵精華。需要 Android 11 以上，並開啟本 App 的無障礙服務。執行期間才會讀取遊戲畫面並在其中點擊與滑動。紅色禮品與蘑菇不會被點擊。遊戲可能看得出無障礙服務已開啟，風險自負。</string>
     <string name="ovl_cd_expedition">自動操作</string>
     <string name="expedition_channel_name">自動探險</string>
     <string name="expedition_running">自動探險進行中</string>
     <string name="expedition_stop">停止</string>
-    <string name="expedition_needs_android11">自動探險需要 Android 11 以上</string>
+    <string name="auto_explain_title">自動操作</string>
+    <string name="auto_explain_body">可以替你派出果實／花苗探險，以及自動餵精華。\n需要無障礙服務「皮克敏巡花助手：自動操作」（Android 11 以上），只在執行時讀取畫面並點擊。\n任何 App 都看得到已開啟的無障礙服務，不需要時請關閉。</string>
+    <string name="auto_explain_open">去開啟</string>
+    <string name="auto_explain_ok">知道了</string>
     <string name="expedition_title">自動操作</string>
     <string name="expedition_target_fruit">果實</string>
     <string name="expedition_target_pot">花苗</string>

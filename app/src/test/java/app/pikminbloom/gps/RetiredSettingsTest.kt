@@ -47,6 +47,12 @@ class RetiredSettingsTest {
     }
 
     @Test
+    fun theAutoExpeditionSwitchIsGoneBecauseTheRobotButtonIsAlwaysOnTheBar() {
+        // 2026-10-10: nobody found the feature behind the switch; the robot button on the bar is always shown.
+        assertGoneFromSettings("auto_expedition", "pref_auto_expedition")
+    }
+
+    @Test
     fun theCadenceCeilingIsGoneFromSettings() {
         // 2026-10-08: "步頻我不認為一般人會去動那個，就別寫出設定了".
         assertGoneFromSettings("max_cadence_spm")

@@ -28,6 +28,8 @@ import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import app.pikminbloom.gps.R
+import app.pikminbloom.gps.auto.AutoButton
+import app.pikminbloom.gps.auto.AutoButtonAction
 import app.pikminbloom.gps.auto.AutoRuns
 import app.pikminbloom.gps.data.LocationJump
 import app.pikminbloom.gps.data.PatrolPhase
@@ -499,17 +501,30 @@ class OverlayService : Service() {
         }
     }
 
-    /** 自動探險 button: stop a running run; else fix what is missing (accessibility, Android 11); else ask what to send. */
+    /** The robot button: cancel a run in progress, explain what the feature needs, or ask what to send. */
     private fun onExpeditionClicked() {
-        when {
-            AutoRuns.isBusy -> AutoRuns.cancel()
-            !NectarAccessibilityService.isEnabled -> {
-                Toast.makeText(this, R.string.toast_nectar_enable_service, Toast.LENGTH_LONG).show()
-                NectarAccessibilityService.openSettings(this)
-            }
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.R -> toast(R.string.expedition_needs_android11)
-            else -> showExpeditionDialog()
+        when (AutoButton.decide(AutoRuns.isBusy, NectarAccessibilityService.isEnabled, Build.VERSION.SDK_INT)) {
+            AutoButtonAction.CANCEL -> AutoRuns.cancel()
+            AutoButtonAction.EXPLAIN -> showAutoExplainDialog()
+            AutoButtonAction.CHOOSE -> showExpeditionDialog()
         }
+    }
+
+    /**
+     * What the robot button needs, in three short lines. 「去開啟」 opens the accessibility settings where the service
+     * can work (Android 11+); below that the only button is 「知道了」.
+     */
+    private fun showAutoExplainDialog() {
+        val builder = AlertDialog.Builder(dialogContext())
+            .setTitle(R.string.auto_explain_title)
+            .setMessage(R.string.auto_explain_body)
+        if (AutoButton.canOpenSettings(Build.VERSION.SDK_INT)) {
+            builder.setPositiveButton(R.string.auto_explain_open) { _, _ -> NectarAccessibilityService.openSettings(this) }
+                .setNegativeButton(R.string.action_cancel, null)
+        } else {
+            builder.setPositiveButton(R.string.auto_explain_ok, null)
+        }
+        showOverlayDialog(builder.create())
     }
 
     /** Which items to send and at most how many expeditions. A number outside 1..50 keeps the dialog open. */
@@ -809,8 +824,7 @@ class OverlayService : Service() {
             ContextCompat.getColor(this, if (scanning) R.color.overlay_phase_paused else R.color.overlay_icon),
         )
         b.btnScan.alpha = if (scanning || scan.isActive) 1f else 0.7f
-        // 自動探險 is opt-in in Settings: its button shows only then, and reads as "on" while a run goes.
-        b.btnExpedition.visibility = if (prefs.autoExpedition) View.VISIBLE else View.GONE
+        // The robot button is always on the bar; it reads as "on" while a run goes.
         b.btnExpedition.imageTintList = ColorStateList.valueOf(
             ContextCompat.getColor(this, if (AutoRuns.isBusy) R.color.overlay_phase_paused else R.color.overlay_icon),
         )
