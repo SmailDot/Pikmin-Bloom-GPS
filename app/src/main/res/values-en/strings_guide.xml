@@ -12,6 +12,8 @@
     <string name="tour_4_title">Start a patrol</string>
     <string name="tour_4_body">Press it and the patrol starts along your patrol route.</string>
     <string name="tour_4_fallback_body">When you are not on patrol, a Start patrol button sits below the main screen; press it and the patrol starts along your patrol route.</string>
+    <string name="tour_homes_title">Home locations</string>
+    <string name="tour_homes_body">Menu → \"Home locations…\" saves a few homes (for example places you visit often). When you tap \"Go home\", you can walk back to your real location or to one of the homes; once you arrive, the avatar stops there. A patrol always starts from your real location and never teleports to a home.</string>
     <string name="tour_5a_title">Floating bar handle</string>
     <string name="tour_5a_body">This is the floating bar\'s handle: tap to open, hold to drag.\n▶ pause and resume, 🏠 go home, ■ stop, 🎮 joystick…</string>
     <string name="tour_5a_fallback_body">Once a patrol starts, the floating bar appears with pause, home, stop and more.</string>

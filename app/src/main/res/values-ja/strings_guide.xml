@@ -12,6 +12,8 @@
     <string name="tour_4_title">巡回を開始</string>
     <string name="tour_4_body">押すと、巡回ルートに沿って巡回が始まります。</string>
     <string name="tour_4_fallback_body">巡回していないときは、メイン画面の下に「巡回を開始」ボタンがあります。押すと、巡回ルートに沿って巡回が始まります。</string>
+    <string name="tour_homes_title">家の位置</string>
+    <string name="tour_homes_body">メニュー →「家の位置…」で「家」をいくつか登録できます（よく行く拠点など）。「帰宅」を押すと、実際の位置か登録した家のどちらかへ歩いて戻れ、着いたらそこで止まります。巡回は必ず実際の位置から始まり、家へワープすることはありません。</string>
     <string name="tour_5a_title">フローティングバーのハンドル</string>
     <string name="tour_5a_body">これはフローティングバーのハンドルです：タップで開き、ドラッグで移動できます。\n▶ 一時停止／再開、🏠 帰宅、■ 停止、🎮 ジョイスティック…</string>
     <string name="tour_5a_fallback_body">巡回を開始すると、フローティングバーが表示され、一時停止や帰宅、停止などを操作できます。</string>

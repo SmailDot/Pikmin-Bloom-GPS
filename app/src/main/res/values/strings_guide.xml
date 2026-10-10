@@ -12,6 +12,8 @@
     <string name="tour_4_title">開始巡邏</string>
     <string name="tour_4_body">按下後，就會開始照巡邏路線巡邏。</string>
     <string name="tour_4_fallback_body">沒在巡邏時，主畫面下方會有『開始巡邏』按鈕；按下後，就會開始照巡邏路線巡邏。</string>
+    <string name="tour_homes_title">家的位置</string>
+    <string name="tour_homes_body">選單 →『家的位置…』可以存幾個『家』（例如常去的據點）。按『回家』時可以選擇走回真實位置或某個家；到了就停在那裡。開始巡邏永遠從真實位置出發，不會瞬移到家。</string>
     <string name="tour_5a_title">浮動列把手</string>
     <string name="tour_5a_body">這是浮動列的把手：點一下展開，按住可以拖動。\n▶ 暫停／繼續、🏠 回家、■ 停止、🎮 搖桿…</string>
     <string name="tour_5a_fallback_body">開始巡邏後，畫面上會出現浮動列，裡面有暫停、回家、停止等控制。</string>

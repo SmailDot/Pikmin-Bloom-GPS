@@ -22,8 +22,8 @@ data class CoachStep(
 )
 
 /**
- * The first-run tour, in order. Step 1 is a centred card; steps 2 to 4 point at the menu, the map and the start button;
- * step 5 points at the floating bar's handle; step 6 is a centred card about the auto actions.
+ * The first-run tour, in order. Step 1 is a centred card; steps 2 to 5 point at the menu, the map, the start button and
+ * the homes menu; step 6 points at the floating bar's handle; step 7 is a centred card about the auto actions.
  */
 object CoachSteps {
 
@@ -35,6 +35,7 @@ object CoachSteps {
             TargetKey.START, R.string.tour_4_title, R.string.tour_4_body, Gesture.TAP,
             fallbackBodyRes = R.string.tour_4_fallback_body,
         ),
+        CoachStep(TargetKey.MENU, R.string.tour_homes_title, R.string.tour_homes_body, Gesture.TAP),
         CoachStep(
             TargetKey.HANDLE, R.string.tour_5a_title, R.string.tour_5a_body, Gesture.TAP, SpotShape.CIRCLE,
             R.string.tour_5a_fallback_body,
