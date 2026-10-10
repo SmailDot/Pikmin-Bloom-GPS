@@ -38,7 +38,7 @@ Settings → Apps → Language).
 
 ## How to use
 1. **Long-press** the map to add a Big Flower, or use "Find nearby candidate Big Flowers".
-2. Tap "Start patrol", then start planting flowers in the game.
+2. Tap "Start patrol" and the patrol follows the route. You plant in the game as usual; expeditions and feeding can be started from the floating bar.
 3. When the arrival alert pops up, tap the Big Flower in the game and swipe down to collect Nectar.
 4. To finish, tap "Go home". Once the avatar is back at your real location the app stops mocking.
 
