@@ -54,34 +54,34 @@ class LocationJumpTest {
 
     @Test
     fun aCrossCountryJumpReadsInWholeKilometresAndMinutes() {
-        assertEquals("上次跳躍 1,850 km · 42 分鐘前", LocationJump.readout(LocationJump(0L, 1_850_000.0), 42 * min))
+        assertEquals("上次瞬移 1,850 km · 42 分鐘前", LocationJump.readout(LocationJump(0L, 1_850_000.0), 42 * min))
     }
 
     @Test
     fun aShortJumpReadsInMetresAndHoursAndMinutes() {
-        assertEquals("上次跳躍 850 m · 2 小時 5 分鐘前", LocationJump.readout(LocationJump(0L, 850.0), 125 * min))
+        assertEquals("上次瞬移 850 m · 2 小時 5 分鐘前", LocationJump.readout(LocationJump(0L, 850.0), 125 * min))
     }
 
     @Test
     fun aFewKilometresKeepOneDecimal() {
-        assertEquals("上次跳躍 3.4 km · 0 分鐘前", LocationJump.readout(LocationJump(0L, 3_400.0), 0L))
+        assertEquals("上次瞬移 3.4 km · 0 分鐘前", LocationJump.readout(LocationJump(0L, 3_400.0), 0L))
     }
 
     @Test
     fun aThousandMetresIsTheFirstToReadInKilometres() {
-        assertEquals("上次跳躍 999 m · 0 分鐘前", LocationJump.readout(LocationJump(0L, 999.0), 0L))
-        assertEquals("上次跳躍 1.0 km · 0 分鐘前", LocationJump.readout(LocationJump(0L, 1_000.0), 0L))
+        assertEquals("上次瞬移 999 m · 0 分鐘前", LocationJump.readout(LocationJump(0L, 999.0), 0L))
+        assertEquals("上次瞬移 1.0 km · 0 分鐘前", LocationJump.readout(LocationJump(0L, 1_000.0), 0L))
     }
 
     @Test
     fun tenKilometresDropTheDecimal() {
-        assertEquals("上次跳躍 10 km · 0 分鐘前", LocationJump.readout(LocationJump(0L, 10_000.0), 0L))
+        assertEquals("上次瞬移 10 km · 0 分鐘前", LocationJump.readout(LocationJump(0L, 10_000.0), 0L))
     }
 
     @Test
     fun theHourTurnsOverAtSixtyMinutes() {
-        assertEquals("上次跳躍 850 m · 59 分鐘前", LocationJump.readout(LocationJump(0L, 850.0), 59 * min))
-        assertEquals("上次跳躍 850 m · 1 小時 0 分鐘前", LocationJump.readout(LocationJump(0L, 850.0), 60 * min))
+        assertEquals("上次瞬移 850 m · 59 分鐘前", LocationJump.readout(LocationJump(0L, 850.0), 59 * min))
+        assertEquals("上次瞬移 850 m · 1 小時 0 分鐘前", LocationJump.readout(LocationJump(0L, 850.0), 60 * min))
     }
 
     @Test
@@ -89,8 +89,8 @@ class LocationJumpTest {
         val saved = Locale.getDefault()
         Locale.setDefault(Locale.GERMANY)   // the default locale would turn 3.4 into 3,4 and 1,850 into 1.850
         try {
-            assertEquals("上次跳躍 3.4 km · 0 分鐘前", LocationJump.readout(LocationJump(0L, 3_400.0), 0L))
-            assertEquals("上次跳躍 1,850 km · 0 分鐘前", LocationJump.readout(LocationJump(0L, 1_850_000.0), 0L))
+            assertEquals("上次瞬移 3.4 km · 0 分鐘前", LocationJump.readout(LocationJump(0L, 3_400.0), 0L))
+            assertEquals("上次瞬移 1,850 km · 0 分鐘前", LocationJump.readout(LocationJump(0L, 1_850_000.0), 0L))
         } finally {
             Locale.setDefault(saved)
         }
@@ -98,12 +98,12 @@ class LocationJumpTest {
 
     @Test
     fun aClockThatWentBackwardsReadsAsJustNow() {
-        assertEquals("上次跳躍 850 m · 0 分鐘前", LocationJump.readout(LocationJump(10 * min, 850.0), 0L))
+        assertEquals("上次瞬移 850 m · 0 分鐘前", LocationJump.readout(LocationJump(10 * min, 850.0), 0L))
     }
 
     @Test
     fun aJumpFromJustUnderADayAgoIsStillShown() {
-        assertEquals("上次跳躍 850 m · 23 小時 59 分鐘前", LocationJump.readout(LocationJump(0L, 850.0), (24 * 60 - 1) * min))
+        assertEquals("上次瞬移 850 m · 23 小時 59 分鐘前", LocationJump.readout(LocationJump(0L, 850.0), (24 * 60 - 1) * min))
     }
 
     @Test

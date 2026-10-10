@@ -35,8 +35,8 @@ object RealModeCopy {
         val back = switchLabel(suspended = true, lang)
         return if (toReal) {
             tr(
-                "手機上所有 App（包含遊戲和 Google 地圖）會馬上看到你真正的位置，遊戲會看到一次位置跳躍${km?.let { "，約 $it" }.orEmpty()}。\n\n" +
-                    "虛擬巡邏會停在原處等你，之後要按「$back」才會跳回去（那也是一次跳躍）。",
+                "手機上所有 App（包含遊戲和 Google 地圖）會馬上看到你真正的位置，遊戲會看到一次瞬移${km?.let { "，約 $it" }.orEmpty()}。\n\n" +
+                    "虛擬巡邏會停在原處等你，之後要按「$back」才會跳回去（那也是一次瞬移）。",
                 "Every app on the phone (the game and Google Maps too) sees where you really are at once, and the game sees " +
                     "one location jump${km?.let { " of about $it" }.orEmpty()}.\n\n" +
                     "The virtual patrol waits where it is; only \u201C$back\u201D takes it back (that is a jump too).",
@@ -47,7 +47,7 @@ object RealModeCopy {
             )
         } else {
             tr(
-                "遊戲會看到一次位置跳躍：從你的真實位置跳回巡邏停放的位置${km?.let { "，約 $it" }.orEmpty()}。\n\n回去之後巡邏會回到切走之前的狀態。",
+                "遊戲會看到一次瞬移：從你的真實位置跳回巡邏停放的位置${km?.let { "，約 $it" }.orEmpty()}。\n\n回去之後巡邏會回到切走之前的狀態。",
                 "The game sees one location jump, from where you really are back to where the patrol waits" +
                     "${km?.let { ", about $it" }.orEmpty()}.\n\nThe patrol then carries on as it was before you switched.",
                 "ゲームからは、実際の位置から巡回の待機位置へ1回ジャンプしたように見えます${km?.let { "（約 $it）" }.orEmpty()}。\n\n" +

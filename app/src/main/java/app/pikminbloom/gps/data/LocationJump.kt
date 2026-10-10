@@ -48,7 +48,7 @@ data class LocationJump(val atMs: Long, val distanceM: Double) {
             val m = minutes % 60
             val age = if (minutes < 60) tr("$minutes 分鐘前", "$minutes min ago", "$minutes 分前", lang)
             else tr("$h 小時 $m 分鐘前", "$h h $m min ago", "$h 時間 $m 分前", lang)
-            return tr("上次跳躍 $distance · $age", "Last jump $distance · $age", "前回のジャンプ $distance · $age", lang)
+            return tr("上次瞬移 $distance · $age", "Last jump $distance · $age", "前回のジャンプ $distance · $age", lang)
         }
     }
 }
