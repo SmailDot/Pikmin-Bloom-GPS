@@ -6,8 +6,9 @@ import app.pikminbloom.gps.geo.GeoMath
 import app.pikminbloom.gps.geo.LatLng
 
 /**
- * Rules for keeping the mock in place (2026-10-08: "我的GPS會瞬間回到台灣(真實位子)再跳回去我虛擬的位置… 可能是我在
- * 睡覺的時候?螢幕關閉的時候?"; the game's day map showed footprints in Taiwan between flowers in Japan).
+ * Rules for keeping the mock in place (2026-10-08 user report: the position briefly jumped back to the real one and
+ * then to the virtual one, perhaps while asleep or with the screen off; the game's day map showed real-position
+ * footprints between the virtual flowers).
  *
  * Nothing on the phone told us when or why, so PatrolService now watches for it: every location fix the system
  * hands out goes past a passive listener (MockLocationController), and one that is not ours, far from where the
@@ -53,7 +54,7 @@ object MockGuard {
     /**
      * What a leak turns the patrol into: 真實位置 (PatrolPhase.SUSPENDED), and it stays there until the user taps
      * 回到虛擬位置. The game has seen the real position already; re-mocking at once would be a jump the app makes on its
-     * own, and with a cause that keeps coming back a Taiwan ⇄ Japan ping-pong (2026-10-08, the user's call: one stay
+     * own, and with a cause that keeps coming back a real ⇄ virtual ping-pong (2026-10-08, the user's call: one stay
      * on the real position and one jump back beats many). Every guarded phase can go there (RealMode.canEnter).
      */
     fun afterLeak(phase: PatrolPhase): PatrolPhase = if (RealMode.canEnter(phase)) PatrolPhase.SUSPENDED else phase

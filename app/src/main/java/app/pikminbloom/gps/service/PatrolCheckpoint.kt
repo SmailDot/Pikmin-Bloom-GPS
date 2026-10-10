@@ -137,7 +137,7 @@ data class PatrolCheckpoint(
 
         /**
          * A checkpoint exists, whatever its age. There used to be a 12 h limit, after which the app
-         * start silently removed the mock providers - i.e. a parked avatar (家 in Japan, days long)
+         * start silently removed the mock providers - i.e. a parked avatar (a saved home far away, days long)
          * teleported back to the real GPS the moment the app was opened. The dialog shows the age
          * and offers 放棄; that decision is the user's, never the clock's.
          */

@@ -6,7 +6,7 @@
     <string name="svc_mock_lost_text">系統把「選取模擬位置資訊應用程式」改掉了。請到 開發者選項 → 選取模擬位置資訊應用程式 → 選「皮克敏巡花助手」；或用電腦執行 adb shell appops set app.pikminbloom.gps android:mock_location allow。遊戲若已經看到真實位置，App 會停在真實位置，不會自己瞬移回去。</string>
     <string name="svc_maps_ask_text">Google 地圖開著，但遊戲和地圖都看到虛擬位置。要切到真實位置請點這裡（遊戲會跳一次）；只是查店家、看評論不用理它。</string>
     <string name="dlg_accuracy_title">建議先關掉「Google 定位準確度」</string>
-    <string name="dlg_accuracy_msg">它開著時，Play 服務會自己用附近的 Wi-Fi 和基地台算出你的真實位置；模擬只要有一點空隙，遊戲就可能看到真實位置（瞬移回台灣）。關掉之後只剩 GPS，而巡邏時 GPS 是本 App 模擬的。\n\n位置：設定 → 位置 → 定位服務 → Google 定位準確度（各家手機名稱略有不同）。\n\n代價：沒巡邏時，地圖等 App 在室內定位會比較慢、比較不準；開始巡邏抓真實位置可能要多等幾秒，靠窗比較快。</string>
+    <string name="dlg_accuracy_msg">它開著時，Play 服務會自己用附近的 Wi-Fi 和基地台算出你的真實位置；模擬只要有一點空隙，遊戲就可能看到真實位置（瞬移回真實位置）。關掉之後只剩 GPS，而巡邏時 GPS 是本 App 模擬的。\n\n位置：設定 → 位置 → 定位服務 → Google 定位準確度（各家手機名稱略有不同）。\n\n代價：沒巡邏時，地圖等 App 在室內定位會比較慢、比較不準；開始巡邏抓真實位置可能要多等幾秒，靠窗比較快。</string>
     <string name="action_accuracy_open">去關掉</string>
     <string name="action_accuracy_start_anyway">照樣開始</string>
     <string name="action_accuracy_mute">不再提醒</string>

@@ -1370,7 +1370,7 @@ class PatrolService : LifecycleService() {
      * guarding it is a leak: the game may already have seen the real position.
      *
      * Then the patrol goes to 真實位置 and stays there (MockGuard.afterLeak). Pulling it back to the virtual position
-     * would be a jump the app makes by itself, and if the cause persists it repeats: Taiwan ⇄ Japan all night, far more
+     * would be a jump the app makes by itself, and if the cause persists it repeats: real ⇄ virtual all night, far more
      * suspicious than one stay on the real position and one jump back when the user wakes up and taps 回到虛擬位置
      * (2026-10-08: "反覆外洩又立刻回去…更容易被偵測出定位異常"). Only problems the game has not seen yet (a push that
      * failed, the permission coming back) are still mended silently, in guardMock.

@@ -10,7 +10,7 @@ data class PowerPlan(val push: Boolean, val wakeLock: Boolean)
  * whether the screen is on or off. Only 真實位置, where no mock exists, lets the CPU go.
  *
  * History: 1.3.0 (T15) let PAUSED / PARKED with the screen off push nothing and sleep; on 1.3.2 the game's day map
- * showed the real position (Taiwan) between flowers in Japan. The first 1.4.0 build still re-pushed those only every
+ * showed the real position between the virtual flowers. The first 1.4.0 build still re-pushed those only every
  * 5 s. Open-source spoofers that fight the same jump all push at least every second (900 ms, 500 ms: "faster
  * prevents jump back to real GPS", PLAN O5), and the user's call was to drop the power saving rather than risk
  * strikes for jumping back and forth (2026-10-08). Battery is the price.
