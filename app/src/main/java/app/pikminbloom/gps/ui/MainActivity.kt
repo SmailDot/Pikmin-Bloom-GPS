@@ -1390,12 +1390,22 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         view.start(CoachSteps.steps, ::tourTarget) { endTour() }
     }
 
-    /** Where each tour step points, in screen pixels. Null (a centred card) when it is not on screen. */
-    private fun tourTarget(key: TargetKey): Bounds? = when (key) {
-        TargetKey.MENU -> overflowButton()?.let { screenBounds(it) }
-        TargetKey.MAP -> screenBounds(binding.map)
-        TargetKey.START -> screenBounds(binding.btnStart)
-        TargetKey.HANDLE -> handleBounds()
+    /** Where each tour step points, in the content root's pixels (the space the tour is drawn in). Null (a centred card) when it is not on screen. */
+    private fun tourTarget(key: TargetKey): Bounds? {
+        val screen = when (key) {
+            TargetKey.MENU -> overflowButton()?.let { screenBounds(it) }
+            TargetKey.MAP -> screenBounds(binding.map)
+            TargetKey.START -> screenBounds(binding.btnStart)
+            TargetKey.HANDLE -> handleBounds()
+        } ?: return null
+        return toContent(screen)
+    }
+
+    /** [screen] converted to the content root's pixels. */
+    private fun toContent(screen: Bounds): Bounds {
+        val at = IntArray(2)
+        findViewById<View>(android.R.id.content).getLocationOnScreen(at)
+        return Bounds(screen.left - at[0], screen.top - at[1], screen.right - at[0], screen.bottom - at[1])
     }
 
     /** A view's rectangle in screen pixels, or null when it is not shown. */
@@ -1407,11 +1417,14 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     }
 
     /**
-     * The floating bar's handle, from its saved window position: the bar is its own window, so the tour finds the handle
-     * from those numbers. The defaults mirror [OverlayService]. Null when the bar is not running.
+     * The floating bar's handle in screen pixels: where the bar published it, else its saved window position while the
+     * bar runs. Null when the bar is not running.
      */
-    private fun handleBounds(): Bounds? {
-        if (!OverlayService.isRunning) return null
+    private fun handleBounds(): Bounds? =
+        OverlayService.handleBounds ?: if (OverlayService.isRunning) savedHandleBounds() else null
+
+    /** The handle's place from the saved window position (the defaults mirror [OverlayService]): a guess, used until the bar publishes. */
+    private fun savedHandleBounds(): Bounds {
         val density = resources.displayMetrics.density
         val size = resources.getDimensionPixelSize(R.dimen.overlay_handle)
         val screenW = resources.displayMetrics.widthPixels

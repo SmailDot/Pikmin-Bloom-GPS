@@ -80,7 +80,7 @@ class SpotlightView(context: Context) : FrameLayout(context) {
         nextButton.setOnClickListener { next() }
     }
 
-    /** Starts the tour. [resolve] finds a step's spot in screen pixels; null means it is missing or hidden. */
+    /** Starts the tour. [resolve] finds a step's spot in this view's pixels, which are the content root's; null means it is missing or hidden. */
     fun start(steps: List<CoachStep>, resolve: (TargetKey) -> Bounds?, onFinished: () -> Unit) {
         this.steps = steps
         this.resolve = resolve
@@ -113,7 +113,7 @@ class SpotlightView(context: Context) : FrameLayout(context) {
         titleView.setText(step.titleRes)
         nextButton.setText(if (i == steps.lastIndex) R.string.tour_done else R.string.tour_next)
         // A spot that is missing or hidden turns the step into a centred card, with its fallback text if it has one.
-        val spot = step.target?.let(resolve)?.let { toLocal(it) }
+        val spot = step.target?.let(resolve)
         bodyView.setText(if (spot == null) (step.fallbackBodyRes ?: step.bodyRes) else step.bodyRes)
         card.measure(
             View.MeasureSpec.makeMeasureSpec(cardWidth, View.MeasureSpec.EXACTLY),
@@ -228,13 +228,6 @@ class SpotlightView(context: Context) : FrameLayout(context) {
             MotionEvent.ACTION_UP -> if (abs(event.x - downX) < slop && abs(event.y - downY) < slop) next()
         }
         return true
-    }
-
-    /** A rectangle in screen pixels, in this view's coordinates. */
-    private fun toLocal(screen: Bounds): Bounds {
-        val origin = IntArray(2)
-        getLocationOnScreen(origin)
-        return Bounds(screen.left - origin[0], screen.top - origin[1], screen.right - origin[0], screen.bottom - origin[1])
     }
 
     private companion object {

@@ -178,6 +178,7 @@ class OverlayService : Service() {
 
     override fun onDestroy() {
         isRunning = false
+        handleBounds = null
         handler.removeCallbacksAndMessages(null)
         scope.cancel()
         // The bar's dialog goes with the bar: no window may outlive the service.
@@ -242,6 +243,7 @@ class OverlayService : Service() {
             }
         }
         b.handle.setOnTouchListener { _, event -> onHandleTouch(event) }
+        b.handle.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> publishHandleBounds() }
 
         b.btnToggle.setOnClickListener {
             val p = PatrolService.state.value.phase
@@ -645,9 +647,22 @@ class OverlayService : Service() {
             .onFailure { Log.w(TAG, "updateViewLayout failed", it) }
     }
 
+    /**
+     * Publishes where the handle is drawn on screen, for the tour. The saved window position is not that place (the
+     * status bar sits between them), so the tour uses this instead. Called when the handle lays out and when a drag ends.
+     */
+    private fun publishHandleBounds() {
+        val handle = binding?.handle ?: return
+        if (handle.width <= 0) return
+        val at = IntArray(2)
+        handle.getLocationOnScreen(at)
+        handleBounds = Bounds(at[0], at[1], at[0] + handle.width, at[1] + handle.height)
+    }
+
     private fun savePosition() {
         prefs.overlayX = params.x
         prefs.overlayY = params.y
+        publishHandleBounds()
     }
 
     private fun setExpanded(value: Boolean) {
@@ -931,6 +946,14 @@ class OverlayService : Service() {
         /** Process-local; the UI uses it to render a "show / hide" toggle. */
         @Volatile
         var isRunning: Boolean = false
+            private set
+
+        /**
+         * The handle's bounds on screen, in pixels, or null when the bar is not up. The tour rings this; see
+         * [publishHandleBounds].
+         */
+        @Volatile
+        var handleBounds: Bounds? = null
             private set
 
         /**
