@@ -1,6 +1,7 @@
 package app.pikminbloom.gps
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
@@ -15,6 +16,15 @@ class StringFormatTest {
         val f = listOf(File("src/main/res/$folder/$file"), File("app/src/main/res/$folder/$file")).first { it.exists() }
         val m = Regex("""<string name="$name">(.*?)</string>""").find(f.readText()) ?: error("$name missing in $folder")
         return m.groupValues[1].replace("\\n", "\n").replace("\\'", "'")
+    }
+
+    @Test
+    fun theAndroidVersionMessageFormatsWithTheReleaseAndTheSdkInAllLanguages() {
+        // Build.VERSION.RELEASE (a String) and Build.VERSION.SDK_INT (an Int) fill %1$s and %2$d.
+        for (folder in listOf("values", "values-en", "values-ja")) {
+            val text = String.format(resource(folder, "strings_expedition.xml", "auto_needs_android11"), "10", 29)
+            assertTrue("$folder: $text", "Android 10" in text && "29" in text)
+        }
     }
 
     @Test

@@ -10,6 +10,7 @@
     <string name="auto_explain_body">可以替你派出果實／花苗探險，以及自動餵精華。\n需要無障礙服務「皮克敏巡花助手：自動操作」（Android 11 以上），只在執行時讀取畫面並點擊。\n任何 App 都看得到已開啟的無障礙服務，不需要時請關閉。</string>
     <string name="auto_explain_open">去開啟</string>
     <string name="auto_explain_ok">知道了</string>
+    <string name="auto_needs_android11">自動操作需要 Android 11 以上。這支手機是 Android %1$s（API %2$d）；請看「設定 → 關於手機」的「Android 版本」，不是 MIUI／EMUI 等系統版本。</string>
     <string name="expedition_title">自動操作</string>
     <string name="expedition_target_fruit">果實</string>
     <string name="expedition_target_pot">花苗</string>

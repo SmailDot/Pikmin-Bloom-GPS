@@ -10,6 +10,7 @@
     <string name="auto_explain_body">It can send fruit and seedling expeditions for you, and feed nectar.\nIt needs the accessibility service \"Pikmin Bloom GPS: Auto actions\" (Android 11 or newer), which reads the screen and taps only while a run goes.\nAny app can see enabled accessibility services, so turn it off when you do not need it.</string>
     <string name="auto_explain_open">Open settings</string>
     <string name="auto_explain_ok">Got it</string>
+    <string name="auto_needs_android11">Auto actions needs Android 11 or newer. This phone runs Android %1$s (API %2$d). Check Settings → About phone → Android version. It is not the MIUI or EMUI version.</string>
     <string name="expedition_title">Auto actions</string>
     <string name="expedition_target_fruit">Fruit</string>
     <string name="expedition_target_pot">Seedlings</string>

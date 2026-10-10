@@ -515,9 +515,17 @@ class OverlayService : Service() {
      * can work (Android 11+); below that the only button is 「知道了」.
      */
     private fun showAutoExplainDialog() {
+        val sdk = Build.VERSION.SDK_INT
+        // Below Android 11 the message also says which Android the phone runs: a skin's "Android 12" can be Android 10.
+        val message = if (sdk < AutoButton.MIN_SDK) {
+            getString(R.string.auto_explain_body) + "\n\n" +
+                getString(R.string.auto_needs_android11, Build.VERSION.RELEASE, sdk)
+        } else {
+            getString(R.string.auto_explain_body)
+        }
         val builder = AlertDialog.Builder(dialogContext())
             .setTitle(R.string.auto_explain_title)
-            .setMessage(R.string.auto_explain_body)
+            .setMessage(message)
         if (AutoButton.canOpenSettings(Build.VERSION.SDK_INT)) {
             builder.setPositiveButton(R.string.auto_explain_open) { _, _ -> NectarAccessibilityService.openSettings(this) }
                 .setNegativeButton(R.string.action_cancel, null)

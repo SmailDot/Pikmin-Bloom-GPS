@@ -10,6 +10,7 @@
     <string name="auto_explain_body">果実と苗の探検の派遣や、ミツをあげる操作を代わりに行えます。\nユーザー補助サービス「Pikmin Bloom GPS：自動操作」（Android 11 以上）が必要です。実行中だけ画面を読み取り、タップします。\nどのアプリからも有効なユーザー補助サービスが見えるため、不要なときはオフにしてください。</string>
     <string name="auto_explain_open">設定を開く</string>
     <string name="auto_explain_ok">了解</string>
+    <string name="auto_needs_android11">自動操作には Android 11 以上が必要です。この端末は Android %1$s（API %2$d）です。「設定 → 端末情報」の「Android バージョン」を確認してください。MIUI や EMUI などの独自バージョンではありません。</string>
     <string name="expedition_title">自動操作</string>
     <string name="expedition_target_fruit">果実</string>
     <string name="expedition_target_pot">苗</string>
