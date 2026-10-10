@@ -10,8 +10,8 @@
     <string name="tour_3_title">Add a Big Flower</string>
     <string name="tour_3_body">Long-press the map to add a Big Flower, or bring one in from the menu item \"Find nearby candidate Big Flowers\".</string>
     <string name="tour_4_title">Start a patrol</string>
-    <string name="tour_4_body">Press here to start the patrol, then open the game.</string>
-    <string name="tour_4_fallback_body">When you are not on patrol, a Start patrol button sits below the main screen; press it, then open the game.</string>
+    <string name="tour_4_body">Press it and the patrol starts along your patrol route.</string>
+    <string name="tour_4_fallback_body">When you are not on patrol, a Start patrol button sits below the main screen; press it and the patrol starts along your patrol route.</string>
     <string name="tour_5a_title">Floating bar handle</string>
     <string name="tour_5a_body">This is the floating bar\'s handle: tap to open, hold to drag.\n▶ pause and resume, 🏠 go home, ■ stop, 🎮 joystick…</string>
     <string name="tour_5a_fallback_body">Once a patrol starts, the floating bar appears with pause, home, stop and more.</string>

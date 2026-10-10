@@ -10,8 +10,8 @@
     <string name="tour_3_title">おおきな花を追加</string>
     <string name="tour_3_body">地図を長押しして おおきな花を追加します（メニューの「近くのおおきな花の候補を検索」からも追加できます）。</string>
     <string name="tour_4_title">巡回を開始</string>
-    <string name="tour_4_body">ここを押して巡回を開始し、ゲームを開きます。</string>
-    <string name="tour_4_fallback_body">巡回していないときは、メイン画面の下に「巡回を開始」ボタンがあります。押してからゲームを開きます。</string>
+    <string name="tour_4_body">押すと、巡回ルートに沿って巡回が始まります。</string>
+    <string name="tour_4_fallback_body">巡回していないときは、メイン画面の下に「巡回を開始」ボタンがあります。押すと、巡回ルートに沿って巡回が始まります。</string>
     <string name="tour_5a_title">フローティングバーのハンドル</string>
     <string name="tour_5a_body">これはフローティングバーのハンドルです：タップで開き、ドラッグで移動できます。\n▶ 一時停止／再開、🏠 帰宅、■ 停止、🎮 ジョイスティック…</string>
     <string name="tour_5a_fallback_body">巡回を開始すると、フローティングバーが表示され、一時停止や帰宅、停止などを操作できます。</string>
