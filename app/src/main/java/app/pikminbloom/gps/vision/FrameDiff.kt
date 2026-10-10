@@ -35,13 +35,17 @@ object FrameDiff {
         return max(dr, max(dg, db)) > threshold
     }
 
-    /** Fraction [0,1] of sampled pixels that differ. Frames of different sizes count as fully changed. */
-    fun changedFraction(a: RgbImage, b: RgbImage, threshold: Int = DEFAULT_THRESHOLD, step: Int = DEFAULT_STEP): Double {
+    /**
+     * Fraction [0,1] of sampled pixels that differ, over [rows] when given (else the whole frame). Frames of different sizes
+     * count as fully changed.
+     */
+    fun changedFraction(a: RgbImage, b: RgbImage, threshold: Int = DEFAULT_THRESHOLD, step: Int = DEFAULT_STEP, rows: IntRange? = null): Double {
         if (a.width != b.width || a.height != b.height) return 1.0
+        val band = rows ?: 0 until a.height
         var total = 0
         var diff = 0
-        var y = step / 2
-        while (y < a.height) {
+        var y = maxOf(band.first, 0) + step / 2
+        while (y <= band.last && y < a.height) {
             var x = step / 2
             while (x < a.width) {
                 total++

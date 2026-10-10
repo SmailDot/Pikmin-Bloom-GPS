@@ -29,6 +29,13 @@ class NavBarWiringTest {
     }
 
     @Test
+    fun theExpeditionHeaderIsWrittenWithTheScreenshotTheRunReceived() {
+        val runner = source("expedition/ExpeditionRunner.kt")
+        assertTrue("the header does not say the screenshot size", runner.contains("shot=\$shot"))
+        assertTrue("the settle looks are not wired into the run", source("expedition/ExpeditionSession.kt").contains("list: still after"))
+    }
+
+    @Test
     fun theServiceReadsTheNavigationBarFromItsWindowInsets() {
         val service = source("nectar/NectarAccessibilityService.kt")
         assertTrue("the service does not read the navigation bar inset", service.contains("getInsetsIgnoringVisibility(WindowInsets.Type.navigationBars())"))

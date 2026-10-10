@@ -45,9 +45,9 @@ object ExpeditionRunner {
         if (svc == null) { Log.i(TAG, "expedition: skipped, accessibility service off"); return }
         // The navigation bar is read once per run: the game is drawn above it on 3-button phones.
         val bar = svc.bottomInsetFraction()
+        val detail = "target=$target, max=$maxDispatch, navInset=${"%.3f".format(Locale.ROOT, bar)}"
         job = scope.launch {
-            AutoRunLog.startRun(app, "expedition", "target=$target, max=$maxDispatch, navInset=${"%.3f".format(Locale.ROOT, bar)}")
-            val session = ExpeditionSession(io(svc), bottomInsetFraction = bar, log = { Log.i(TAG, "expedition: $it"); AutoRunLog.append(app, it) })
+            val session = ExpeditionSession(io(svc, app, detail), bottomInsetFraction = bar, log = { Log.i(TAG, "expedition: $it"); AutoRunLog.append(app, it) })
             RunNotice.show(app, R.string.expedition_running)
             var stop = ExpeditionStop.CANCELLED
             var count = 0
@@ -75,8 +75,22 @@ object ExpeditionRunner {
         job?.cancel()
     }
 
-    private fun io(svc: NectarAccessibilityService): NectarIo = object : NectarIo {
-        override suspend fun frame(): RgbImage? = svc.screenshot()
+    /**
+     * The run's screen and taps. The run header is written with the first screenshot, so it can say the size the phone
+     * actually sent (the window's size is not always the screenshot's).
+     */
+    private fun io(svc: NectarAccessibilityService, app: Context, detail: String): NectarIo = object : NectarIo {
+        private var headed = false
+
+        override suspend fun frame(): RgbImage? {
+            val img = svc.screenshot()
+            if (!headed) {
+                headed = true
+                val shot = img?.let { "${it.width}x${it.height}" } ?: "none"
+                AutoRunLog.startRun(app, "expedition", "$detail, shot=$shot")
+            }
+            return img
+        }
         override suspend fun tap(x: Int, y: Int) = svc.tap(x, y)
         override suspend fun swipe(x: Int, fromY: Int, toY: Int, durationMs: Long) = svc.swipe(x, fromY, toY, durationMs)
         override suspend fun back() = svc.back()

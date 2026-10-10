@@ -54,7 +54,7 @@ class ExpeditionSession(
             log("not on the 探險 list after $LIST_LOOKS looks")
             return ExpeditionStop.NOT_ON_LIST
         }
-        var list: Look = first
+        var list: Look = settled(first) ?: first
         var swipes = 0
         while (true) {
             val cell = list.frame.cells.sortedWith(compareBy({ it.y }, { it.x })).firstOrNull { wanted(target, it.kind) }
@@ -68,11 +68,12 @@ class ExpeditionSession(
                 val fromY = list.frame.tabY
                     ?.takeIf { it > (0.85 * gameH).toInt() }
                     ?.let { it - (0.035 * gameH).toInt() }
-                    ?: (0.85 * gameH).toInt()
-                io.swipe((0.5 * before.width).toInt(), fromY, (0.40 * gameH).toInt(), SWIPE_MS)
+                    ?: (0.80 * gameH).toInt()
+                // A gentle swipe: a fling leaves the sheet gliding well past the settle looks.
+                io.swipe((0.5 * before.width).toInt(), fromY, (0.45 * gameH).toInt(), SWIPE_MS)
                 io.wait(SWIPE_SETTLE_MS)
-                // The sheet bounces for a moment after a swipe: take the first look that is the list, then compare.
-                val after = poll(LIST_LOOKS, LIST_LOOK_MS, ExpScreen.LIST)?.let(::logList) ?: return ExpeditionStop.LOST
+                // The sheet may still glide after the swipe: only a LIST look that has stopped is read.
+                val after = settled(list) ?: return ExpeditionStop.LOST
                 if (FrameDiff.changedFraction(before, after.img) < 0.01) return ExpeditionStop.DONE_END_OF_LIST
                 list = after
                 continue
@@ -117,6 +118,36 @@ class ExpeditionSession(
 
     /** The height of the game in [img]: what the rules and the bottom-anchored taps measure against. */
     private fun gameHeight(img: RgbImage): Int = img.height - insetPx(img)
+
+    /**
+     * The list once it has stopped. Each LIST look is compared with the one before it (the first with [from]), and the first
+     * that matches is read: a list still gliding after a swipe is smeared, so it is not. After [SETTLE_LOOKS] looks that never
+     * match, the last LIST look is read. Null when no LIST look came at all.
+     */
+    private suspend fun settled(from: Look): Look? {
+        var prev = from
+        var seen: Look? = null
+        for (n in 1..SETTLE_LOOKS) {
+            io.wait(SETTLE_LOOK_MS)
+            val now = look(ExpScreen.LIST) ?: continue
+            if (now.frame.screen != ExpScreen.LIST) continue
+            seen = now
+            if (isStill(prev.img, now.img, contentRows(now.img, now.frame.tabY ?: prev.frame.tabY))) {
+                log("list: still after $n looks")
+                return now
+            }
+            prev = now
+        }
+        if (seen != null) log("list: never still in $SETTLE_LOOKS looks; using the last one")
+        return seen
+    }
+
+    /** The content band of a LIST frame: from the tab row to the bottom band, or the whole game when that is empty. */
+    private fun contentRows(img: RgbImage, tabY: Int?): IntRange {
+        val top = tabY ?: 0
+        val bottom = gameHeight(img) - (0.178 * img.width).toInt()
+        return if (bottom > top) top until bottom else 0 until gameHeight(img)
+    }
 
     /** One of our own taps, logged with its target and its point before it is made. */
     private suspend fun tapAt(what: String, x: Int, y: Int) {
@@ -175,9 +206,16 @@ class ExpeditionSession(
         return null
     }
 
-    private companion object {
+    companion object {
+        /** A list is still when less than this share of its content band's sampled pixels changed between two looks. */
+        const val STILL_FRACTION = 0.01
+
+        /** Whether the content rows of two LIST looks match, to within [STILL_FRACTION]. */
+        fun isStill(prev: RgbImage, now: RgbImage, rows: IntRange): Boolean =
+            FrameDiff.changedFraction(prev, now, rows = rows) < STILL_FRACTION
+
         const val MAX_SWIPES = 15
-        const val SWIPE_MS = 600L
+        const val SWIPE_MS = 900L
         const val SWIPE_SETTLE_MS = 1200L
         const val POLL_FRAMES = 3
         const val POLL_MS = 1000L
@@ -189,5 +227,8 @@ class ExpeditionSession(
         /** Looks for the list when a screen should be it: at the start of a run, and after each swipe (the sheet bounces). */
         const val LIST_LOOKS = 3
         const val LIST_LOOK_MS = 700L
+        /** Looks at the list until it has stopped: at most this many, this far apart (a glide takes a second or two). */
+        const val SETTLE_LOOKS = 6
+        const val SETTLE_LOOK_MS = 500L
     }
 }

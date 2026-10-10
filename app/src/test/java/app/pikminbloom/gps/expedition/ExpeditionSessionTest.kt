@@ -13,6 +13,7 @@ private const val W = 1220
 private const val H = 2712
 private val BLACK = 0xFF000000.toInt()
 private val WHITE = 0xFFFFFFFF.toInt()
+private val GREY = 0xFF808080.toInt()
 
 /**
  * Drives [ExpeditionSession] through scripted screens. Mirrors `NectarCollectorTest`'s fake io:
@@ -110,6 +111,7 @@ class ExpeditionSessionTest {
             listOf(
                 Scene(other), Scene(other),
                 Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
             ),
         )
@@ -123,25 +125,29 @@ class ExpeditionSessionTest {
         val io = FakeIo(
             listOf(
                 Scene(list(tabY = 2620), shade = BLACK),
+                Scene(list(tabY = 2620), shade = BLACK),
+                Scene(list(Cell(226, 1000, ItemKind.POT)), shade = WHITE),
                 Scene(list(Cell(226, 1000, ItemKind.POT)), shade = WHITE),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
             ),
         )
         assertEquals(ExpeditionResult(1, ExpeditionStop.LIMIT_REACHED), runSession(io, ExpeditionTarget.POT, maxDispatch = 1))
-        assertEquals(Swipe(610, 2526, 1084, 600L), io.swipes.first())
+        assertEquals(Swipe(610, 2526, 1220, 900L), io.swipes.first())
     }
 
     @Test
-    fun `a sheet whose tab row is higher up is swiped from 0_85H as before`() {
+    fun `a sheet whose tab row is higher up is swiped from 0_80H and gently to 0_45H`() {
         val io = FakeIo(
             listOf(
                 Scene(list(tabY = 1232), shade = BLACK),
+                Scene(list(tabY = 1232), shade = BLACK),
+                Scene(list(Cell(226, 1000, ItemKind.POT)), shade = WHITE),
                 Scene(list(Cell(226, 1000, ItemKind.POT)), shade = WHITE),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
             ),
         )
         assertEquals(ExpeditionResult(1, ExpeditionStop.LIMIT_REACHED), runSession(io, ExpeditionTarget.POT, maxDispatch = 1))
-        assertEquals(Swipe(610, 2305, 1084, 600L), io.swipes.first())
+        assertEquals(Swipe(610, 2169, 1220, 900L), io.swipes.first())
     }
 
     @Test
@@ -149,7 +155,9 @@ class ExpeditionSessionTest {
         val io = FakeIo(
             listOf(
                 Scene(list(), shade = BLACK),
+                Scene(list(), shade = BLACK),
                 Scene(other, shade = WHITE), Scene(other, shade = WHITE),
+                Scene(list(Cell(993, 1632, ItemKind.FRUIT)), shade = WHITE),
                 Scene(list(Cell(993, 1632, ItemKind.FRUIT)), shade = WHITE),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
             ),
@@ -173,6 +181,7 @@ class ExpeditionSessionTest {
         val io = FakeIo(
             listOf(
                 Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
             ),
         )
@@ -187,6 +196,7 @@ class ExpeditionSessionTest {
     fun `on a phone with a navigation bar the back tap moves up by the bar too`() {
         val io = FakeIo(
             listOf(
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(detail), Scene(select(false)), Scene(select(false)), Scene(detail), Scene(list()),
             ),
@@ -204,6 +214,7 @@ class ExpeditionSessionTest {
         val io = FakeIo(
             listOf(
                 Scene(list(Cell(226, 1000, ItemKind.POT), tabY = 2400)),
+                Scene(list(Cell(226, 1000, ItemKind.POT), tabY = 2400)),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
             ),
         )
@@ -211,6 +222,7 @@ class ExpeditionSessionTest {
         assertEquals(
             listOf(
                 "list: tabY=2400, cells=[POT×1, FRUIT×0, GIFT×0, COVERED×0, IN_PROGRESS×0, UNKNOWN×0]",
+                "list: still after 1 looks",
                 "tap cell POT at 226,1000",
                 "tap explore at 610,2003",
                 "tap auto at 295,1031",
@@ -223,6 +235,48 @@ class ExpeditionSessionTest {
             ),
             lines,
         )
+    }
+
+    /**
+     * After the swipe the sheet glides: two moving looks, then the list stops. The first look that matches the one before it
+     * is the one read; the moving looks are not.
+     */
+    @Test
+    fun `a list still gliding after a swipe is not read, and the first look that has stopped is used`() {
+        val lines = mutableListOf<String>()
+        val io = FakeIo(
+            listOf(
+                Scene(list(), shade = BLACK), Scene(list(), shade = BLACK), // the first look, and the look that confirms it
+                Scene(list(Cell(226, 800, ItemKind.POT)), shade = GREY),    // gliding
+                Scene(list(Cell(226, 1000, ItemKind.POT)), shade = WHITE),  // gliding
+                Scene(list(Cell(226, 1200, ItemKind.POT)), shade = WHITE),  // stopped
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        runBlocking { session(io) { lines += it }.run(ExpeditionTarget.POT, maxDispatch = 1) }
+        assertEquals(226 to 1200, io.taps.first())
+        assertTrue("log was $lines", lines.contains("list: still after 3 looks"))
+    }
+
+    /** A list that never stops is read at its last look: the sheet is then no more smeared than it will ever be. */
+    @Test
+    fun `a list that never stops moving is read at its last look`() {
+        val lines = mutableListOf<String>()
+        val io = FakeIo(
+            listOf(
+                Scene(list(), shade = BLACK), Scene(list(), shade = BLACK),
+                Scene(list(Cell(226, 800, ItemKind.POT)), shade = GREY),
+                Scene(list(Cell(226, 900, ItemKind.POT)), shade = WHITE),
+                Scene(list(Cell(226, 1000, ItemKind.POT)), shade = GREY),
+                Scene(list(Cell(226, 1100, ItemKind.POT)), shade = WHITE),
+                Scene(list(Cell(226, 1200, ItemKind.POT)), shade = GREY),
+                Scene(list(Cell(226, 1300, ItemKind.POT)), shade = WHITE),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        runBlocking { session(io) { lines += it }.run(ExpeditionTarget.POT, maxDispatch = 1) }
+        assertEquals(226 to 1300, io.taps.first())
+        assertTrue("log was $lines", lines.any { it.startsWith("list: never still in 6 looks") })
     }
 
     @Test
@@ -246,6 +300,7 @@ class ExpeditionSessionTest {
             listOf(
                 Scene(other, missing = true),
                 Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
             ),
         )
@@ -258,6 +313,11 @@ class ExpeditionSessionTest {
     fun `fruit target skips pots, gifts, unknown, covered and in-progress cells`() {
         val io = FakeIo(
             listOf(
+                Scene(list(
+                    Cell(226, 1000, ItemKind.POT), Cell(610, 1151, ItemKind.GIFT),
+                    Cell(993, 1400, ItemKind.UNKNOWN), Cell(993, 1500, ItemKind.COVERED),
+                    Cell(226, 1700, ItemKind.IN_PROGRESS), Cell(993, 1632, ItemKind.FRUIT),
+                )),
                 Scene(list(
                     Cell(226, 1000, ItemKind.POT), Cell(610, 1151, ItemKind.GIFT),
                     Cell(993, 1400, ItemKind.UNKNOWN), Cell(993, 1500, ItemKind.COVERED),
@@ -276,6 +336,7 @@ class ExpeditionSessionTest {
         val io = FakeIo(
             listOf(
                 Scene(list(Cell(993, 1632, ItemKind.FRUIT), Cell(226, 1156, ItemKind.POT))),
+                Scene(list(Cell(993, 1632, ItemKind.FRUIT), Cell(226, 1156, ItemKind.POT))),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
             ),
         )
@@ -287,6 +348,7 @@ class ExpeditionSessionTest {
     fun `faded go bubble after auto backs out to the list and stops at NO_PIKMIN`() {
         val io = FakeIo(
             listOf(
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(detail), Scene(select(false)), Scene(select(false)), Scene(detail), Scene(list()),
             ),
@@ -300,6 +362,7 @@ class ExpeditionSessionTest {
     fun `reaching the dispatch limit stops at LIMIT_REACHED after that many dispatches`() {
         val io = FakeIo(
             listOf(
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen),
                 Scene(list(Cell(226, 1500, ItemKind.POT))),
@@ -322,13 +385,15 @@ class ExpeditionSessionTest {
         val io = FakeIo(
             listOf(
                 Scene(list(), shade = BLACK),
+                Scene(list(), shade = BLACK),
+                Scene(list(Cell(226, 1000, ItemKind.POT)), shade = WHITE),
                 Scene(list(Cell(226, 1000, ItemKind.POT)), shade = WHITE),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
             ),
         )
         val result = runSession(io, ExpeditionTarget.POT, maxDispatch = 1)
         assertEquals(ExpeditionResult(1, ExpeditionStop.LIMIT_REACHED), result)
-        assertEquals(listOf(Swipe(610, 2305, 1084, 600L)), io.swipes)
+        assertEquals(listOf(Swipe(610, 2169, 1220, 900L)), io.swipes)
         assertEquals(226 to 1000, io.taps.first())
     }
 
@@ -352,6 +417,7 @@ class ExpeditionSessionTest {
         val io = FakeIo(
             listOf(
                 Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
             ),
         )
@@ -364,6 +430,7 @@ class ExpeditionSessionTest {
     fun `dispatchedSoFar still counts the dispatches made before a cancellation`() {
         val io = FakeIo(
             listOf(
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(list(Cell(226, 1000, ItemKind.POT))),
                 Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen),
                 Scene(list(Cell(226, 1500, ItemKind.POT))),
