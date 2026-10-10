@@ -24,6 +24,15 @@ class RgbImage(val width: Int, val height: Int, val pixels: IntArray) {
     /** Packed `0xAARRGGBB` at ([x], [y]). No bounds check on the hot path; callers clamp. */
     fun get(x: Int, y: Int): Int = pixels[y * width + x]
 
+    /**
+     * The rows above a navigation bar of [px] rows at the bottom: the game's own area. A copy; with no bar this image.
+     */
+    fun cropBottom(px: Int): RgbImage {
+        if (px <= 0) return this
+        val rows = (height - px).coerceAtLeast(0)
+        return RgbImage(width, rows, pixels.copyOf(width * rows))
+    }
+
     /** Packed pixel, or [fallback] when ([x], [y]) is outside the raster. */
     fun getOrElse(x: Int, y: Int, fallback: Int = 0): Int =
         if (x < 0 || y < 0 || x >= width || y >= height) fallback else pixels[y * width + x]

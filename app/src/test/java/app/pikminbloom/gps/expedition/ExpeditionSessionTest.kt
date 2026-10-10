@@ -169,6 +169,36 @@ class ExpeditionSessionTest {
     }
 
     @Test
+    fun `on a phone with a navigation bar the go and close taps move up by the bar`() {
+        val io = FakeIo(
+            listOf(
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        runBlocking {
+            ExpeditionSession(io, analyze = { _ -> checkNotNull(io.shown) }, bottomInsetFraction = 120.0 / H)
+                .run(ExpeditionTarget.POT, maxDispatch = 1)
+        }
+        assertEquals(listOf(226 to 1000, goExploreTap, autoTap, 1034 to 2407, 117 to 2474), io.taps)
+    }
+
+    @Test
+    fun `on a phone with a navigation bar the back tap moves up by the bar too`() {
+        val io = FakeIo(
+            listOf(
+                Scene(list(Cell(226, 1000, ItemKind.POT))),
+                Scene(detail), Scene(select(false)), Scene(select(false)), Scene(detail), Scene(list()),
+            ),
+        )
+        runBlocking {
+            ExpeditionSession(io, analyze = { _ -> checkNotNull(io.shown) }, bottomInsetFraction = 120.0 / H)
+                .run(ExpeditionTarget.POT, maxDispatch = 5)
+        }
+        assertEquals(listOf(226 to 1000, goExploreTap, autoTap, 118 to 2474, 118 to 2474), io.taps)
+    }
+
+    @Test
     fun `a run logs each list look, each of our taps, the select state after auto and its stop, and nothing else`() {
         val lines = mutableListOf<String>()
         val io = FakeIo(

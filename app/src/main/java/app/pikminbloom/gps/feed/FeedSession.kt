@@ -2,6 +2,7 @@ package app.pikminbloom.gps.feed
 
 import app.pikminbloom.gps.vision.RgbImage
 import kotlinx.coroutines.CancellationException
+import kotlin.math.roundToInt
 
 /**
  * What the feed run can do to the phone. The Android implementation is the accessibility service (gestures) and
@@ -39,7 +40,9 @@ data class FeedResult(val rounds: Int, val stop: FeedStop)
  */
 class FeedSession(
     private val io: FeedIo,
-    private val isFeed: (RgbImage) -> Boolean = FeedVision::isFeedScreen,
+    /** The navigation bar's height as a fraction of the screen's height (0 with none): every frame is cut to the game above it. */
+    private val bottomInsetFraction: Double = 0.0,
+    private val isFeed: (RgbImage) -> Boolean = { FeedVision.isFeedScreen(it) },
     private val blooms: (RgbImage, RgbImage) -> List<Pair<Int, Int>> = FeedVision::findBlooms,
     private val log: (String) -> Unit = {},
 ) {
@@ -73,7 +76,7 @@ class FeedSession(
             val h = feed.height
             if (!io.pinch(w, h)) return FeedStop.LOST
             io.wait(PINCH_SETTLE_MS)
-            val before = io.frame()
+            val before = frame()
             if (before == null || !isFeed(before)) return FeedStop.LOST
             val feedX = (0.50 * w).toInt()
             val feedY = (0.54 * h).toInt()
@@ -109,17 +112,23 @@ class FeedSession(
             if (!io.path(FeedGestures.spiral(w, h, start), HARVEST_MS)) return false
             io.wait(HARVEST_SETTLE_MS)
             if (pass == EXTRA_PASSES) break
-            val left = io.frame()?.let { blooms(before, it) }.orEmpty()
+            val left = frame()?.let { blooms(before, it) }.orEmpty()
             start = left.firstOrNull() ?: break
         }
         return true
     }
 
+    /** The game area of [img]: the rows above the navigation bar, which the rules and the taps are measured on. */
+    private fun game(img: RgbImage): RgbImage = img.cropBottom((bottomInsetFraction * img.height).roundToInt())
+
+    /** The next frame as the game area, or null when the screenshot had none. */
+    private suspend fun frame(): RgbImage? = io.frame()?.let(::game)
+
     /** The first frame that is the feed screen, looking up to [FEED_LOOKS] times, [FEED_LOOK_MS] apart. */
     private suspend fun feedFrame(): RgbImage? {
         repeat(FEED_LOOKS) {
             io.wait(FEED_LOOK_MS)
-            val img = io.frame()
+            val img = frame()
             if (img != null && isFeed(img)) return img
         }
         return null
@@ -129,7 +138,7 @@ class FeedSession(
     private suspend fun firstBloom(before: RgbImage): Pair<Int, Int>? {
         repeat(BLOOM_LOOKS) {
             io.wait(BLOOM_LOOK_MS)
-            val after = io.frame() ?: return@repeat
+            val after = frame() ?: return@repeat
             val found = blooms(before, after)
             if (found.isNotEmpty()) return found.first()
         }

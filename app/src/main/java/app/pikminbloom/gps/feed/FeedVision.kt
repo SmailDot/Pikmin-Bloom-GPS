@@ -15,11 +15,14 @@ object FeedVision {
 
     /**
      * The feed screen: the whistle at the bottom right is lit green, and the first-round button above it is green.
-     * Measured on 1220x2712: feed 0.37–0.60, the other screens at most 0.15.
+     * Measured on 1220x2712: feed 0.37–0.60, the other screens at most 0.15. [bottomInset] rows at the bottom are the
+     * navigation bar: the game is the rows above them.
      */
-    fun isFeedScreen(img: RgbImage): Boolean =
-        greenFraction(img, 0.78, 0.95, 0.895, 0.975) >= 0.45 &&
-            greenFraction(img, 0.80, 0.92, 0.655, 0.715) >= 0.30
+    fun isFeedScreen(img: RgbImage, bottomInset: Int = 0): Boolean {
+        val game = img.cropBottom(bottomInset)
+        return greenFraction(game, 0.78, 0.95, 0.895, 0.975) >= 0.45 &&
+            greenFraction(game, 0.80, 0.92, 0.655, 0.715) >= 0.30
+    }
 
     private fun greenFraction(img: RgbImage, x0f: Double, x1f: Double, y0f: Double, y1f: Double): Double {
         val x0 = (x0f * img.width).toInt()

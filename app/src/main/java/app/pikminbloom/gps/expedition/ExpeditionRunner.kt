@@ -19,6 +19,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /**
  * Glue for 自動探險, like [app.pikminbloom.gps.nectar.NectarRunner]: one run at a time on a background scope,
@@ -42,9 +43,11 @@ object ExpeditionRunner {
         if (AutoRuns.isBusy) return
         val svc = NectarAccessibilityService.instance
         if (svc == null) { Log.i(TAG, "expedition: skipped, accessibility service off"); return }
+        // The navigation bar is read once per run: the game is drawn above it on 3-button phones.
+        val bar = svc.bottomInsetFraction()
         job = scope.launch {
-            AutoRunLog.startRun(app, "expedition", "target=$target, max=$maxDispatch")
-            val session = ExpeditionSession(io(svc), log = { Log.i(TAG, "expedition: $it"); AutoRunLog.append(app, it) })
+            AutoRunLog.startRun(app, "expedition", "target=$target, max=$maxDispatch, navInset=${"%.3f".format(Locale.ROOT, bar)}")
+            val session = ExpeditionSession(io(svc), bottomInsetFraction = bar, log = { Log.i(TAG, "expedition: $it"); AutoRunLog.append(app, it) })
             RunNotice.show(app, R.string.expedition_running)
             var stop = ExpeditionStop.CANCELLED
             var count = 0

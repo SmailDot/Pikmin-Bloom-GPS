@@ -4,6 +4,7 @@ import app.pikminbloom.gps.nectar.NectarIo
 import app.pikminbloom.gps.vision.FrameDiff
 import app.pikminbloom.gps.vision.RgbImage
 import kotlinx.coroutines.CancellationException
+import kotlin.math.roundToInt
 
 enum class ExpeditionTarget { FRUIT, POT, BOTH }
 
@@ -21,7 +22,9 @@ data class ExpeditionResult(val dispatched: Int, val stop: ExpeditionStop)
  */
 class ExpeditionSession(
     private val io: NectarIo,
-    private val analyze: (RgbImage) -> ExpFrame = ExpeditionVision::analyze,
+    /** The navigation bar's height as a fraction of the screen's height (0 with none): the game is the rows above it. */
+    private val bottomInsetFraction: Double = 0.0,
+    private val analyze: (RgbImage) -> ExpFrame = { ExpeditionVision.analyze(it, (bottomInsetFraction * it.height).roundToInt()) },
     private val log: (String) -> Unit = {},
 ) {
     private var dispatched = 0
@@ -61,11 +64,12 @@ class ExpeditionSession(
                 val before = list.img
                 // A fully collapsed sheet puts its tab row in the gesture-navigation zone at the bottom: grab the
                 // sheet just above its tabs (its drag handle) instead, or the swipe moves the map.
+                val gameH = gameHeight(before)
                 val fromY = list.frame.tabY
-                    ?.takeIf { it > (0.85 * before.height).toInt() }
-                    ?.let { it - (0.035 * before.height).toInt() }
-                    ?: (0.85 * before.height).toInt()
-                io.swipe((0.5 * before.width).toInt(), fromY, (0.40 * before.height).toInt(), SWIPE_MS)
+                    ?.takeIf { it > (0.85 * gameH).toInt() }
+                    ?.let { it - (0.035 * gameH).toInt() }
+                    ?: (0.85 * gameH).toInt()
+                io.swipe((0.5 * before.width).toInt(), fromY, (0.40 * gameH).toInt(), SWIPE_MS)
                 io.wait(SWIPE_SETTLE_MS)
                 // The sheet bounces for a moment after a swipe: take the first look that is the list, then compare.
                 val after = poll(LIST_LOOKS, LIST_LOOK_MS, ExpScreen.LIST)?.let(::logList) ?: return ExpeditionStop.LOST
@@ -92,11 +96,11 @@ class ExpeditionSession(
             picked?.let { log(ExpeditionLines.select(it.frame)) }
             if (picked == null || picked.frame.screen != ExpScreen.SELECT) return ExpeditionStop.LOST
             if (!picked.frame.goActive) return backToList(picked)
-            val (goX, goY) = ExpeditionVision.goTap(picked.img.width, picked.img.height)
+            val (goX, goY) = ExpeditionVision.goTap(picked.img.width, gameHeight(picked.img))
             tapAt("go", goX, goY)
 
             val shown = poll(RESULT_FRAMES, RESULT_POLL_MS, ExpScreen.RESULT) ?: return ExpeditionStop.LOST
-            val (closeX, closeY) = ExpeditionVision.closeTap(shown.img.width, shown.img.height)
+            val (closeX, closeY) = ExpeditionVision.closeTarget(shown.img, insetPx(shown.img))
             tapAt("close", closeX, closeY)
             io.wait(CLOSE_SETTLE_MS)
             list = poll(POLL_FRAMES, POLL_MS, ExpScreen.LIST)?.let(::logList) ?: return ExpeditionStop.LOST
@@ -107,6 +111,12 @@ class ExpeditionSession(
             if (dispatched >= maxDispatch) return ExpeditionStop.LIMIT_REACHED
         }
     }
+
+    /** The navigation bar's rows in [img], at the bottom; the game is the rows above them. */
+    private fun insetPx(img: RgbImage): Int = (bottomInsetFraction * img.height).roundToInt()
+
+    /** The height of the game in [img]: what the rules and the bottom-anchored taps measure against. */
+    private fun gameHeight(img: RgbImage): Int = img.height - insetPx(img)
 
     /** One of our own taps, logged with its target and its point before it is made. */
     private suspend fun tapAt(what: String, x: Int, y: Int) {
@@ -131,7 +141,7 @@ class ExpeditionSession(
         var at = start
         repeat(BACK_TAPS) {
             if (at.frame.screen != ExpScreen.SELECT && at.frame.screen != ExpScreen.DETAIL) return ExpeditionStop.LOST
-            val (x, y) = ExpeditionVision.backTap(at.img.width, at.img.height)
+            val (x, y) = ExpeditionVision.backTap(at.img.width, gameHeight(at.img))
             tapAt("back", x, y)
             io.wait(POLL_MS)
             at = look(ExpScreen.LIST) ?: return ExpeditionStop.LOST

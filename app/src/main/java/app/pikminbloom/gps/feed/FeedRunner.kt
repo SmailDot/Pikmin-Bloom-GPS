@@ -18,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /**
  * Glue for 自動餵精華, like [app.pikminbloom.gps.expedition.ExpeditionRunner]: one run at a time on a background
@@ -41,9 +42,11 @@ object FeedRunner {
         if (AutoRuns.isBusy) return
         val svc = NectarAccessibilityService.instance
         if (svc == null) { Log.i(TAG, "feed: skipped, accessibility service off"); return }
+        // The navigation bar is read once per run: the game is drawn above it on 3-button phones.
+        val bar = svc.bottomInsetFraction()
         job = scope.launch {
-            AutoRunLog.startRun(app, "feed", "target=$rounds")
-            val session = FeedSession(io(svc), log = { Log.i(TAG, "feed: $it"); AutoRunLog.append(app, it) })
+            AutoRunLog.startRun(app, "feed", "target=$rounds, navInset=${"%.3f".format(Locale.ROOT, bar)}")
+            val session = FeedSession(io(svc), bottomInsetFraction = bar, log = { Log.i(TAG, "feed: $it"); AutoRunLog.append(app, it) })
             RunNotice.show(app, R.string.feed_running)
             var stop = FeedStop.CANCELLED
             var count = 0

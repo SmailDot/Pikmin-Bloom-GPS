@@ -11,6 +11,8 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import android.view.Display
+import android.view.WindowInsets
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import androidx.annotation.RequiresApi
 import app.pikminbloom.gps.feed.FeedGestures
@@ -121,6 +123,18 @@ class NectarAccessibilityService : AccessibilityService() {
      * Privacy: the pixels exist only in memory, as the frame of one step of a run. They are never written to
      * disk, logged or sent anywhere, and the frame is dropped once the step has read it.
      */
+    /**
+     * The navigation bar's height at the bottom as a fraction of the window's height. A 3-button bar makes the game draw
+     * above it, so the expedition and feed rules measure the rows above the bar. 0 with no bar, and before Android 11.
+     */
+    fun bottomInsetFraction(): Double {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return 0.0
+        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
+        val bar = metrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.navigationBars()).bottom
+        val height = metrics.bounds.height()
+        return if (height > 0) bar.toDouble() / height else 0.0
+    }
+
     suspend fun screenshot(): RgbImage? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
         return try {

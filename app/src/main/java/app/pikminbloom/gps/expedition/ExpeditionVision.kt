@@ -3,6 +3,7 @@ package app.pikminbloom.gps.expedition
 import app.pikminbloom.gps.vision.ColorMath
 import app.pikminbloom.gps.vision.RgbImage
 import kotlin.math.abs
+import kotlin.math.hypot
 
 enum class ExpScreen { LIST, DETAIL, SELECT, RESULT, OTHER }
 
@@ -40,8 +41,13 @@ data class ExpFrame(
  */
 object ExpeditionVision {
 
-    /** Screen priority: RESULT, then SELECT, then DETAIL, then LIST, then OTHER. */
-    fun analyze(img: RgbImage): ExpFrame {
+    /**
+     * Screen priority: RESULT, then SELECT, then DETAIL, then LIST, then OTHER. [bottomInset] rows at the bottom are the
+     * navigation bar, not the game: the game is the rows above them, and every rule is measured on those.
+     */
+    fun analyze(img: RgbImage, bottomInset: Int = 0): ExpFrame = analyzeGame(img.cropBottom(bottomInset))
+
+    private fun analyzeGame(img: RgbImage): ExpFrame {
         val hsv = DoubleArray(3)
         if (isResult(img, hsv)) return ExpFrame(ExpScreen.RESULT)
         selectRowY(img, hsv)?.let {
@@ -58,6 +64,79 @@ object ExpeditionVision {
 
     /** Solid green ✕ that closes the RESULT screen. */
     fun closeTap(w: Int, h: Int): Pair<Int, Int> = (0.096 * w).toInt() to bottomAnchored(h, 0.097, w)
+
+    /**
+     * Where the ✕ of RESULT is tapped: the centre of the dark-green ring in the corner of the game area, when there is one
+     * (a phone's own screen may not match the measured point); otherwise the measured point.
+     */
+    fun closeTarget(img: RgbImage, bottomInset: Int = 0): Pair<Int, Int> {
+        val game = img.cropBottom(bottomInset)
+        val measured = closeTap(game.width, game.height)
+        return ringCentre(game, measured) ?: measured
+    }
+
+    /** The dark green of the RESULT ✕: the colour rule RESULT itself is measured with. */
+    private fun isDarkGreen(c: DoubleArray): Boolean = c[0] > 120.0 && c[0] < 160.0 && c[1] > 0.35 && c[2] > 0.25 && c[2] < 0.6
+
+    /** Smallest dark-green component (in pixels) that counts as the ✕ ring. */
+    private const val MIN_RING_PIXELS = 800
+
+    /**
+     * Centroid of the dark-green component nearest [near] in the corner box of the game area (the left fifth, the bottom
+     * 30%), or null when no component is big enough.
+     */
+    private fun ringCentre(img: RgbImage, near: Pair<Int, Int>): Pair<Int, Int>? {
+        val y0 = (0.70 * img.height).toInt()
+        val bw = (0.2 * img.width).toInt()
+        val bh = img.height - y0
+        val hsv = DoubleArray(3)
+        val mask = BooleanArray(bw * bh) { i ->
+            ColorMath.toHsv(img.get(i % bw, y0 + i / bw), hsv)
+            isDarkGreen(hsv)
+        }
+        val seen = BooleanArray(mask.size)
+        val stack = IntArray(mask.size)
+        val dx = intArrayOf(1, -1, 0, 0)
+        val dy = intArrayOf(0, 0, 1, -1)
+        var best: Pair<Int, Int>? = null
+        var bestDistance = Double.MAX_VALUE
+        for (start in mask.indices) {
+            if (!mask[start] || seen[start]) continue
+            var top = 0
+            var count = 0L
+            var sumX = 0L
+            var sumY = 0L
+            stack[top++] = start
+            seen[start] = true
+            while (top > 0) {
+                val i = stack[--top]
+                val x = i % bw
+                val y = i / bw
+                count++
+                sumX += x
+                sumY += y
+                for (d in 0 until 4) {
+                    val nx = x + dx[d]
+                    val ny = y + dy[d]
+                    if (nx < 0 || ny < 0 || nx >= bw || ny >= bh) continue
+                    val j = ny * bw + nx
+                    if (mask[j] && !seen[j]) {
+                        seen[j] = true
+                        stack[top++] = j
+                    }
+                }
+            }
+            if (count < MIN_RING_PIXELS) continue
+            val cx = (sumX / count).toInt()
+            val cy = y0 + (sumY / count).toInt()
+            val distance = hypot((cx - near.first).toDouble(), (cy - near.second).toDouble())
+            if (distance < bestDistance) {
+                bestDistance = distance
+                best = cx to cy
+            }
+        }
+        return best
+    }
 
     /** Back / 取消, bottom-left on DETAIL and SELECT. */
     fun backTap(w: Int, h: Int): Pair<Int, Int> = (0.097 * w).toInt() to bottomAnchored(h, 0.097, w)
@@ -95,7 +174,7 @@ object ExpeditionVision {
         val w = img.width
         val h = img.height
         val frac = fraction(img, (0.02 * w).toInt(), bottomAnchored(h, 0.166, w), (0.12 * w).toInt(), bottomAnchored(h, 0.022, w), hsv) {
-            it[0] > 120.0 && it[0] < 160.0 && it[1] > 0.35 && it[2] > 0.25 && it[2] < 0.6
+            isDarkGreen(it)
         }
         return frac >= 0.2
     }
