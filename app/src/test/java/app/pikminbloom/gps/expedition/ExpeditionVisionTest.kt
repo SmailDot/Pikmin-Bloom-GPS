@@ -152,6 +152,40 @@ class ExpeditionVisionTest {
         assertTrue("missing $missing; cells ${frame.cells}", missing.isEmpty())
     }
 
+    /**
+     * A device frame at another scroll offset, with the game's floating scroll indicator (a white tab with ^ and v) on the
+     * right edge. The app's own look read it as POT×3, GIFT×1, UNKNOWN×5, so the orange was never sent.
+     */
+    @Test
+    fun `list_orange_run - the cells beside the scroll indicator are read, and the in-progress cards are never tapped`() {
+        val img = fixture("list_orange_run.png")
+        val frame = ExpeditionVision.analyze(img)
+        val expected = listOf(
+            Expect(226, 718, ItemKind.GIFT), Expect(610, 718, ItemKind.GIFT), Expect(993, 718, ItemKind.GIFT),
+            Expect(226, 1206, ItemKind.GIFT), Expect(610, 1206, ItemKind.POT), Expect(993, 1222, ItemKind.FRUIT),
+            Expect(226, 1690, ItemKind.POT), Expect(610, 1690, ItemKind.POT), Expect(993, 1690, ItemKind.GIFT),
+            Expect(226, 2170, ItemKind.POT),
+        )
+        val left = frame.cells.toMutableList()
+        val missing = mutableListOf<Expect>()
+        for (e in expected) {
+            val i = left.indexOfFirst { it.x == e.x && it.kind == e.kind && abs(it.y - e.y) <= 15 }
+            if (i < 0) missing += e else left.removeAt(i)
+        }
+        // The two cards at the bottom right are pale and unfinished: UNKNOWN or IN_PROGRESS, never read as anything tappable.
+        val unexpected = left.filter { it.kind != ItemKind.IN_PROGRESS && it.kind != ItemKind.UNKNOWN }
+        assertTrue("missing $missing; unexpected $unexpected\n${ExpeditionVision.diagnose(img)}", missing.isEmpty() && unexpected.isEmpty())
+    }
+
+    /** A page of finished expeditions: cards marked 完成 and 領取, with coloured borders. None of them is to be tapped here. */
+    @Test
+    fun `list_done_cards - finished expedition cards are never read as a pot, fruit or gift`() {
+        val img = fixture("list_done_cards.png")
+        val frame = ExpeditionVision.analyze(img)
+        val tappable = frame.cells.filter { it.kind != ItemKind.UNKNOWN && it.kind != ItemKind.IN_PROGRESS }
+        assertTrue("cells ${frame.cells}; tappable $tappable\n${ExpeditionVision.diagnose(img)}", tappable.isEmpty())
+    }
+
     @Test
     fun `detail - the outlined go-explore button is found at y 2003`() {
         val frame = ExpeditionVision.analyze(fixture("detail.png"))

@@ -264,6 +264,36 @@ object ExpeditionVision {
     }
 
     /**
+     * What the cell finder saw in a LIST frame, for a failed frame test: each column's icon runs and, for each run, the gutter
+     * whiteness, the colour shares of its icon box, and the verdict in the order the finder applies them.
+     */
+    internal fun diagnose(img: RgbImage): String {
+        val hsv = DoubleArray(3)
+        val tab = listTab(img, hsv) ?: return "no tab row"
+        val out = StringBuilder("tab rows ${tab.first}..${tab.last}")
+        for ((cx, runs) in columnRuns(img, tab.last, hsv)) {
+            out.append("\ncol $cx runs $runs")
+            for (run in runs) {
+                val cy = (run.first + run.last) / 2
+                val f = features(img, cx, cy, hsv)
+                val kind = when {
+                    gutterWhite(img, cx, run, hsv) < 0.85 -> "GUTTER"
+                    isCovered(img, cx, cy, hsv) -> "COVERED"
+                    isInProgress(img, cx, run.first) -> "IN_PROGRESS"
+                    else -> verdict(f).name
+                }
+                out.append(
+                    "\n  $run cy=$cy gutter=${f3(gutterWhite(img, cx, run, hsv))} soil=${f3(f.soil)} red=${f3(f.red)} " +
+                        "box=${f3(f.box)} ink2=${f3(f.ink2)} dark=${f3(f.dark)} -> $kind",
+                )
+            }
+        }
+        return out.toString()
+    }
+
+    private fun f3(v: Double): String = "%.3f".format(java.util.Locale.ROOT, v)
+
+    /**
      * The icon runs (global rows) the cell finder reads in each of the three columns of a LIST frame, before the gutter
      * and kind checks. For the diagnostics of a failed frame test; the same runs [listCells] classifies.
      */
@@ -288,19 +318,65 @@ object ExpeditionVision {
     /** Cells of a LIST screen, in reading order. */
     private fun listCells(img: RgbImage, tabBottom: Int, hsv: DoubleArray): List<Cell> {
         val cells = ArrayList<Cell>()
+        val panelRows = ArrayList<Int>()
         for ((cx, runs) in columnRuns(img, tabBottom, hsv)) {
             for (run in runs) {
                 if (!gutterClear(img, cx, run, hsv)) continue
                 val cy = (run.first + run.last) / 2
+                if (isPanel(img, cx, cy)) panelRows += cy
                 val kind = when {
                     isCovered(img, cx, cy, hsv) -> ItemKind.COVERED
                     isInProgress(img, cx, run.first) -> ItemKind.IN_PROGRESS
+                    isPanel(img, cx, cy) -> ItemKind.UNKNOWN
                     else -> classify(img, cx, cy, hsv)
                 }
                 cells.add(Cell(cx, cy, kind))
             }
         }
-        return cells.sortedWith(compareBy({ it.y }, { it.x }))
+        // One card's panel marks its whole row of cards: the other cells in that row are cards too, not items to tap.
+        val reach = (PANEL_ROW_FRACTION * img.height).toInt()
+        return cells.map { c ->
+            val inCardRow = panelRows.any { abs(it - c.y) <= reach }
+            if (inCardRow && (c.kind == ItemKind.POT || c.kind == ItemKind.FRUIT || c.kind == ItemKind.GIFT)) c.copy(kind = ItemKind.UNKNOWN) else c
+        }.sortedWith(compareBy({ it.y }, { it.x }))
+    }
+
+    /**
+     * A card's coloured panel: saturated colour reaching the icon box's right edge over most of its rows, with a ragged left
+     * edge. A fruit is round, so its left edge keeps to one line from row to row; a card panel does not.
+     */
+    private fun isPanel(img: RgbImage, cx: Int, cy: Int): Boolean {
+        val w = img.width
+        val h = img.height
+        val x0 = cx - (0.0778 * w).toInt()
+        val x1 = cx + (0.05 * w).toInt()
+        val hsv = DoubleArray(3)
+        var rows = 0
+        var touching = 0
+        val lefts = ArrayList<Double>()
+        for (y in (cy - (0.035 * h).toInt())..(cy + (0.035 * h).toInt())) {
+            rows++
+            var left = -1
+            for (x in x0..x1) {
+                ColorMath.toHsv(img.get(x, y), hsv)
+                if (hsv[1] > 0.3) {
+                    left = x - x0
+                    break
+                }
+            }
+            var edge = 0
+            for (x in (x1 - 5)..x1) {
+                ColorMath.toHsv(img.get(x, y), hsv)
+                if (hsv[1] > 0.3) edge++
+            }
+            if (left >= 0 && edge >= 3) {
+                touching++
+                lefts += left.toDouble()
+            }
+        }
+        if (lefts.size < 3 || touching < PANEL_TOUCH_FRACTION * rows) return false
+        val mean = lefts.average()
+        return kotlin.math.sqrt(lefts.sumOf { (it - mean) * (it - mean) } / lefts.size) >= PANEL_RAGGED_PX
     }
 
     /**
@@ -344,15 +420,19 @@ object ExpeditionVision {
      * A mushroom photo card spills colour into the gutter beside it; a real cell has white there. The strip is
      * narrow (±0.005W) so a running card's border, drawn in its own grid slot, does not reach it.
      */
-    private fun gutterClear(img: RgbImage, cx: Int, run: IntRange, hsv: DoubleArray): Boolean {
+    private fun gutterClear(img: RgbImage, cx: Int, run: IntRange, hsv: DoubleArray): Boolean = gutterWhite(img, cx, run, hsv) >= 0.85
+
+    /** The least whiteness of the gutters beside this run that apply to its column (1 when none applies). */
+    private fun gutterWhite(img: RgbImage, cx: Int, run: IntRange, hsv: DoubleArray): Double {
         val w = img.width
         val half = (0.005 * w).toInt()
+        var least = 1.0
         for (fg in listOf(0.3428, 0.6572)) {
             val g = (fg * w).toInt()
             if (abs(g - cx).toDouble() > 0.2 * w) continue
-            if (fraction(img, g - half, run.first, g + half, run.last, hsv) { isGutterWhite(it) } < 0.85) return false
+            least = minOf(least, fraction(img, g - half, run.first, g + half, run.last, hsv) { isGutterWhite(it) })
         }
-        return true
+        return least
     }
 
     /** White for the gutter check only: looser than [isWhite], so a faint tint in the gutter still counts as white. */
@@ -401,8 +481,22 @@ object ExpeditionVision {
     private fun isNearGrey(p: Int): Boolean =
         abs(((p ushr 16) and 0xFF) - 230) <= 8 && abs(((p ushr 8) and 0xFF) - 231) <= 8 && abs((p and 0xFF) - 230) <= 8
 
+    /** The colour shares of one icon box: soil, red ribbon, white box, saturated ink, and dark ink. */
+    internal class Features(val soil: Double, val red: Double, val box: Double, val ink2: Double, val dark: Double)
+
     /** GIFT, POT, FRUIT or UNKNOWN, from the colours inside the icon box. */
-    private fun classify(img: RgbImage, cx: Int, cy: Int, hsv: DoubleArray): ItemKind {
+    private fun classify(img: RgbImage, cx: Int, cy: Int, hsv: DoubleArray): ItemKind = verdict(features(img, cx, cy, hsv))
+
+    /** The verdict for one icon box's shares: GIFT, then POT, then FRUIT (saturated or dark), else UNKNOWN. */
+    private fun verdict(f: Features): ItemKind = when {
+        f.box >= 0.18 && f.red >= 0.08 -> ItemKind.GIFT
+        f.soil >= 0.012 -> ItemKind.POT
+        f.ink2 >= 0.3 || f.dark >= DARK_FRUIT_FRACTION -> ItemKind.FRUIT
+        else -> ItemKind.UNKNOWN
+    }
+
+    /** The colour shares of the icon box centred on ([cx], [cy]). */
+    private fun features(img: RgbImage, cx: Int, cy: Int, hsv: DoubleArray): Features {
         val w = img.width
         val h = img.height
         var total = 0
@@ -426,12 +520,7 @@ object ExpeditionVision {
             }
         }
         val n = total.toDouble()
-        return when {
-            box / n >= 0.18 && red / n >= 0.08 -> ItemKind.GIFT
-            soil / n >= 0.012 -> ItemKind.POT
-            saturated / n >= 0.3 || dark / n >= DARK_FRUIT_FRACTION -> ItemKind.FRUIT
-            else -> ItemKind.UNKNOWN
-        }
+        return Features(soil / n, red / n, box / n, saturated / n, dark / n)
     }
 
     /**
@@ -442,4 +531,13 @@ object ExpeditionVision {
 
     /** A row grey across this share of the screen width is a separator line of the list, not an in-progress card. */
     private const val SEPARATOR_FRACTION = 0.6
+
+    /** A card's panel reaches the box's right edge on at least this share of its rows... */
+    private const val PANEL_TOUCH_FRACTION = 0.55
+
+    /** ...and its left edge is ragged by at least this many pixels (a fruit's stays within about 5). */
+    private const val PANEL_RAGGED_PX = 8.0
+
+    /** Cells within this share of the height of a card's panel are in its row. */
+    private const val PANEL_ROW_FRACTION = 0.015
 }
