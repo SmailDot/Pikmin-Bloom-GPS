@@ -23,9 +23,9 @@ import kotlin.math.sin
 
 /**
  * The spotlight tour, drawn over the real main screen: a 70 % scrim with a hole over the step's control, a ring that
- * pulses round the hole, a card with the step's text, and, for a tap or long-press step, a hand that presses on the
- * control with a ripple. A touch inside the hole reaches the control itself; a touch on the scrim, or 下一個, moves on.
- * Animations are skipped when the system has them turned off. The geometry is pure, in [SpotlightLayout].
+ * pulses round the hole, a card with the step's text, and, for a tap or long-press step, a hand that shows the gesture.
+ * Every touch only moves the tour on; nothing underneath is ever pressed. Animations are skipped when the system has
+ * them turned off. The geometry is pure, in [SpotlightLayout].
  */
 class SpotlightView(context: Context) : FrameLayout(context) {
 
@@ -62,7 +62,6 @@ class SpotlightView(context: Context) : FrameLayout(context) {
     private var resolve: (TargetKey) -> View? = { null }
     private var onFinished: () -> Unit = {}
     private var index = 0
-    private var target: View? = null
     private var placement: Placement? = null
     private var gesture = Gesture.NONE
     private var pulseFraction = 0f
@@ -70,7 +69,6 @@ class SpotlightView(context: Context) : FrameLayout(context) {
     private var animator: ValueAnimator? = null
     private var downX = 0f
     private var downY = 0f
-    private var forwarding = false
 
     init {
         isClickable = true // the whole tour consumes touches; only the hole passes them on
@@ -117,7 +115,6 @@ class SpotlightView(context: Context) : FrameLayout(context) {
         nextButton.setText(if (i == steps.lastIndex) R.string.tour_done else R.string.tour_next)
         // A control that is missing or not visible turns the step into a centred card.
         val spot = step.target?.let(resolve)?.takeIf { it.isShown && it.width > 0 && it.height > 0 }
-        target = spot
         gesture = if (spot != null) step.gesture else Gesture.NONE
         card.measure(
             View.MeasureSpec.makeMeasureSpec(cardWidth, View.MeasureSpec.EXACTLY),
@@ -209,34 +206,19 @@ class SpotlightView(context: Context) : FrameLayout(context) {
         super.onDraw(canvas)
     }
 
+    /**
+     * Every touch moves the tour on, wherever it lands, and none reaches the views underneath: this is a safety screen,
+     * so a tap on 開始巡邏 or on the map must never really press them. A tap is a touch that did not move.
+     */
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val hole = placement?.hole
-        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-            downX = event.x
-            downY = event.y
-            forwarding = target != null && hole != null && hole.contains(event.x, event.y)
-        }
-        if (forwarding) {
-            forwardToTarget(event)
-            if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
-                forwarding = false
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                downX = event.x
+                downY = event.y
             }
-            return true
-        }
-        if (event.actionMasked == MotionEvent.ACTION_UP && abs(event.x - downX) < slop && abs(event.y - downY) < slop) {
-            next()
+            MotionEvent.ACTION_UP -> if (abs(event.x - downX) < slop && abs(event.y - downY) < slop) next()
         }
         return true
-    }
-
-    /** A touch that starts in the hole is handed to the control, shifted into its own coordinates, so it can be used. */
-    private fun forwardToTarget(event: MotionEvent) {
-        val view = target ?: return
-        val origin = boundsOf(view)
-        val copy = MotionEvent.obtain(event)
-        copy.offsetLocation(-origin.left.toFloat(), -origin.top.toFloat())
-        view.dispatchTouchEvent(copy)
-        copy.recycle()
     }
 
     /** Where [view] sits in this view's coordinates. */
