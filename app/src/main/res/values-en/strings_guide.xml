@@ -11,8 +11,12 @@
     <string name="tour_3_body">Long-press the map to add a Big Flower, or bring one in from the menu item \"Find nearby candidate Big Flowers\".</string>
     <string name="tour_4_title">Start a patrol</string>
     <string name="tour_4_body">Press here to start the patrol, then open the game.</string>
-    <string name="tour_5_title">The floating bar and auto actions</string>
-    <string name="tour_5_body">While patrolling, the floating bar appears: ▶ pause and resume, 🏠 go home, ■ stop, 🚶 travel mode, speed, 🎮 joystick, ◎ scan for Big Flowers, 🤖 auto actions, 📍 real location switch. Drag the handle to move it. 🤖 sends fruit and seedling expeditions from the game\'s expedition list, or feeds nectar on the feed screen. Stop it from the notification.</string>
+    <string name="tour_4_fallback_body">When you are not on patrol, a Start patrol button sits below the main screen; press it, then open the game.</string>
+    <string name="tour_5a_title">Floating bar handle</string>
+    <string name="tour_5a_body">This is the floating bar\'s handle: tap to open, hold to drag.\n▶ pause and resume, 🏠 go home, ■ stop, 🎮 joystick…</string>
+    <string name="tour_5a_fallback_body">Once a patrol starts, the floating bar appears with pause, home, stop and more.</string>
+    <string name="tour_5b_title">Auto actions</string>
+    <string name="tour_5b_body">🤖 Auto actions: on the game\'s expedition list it sends fruit and seedling expeditions; on the feed screen it auto-feeds nectar. The first time, it asks you to turn on the accessibility service; stop it from the notification.</string>
     <string name="tour_next">Next</string>
     <string name="tour_done">Done</string>
 </resources>

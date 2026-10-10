@@ -12,6 +12,7 @@
     <dimen name="coach_hole_corner">12dp</dimen>
     <dimen name="coach_pulse">12dp</dimen>
     <dimen name="coach_hand">48dp</dimen>
+    <dimen name="coach_circle_radius">56dp</dimen>
 
     <dimen name="card_corner">20dp</dimen>
     <dimen name="card_elevation">6dp</dimen>

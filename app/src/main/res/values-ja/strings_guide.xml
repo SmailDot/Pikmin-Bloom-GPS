@@ -11,8 +11,12 @@
     <string name="tour_3_body">地図を長押しして おおきな花を追加します（メニューの「近くのおおきな花の候補を検索」からも追加できます）。</string>
     <string name="tour_4_title">巡回を開始</string>
     <string name="tour_4_body">ここを押して巡回を開始し、ゲームを開きます。</string>
-    <string name="tour_5_title">フローティングバーと自動操作</string>
-    <string name="tour_5_body">巡回中はフローティングバーが出ます：▶ 一時停止／再開、🏠 帰宅、■ 停止、🚶 移動方法、速度、🎮 ジョイスティック、◎ 花のスキャン、🤖 自動操作、📍 実際の位置の切り替え。ハンドルはドラッグで移動できます。🤖 は探検リストで果実・苗の探検、餵精華の画面でミツを自動で行います。停止は通知から。</string>
+    <string name="tour_4_fallback_body">巡回していないときは、メイン画面の下に「巡回を開始」ボタンがあります。押してからゲームを開きます。</string>
+    <string name="tour_5a_title">フローティングバーのハンドル</string>
+    <string name="tour_5a_body">これはフローティングバーのハンドルです：タップで開き、ドラッグで移動できます。\n▶ 一時停止／再開、🏠 帰宅、■ 停止、🎮 ジョイスティック…</string>
+    <string name="tour_5a_fallback_body">巡回を開始すると、フローティングバーが表示され、一時停止や帰宅、停止などを操作できます。</string>
+    <string name="tour_5b_title">自動操作</string>
+    <string name="tour_5b_body">🤖 自動操作：探検リストで押すと果実・苗の探検を自動で行い、えさやりの画面で押すとミツを自動であげます。初回はアクセシビリティサービスをオンにします。停止は通知から。</string>
     <string name="tour_next">次へ</string>
     <string name="tour_done">完了</string>
 </resources>

@@ -1390,11 +1390,37 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         view.start(CoachSteps.steps, ::tourTarget) { endTour() }
     }
 
-    /** The control each tour step points at. Null (a centred card) when it is not on screen. */
-    private fun tourTarget(key: TargetKey): View? = when (key) {
-        TargetKey.MENU -> overflowButton()
-        TargetKey.MAP -> binding.map
-        TargetKey.START -> binding.btnStart
+    /** Where each tour step points, in screen pixels. Null (a centred card) when it is not on screen. */
+    private fun tourTarget(key: TargetKey): Bounds? = when (key) {
+        TargetKey.MENU -> overflowButton()?.let { screenBounds(it) }
+        TargetKey.MAP -> screenBounds(binding.map)
+        TargetKey.START -> screenBounds(binding.btnStart)
+        TargetKey.HANDLE -> handleBounds()
+    }
+
+    /** A view's rectangle in screen pixels, or null when it is not shown. */
+    private fun screenBounds(view: View): Bounds? {
+        if (!view.isShown || view.width <= 0 || view.height <= 0) return null
+        val at = IntArray(2)
+        view.getLocationOnScreen(at)
+        return Bounds(at[0], at[1], at[0] + view.width, at[1] + view.height)
+    }
+
+    /**
+     * The floating bar's handle, from its saved window position: the bar is its own window, so the tour finds the handle
+     * from those numbers. The defaults mirror [OverlayService]. Null when the bar is not running.
+     */
+    private fun handleBounds(): Bounds? {
+        if (!OverlayService.isRunning) return null
+        val density = resources.displayMetrics.density
+        val size = resources.getDimensionPixelSize(R.dimen.overlay_handle)
+        val screenW = resources.displayMetrics.widthPixels
+        val screenH = resources.displayMetrics.heightPixels
+        val x = (prefs.overlayX.takeIf { it != Prefs.OVERLAY_UNSET } ?: (8 * density).toInt())
+            .coerceIn(0, maxOf(0, screenW - size))
+        val y = (prefs.overlayY.takeIf { it != Prefs.OVERLAY_UNSET } ?: (screenH / 3))
+            .coerceIn(0, maxOf(0, screenH - size))
+        return Bounds(x, y, x + size, y + size)
     }
 
     /** The toolbar's ⋮ button: the last child of its action-menu view. */

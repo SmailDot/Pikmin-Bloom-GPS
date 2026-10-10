@@ -34,6 +34,7 @@ class SpotlightView(context: Context) : FrameLayout(context) {
     private val pulseMax = resources.getDimensionPixelSize(R.dimen.coach_pulse)
     private val corner = resources.getDimensionPixelSize(R.dimen.coach_hole_corner).toFloat()
     private val handSize = resources.getDimensionPixelSize(R.dimen.coach_hand)
+    private val circleRadius = resources.getDimensionPixelSize(R.dimen.coach_circle_radius)
     private val cardWidth = resources.getDimensionPixelSize(R.dimen.coach_card_width)
     private val slop = ViewConfiguration.get(context).scaledTouchSlop
     private val density = resources.displayMetrics.density
@@ -59,11 +60,10 @@ class SpotlightView(context: Context) : FrameLayout(context) {
     private val hand = ImageView(context).apply { setImageResource(R.drawable.ic_touch_hand) }
 
     private var steps: List<CoachStep> = emptyList()
-    private var resolve: (TargetKey) -> View? = { null }
+    private var resolve: (TargetKey) -> Bounds? = { null }
     private var onFinished: () -> Unit = {}
     private var index = 0
     private var placement: Placement? = null
-    private var gesture = Gesture.NONE
     private var pulseFraction = 0f
     private var animating = false
     private var animator: ValueAnimator? = null
@@ -71,7 +71,7 @@ class SpotlightView(context: Context) : FrameLayout(context) {
     private var downY = 0f
 
     init {
-        isClickable = true // the whole tour consumes touches; only the hole passes them on
+        isClickable = true // the whole tour consumes touches; see onTouchEvent
         setWillNotDraw(false)
         addView(card)
         addView(hand, LayoutParams(handSize, handSize))
@@ -80,8 +80,8 @@ class SpotlightView(context: Context) : FrameLayout(context) {
         nextButton.setOnClickListener { next() }
     }
 
-    /** Starts the tour. [resolve] finds a step's control on the screen; null means it is missing or hidden. */
-    fun start(steps: List<CoachStep>, resolve: (TargetKey) -> View?, onFinished: () -> Unit) {
+    /** Starts the tour. [resolve] finds a step's spot in screen pixels; null means it is missing or hidden. */
+    fun start(steps: List<CoachStep>, resolve: (TargetKey) -> Bounds?, onFinished: () -> Unit) {
         this.steps = steps
         this.resolve = resolve
         this.onFinished = onFinished
@@ -111,30 +111,34 @@ class SpotlightView(context: Context) : FrameLayout(context) {
         index = i
         val step = steps[i]
         titleView.setText(step.titleRes)
-        bodyView.setText(step.bodyRes)
         nextButton.setText(if (i == steps.lastIndex) R.string.tour_done else R.string.tour_next)
-        // A control that is missing or not visible turns the step into a centred card.
-        val spot = step.target?.let(resolve)?.takeIf { it.isShown && it.width > 0 && it.height > 0 }
-        gesture = if (spot != null) step.gesture else Gesture.NONE
+        // A spot that is missing or hidden turns the step into a centred card, with its fallback text if it has one.
+        val spot = step.target?.let(resolve)?.let { toLocal(it) }
+        bodyView.setText(if (spot == null) (step.fallbackBodyRes ?: step.bodyRes) else step.bodyRes)
         card.measure(
             View.MeasureSpec.makeMeasureSpec(cardWidth, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
         )
         val p = SpotlightLayout.place(
             Size(width, height),
-            spot?.let { boundsOf(it) },
+            spot,
+            step.shape,
+            step.gesture,
             pad,
+            circleRadius,
+            handSize,
             margin,
             Size(card.measuredWidth, card.measuredHeight),
         )
         placement = p
         card.translationX = p.tooltipX.toFloat()
         card.translationY = p.tooltipY.toFloat()
-        val ring = p.ring
-        if (ring != null && gesture != Gesture.NONE) {
+        val tip = p.fingertip
+        if (tip != null) {
+            val origin = SpotlightLayout.handOrigin(tip, handSize, Size(width, height))
             hand.visibility = VISIBLE
-            hand.translationX = (ring.cx - handSize / 2).toFloat()
-            hand.translationY = (ring.cy - handSize / 2).toFloat()
+            hand.translationX = origin.x.toFloat()
+            hand.translationY = origin.y.toFloat()
         } else {
             hand.visibility = GONE
         }
@@ -181,14 +185,18 @@ class SpotlightView(context: Context) : FrameLayout(context) {
     override fun onDraw(canvas: Canvas) {
         val p = placement
         val hole = p?.hole
-        if (hole == null) {
+        val circle = p?.circle
+        if (hole == null && circle == null) {
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), scrim)
         } else {
             holePath.reset()
             holePath.fillType = Path.FillType.EVEN_ODD
             holePath.addRect(0f, 0f, width.toFloat(), height.toFloat(), Path.Direction.CW)
-            holeRect.set(hole.left.toFloat(), hole.top.toFloat(), hole.right.toFloat(), hole.bottom.toFloat())
-            holePath.addRoundRect(holeRect, corner, corner, Path.Direction.CCW)
+            if (hole != null) {
+                holeRect.set(hole.left.toFloat(), hole.top.toFloat(), hole.right.toFloat(), hole.bottom.toFloat())
+                holePath.addRoundRect(holeRect, corner, corner, Path.Direction.CCW)
+            }
+            if (circle != null) holePath.addCircle(circle.cx.toFloat(), circle.cy.toFloat(), circle.radius.toFloat(), Path.Direction.CCW)
             canvas.drawPath(holePath, scrim)
         }
         val ring = p?.ring
@@ -196,12 +204,13 @@ class SpotlightView(context: Context) : FrameLayout(context) {
             val pulse = SpotlightLayout.pulse(pulseFraction, pulseMax)
             ringPaint.alpha = pulse.alpha
             canvas.drawCircle(ring.cx.toFloat(), ring.cy.toFloat(), (ring.radius + pulse.growth).toFloat(), ringPaint)
-            if (animating && gesture != Gesture.NONE) {
-                // the tap or press ripple: it grows from the hand's point and fades
-                ripplePaint.alpha = (255 * (1 - pulseFraction)).toInt()
-                val radius = handSize * 0.3f + handSize * 0.7f * pulseFraction
-                canvas.drawCircle(ring.cx.toFloat(), ring.cy.toFloat(), radius, ripplePaint)
-            }
+        }
+        val tip = p?.fingertip
+        if (tip != null && animating) {
+            // the tap or press ripple: it grows from the fingertip and fades
+            ripplePaint.alpha = (255 * (1 - pulseFraction)).toInt()
+            val radius = handSize * 0.3f + handSize * 0.7f * pulseFraction
+            canvas.drawCircle(tip.x.toFloat(), tip.y.toFloat(), radius, ripplePaint)
         }
         super.onDraw(canvas)
     }
@@ -221,15 +230,11 @@ class SpotlightView(context: Context) : FrameLayout(context) {
         return true
     }
 
-    /** Where [view] sits in this view's coordinates. */
-    private fun boundsOf(view: View): Bounds {
-        val mine = IntArray(2)
-        val theirs = IntArray(2)
-        getLocationOnScreen(mine)
-        view.getLocationOnScreen(theirs)
-        val left = theirs[0] - mine[0]
-        val top = theirs[1] - mine[1]
-        return Bounds(left, top, left + view.width, top + view.height)
+    /** A rectangle in screen pixels, in this view's coordinates. */
+    private fun toLocal(screen: Bounds): Bounds {
+        val origin = IntArray(2)
+        getLocationOnScreen(origin)
+        return Bounds(screen.left - origin[0], screen.top - origin[1], screen.right - origin[0], screen.bottom - origin[1])
     }
 
     private companion object {
