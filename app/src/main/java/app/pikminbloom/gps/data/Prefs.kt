@@ -124,6 +124,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_GUIDE_SEEN, false)
         set(v) = sp.edit { putBoolean(KEY_GUIDE_SEEN, v) }
 
+    /** The go-modes explanation has been shown once: the first Big-Flower tap (ui/WaypointDialogs.showGoModesIntro). */
+    var goModesSeen: Boolean
+        get() = sp.getBoolean(KEY_GO_MODES_SEEN, false)
+        set(v) = sp.edit { putBoolean(KEY_GO_MODES_SEEN, v) }
+
     /** Show the floating control bar (ui/OverlayService) automatically while a patrol runs. */
     var overlayEnabled: Boolean
         get() = sp.getBoolean(KEY_OVERLAY_ENABLED, false)
@@ -270,6 +275,7 @@ class Prefs(context: Context) {
         const val KEY_LAST_LON = "last_lon"
         const val KEY_DISCLAIMER = "disclaimer_accepted"
         const val KEY_GUIDE_SEEN = "guide_seen"
+        const val KEY_GO_MODES_SEEN = "go_modes_seen"
         const val KEY_ACCURACY_ADVICE_MUTED = "accuracy_advice_muted"
         const val KEY_STAY_ASK_KM = "stay_ask_km"
         const val KEY_AUTO_NECTAR = "auto_nectar"

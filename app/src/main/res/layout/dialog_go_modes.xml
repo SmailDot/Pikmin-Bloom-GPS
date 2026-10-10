@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The one-time explanation of the flower menu (ui/WaypointDialogs.showGoModesIntro): the demo, then its text. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <app.pikminbloom.gps.ui.GoModesDemoView
+        android:id="@+id/goModesDemo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/goModesBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/space_m"
+        android:textAppearance="?attr/textAppearanceBodyMedium" />
+</LinearLayout>

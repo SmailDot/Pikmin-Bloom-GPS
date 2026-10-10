@@ -19,11 +19,13 @@ data class CoachStep(
     val gesture: Gesture,
     val shape: SpotShape = SpotShape.RECT,
     val fallbackBodyRes: Int? = null,
+    val demo: Boolean = false,
 )
 
 /**
- * The first-run tour, in order. Step 1 is a centred card; steps 2 to 5 point at the menu, the map, the start button and
- * the homes menu; step 6 points at the floating bar's handle; step 7 is a centred card about the auto actions.
+ * The first-run tour, in order. Step 1 is a centred card; steps 2 and 3 point at the menu and the map; step 4 is a
+ * centred card with the go-modes demo; steps 5 to 7 point at the start button, the homes menu and the floating bar's
+ * handle; step 8 is a centred card about the auto actions.
  */
 object CoachSteps {
 
@@ -31,6 +33,7 @@ object CoachSteps {
         CoachStep(null, R.string.guide_1_title, R.string.guide_1_body, Gesture.NONE),
         CoachStep(TargetKey.MENU, R.string.tour_2_title, R.string.tour_2_body, Gesture.TAP),
         CoachStep(TargetKey.MAP, R.string.tour_3_title, R.string.tour_3_body, Gesture.LONG_PRESS, SpotShape.CIRCLE),
+        CoachStep(null, R.string.tour_modes_title, R.string.tour_modes_body, Gesture.NONE, demo = true),
         CoachStep(
             TargetKey.START, R.string.tour_4_title, R.string.tour_4_body, Gesture.TAP,
             fallbackBodyRes = R.string.tour_4_fallback_body,

@@ -1,7 +1,11 @@
 package app.pikminbloom.gps.ui
 
 import android.app.Activity
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.RelativeSizeSpan
 import android.view.LayoutInflater
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import app.pikminbloom.gps.R
 import app.pikminbloom.gps.data.Prefs
@@ -96,17 +100,46 @@ object WaypointDialogs {
         }
         binding.actionMoveUp.setOnClickListener { store.move(index, index - 1); sheet.dismiss() }
         binding.actionMoveDown.setOnClickListener { store.move(index, index + 1); sheet.dismiss() }
-        binding.actionStartHere.setText(if (running) R.string.action_go_now else R.string.action_start_here)
+        binding.actionStartHere.text = if (running) withHint(activity, R.string.action_go_now, R.string.hint_go_now) else withHint(activity, R.string.action_start_here, R.string.hint_start_here)
         binding.actionStartHere.setOnClickListener { sheet.dismiss(); onStartHere(index) }
-        binding.actionStayThere.setText(if (running) R.string.action_go_and_stay else R.string.action_start_and_stay)
+        binding.actionStayThere.text = if (running) withHint(activity, R.string.action_go_and_stay, R.string.hint_go_and_stay) else withHint(activity, R.string.action_start_and_stay, R.string.hint_start_and_stay)
         binding.actionStayThere.setOnClickListener { sheet.dismiss(); onStayThere(index) }
-        binding.actionTeleport.setText(if (running) R.string.action_teleport_now else R.string.action_teleport_here)
+        binding.actionTeleport.text = if (running) withHint(activity, R.string.action_teleport_now, R.string.hint_teleport_now) else withHint(activity, R.string.action_teleport_here, R.string.hint_teleport_here)
         binding.actionTeleport.setOnClickListener { sheet.dismiss(); onTeleport(index) }
         binding.actionDelete.setOnClickListener {
             sheet.dismiss()
             confirmDelete(activity, wp) { store.remove(wp.id) }
         }
         sheet.show()
+    }
+
+    /** A menu label with its one-line hint under it; the hint is drawn smaller. */
+    private fun withHint(activity: Activity, label: Int, hint: Int): CharSequence {
+        val title = activity.getString(label)
+        return SpannableString(title + "\n" + activity.getString(hint)).apply {
+            setSpan(RelativeSizeSpan(0.85f), title.length + 1, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+    }
+
+    /**
+     * Explains the three flower actions the first time a flower is tapped, before its menu opens. [onDone] opens the
+     * menu when the explanation is closed (知道了), and that is the only time it is marked seen.
+     */
+    fun showGoModesIntro(activity: Activity, prefs: Prefs, onDone: () -> Unit) {
+        val view = LayoutInflater.from(activity).inflate(R.layout.dialog_go_modes, null)
+        view.findViewById<TextView>(R.id.goModesBody).setText(R.string.tour_modes_body)
+        val demo = view.findViewById<GoModesDemoView>(R.id.goModesDemo)
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.tour_modes_title)
+            .setView(view)
+            .setPositiveButton(R.string.go_modes_ok, null)
+            .setOnDismissListener {
+                demo.stop()
+                prefs.goModesSeen = true
+                onDone()
+            }
+            .show()
+        demo.start()
     }
 
     /** Bottom sheet listing every waypoint with reorder / edit / delete / start-here. */

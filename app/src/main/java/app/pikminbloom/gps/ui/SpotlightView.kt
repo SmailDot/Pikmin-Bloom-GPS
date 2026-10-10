@@ -57,6 +57,7 @@ class SpotlightView(context: Context) : FrameLayout(context) {
     private val titleView: TextView = card.findViewById(R.id.coachTitle)
     private val bodyView: TextView = card.findViewById(R.id.coachBody)
     private val nextButton: MaterialButton = card.findViewById(R.id.coachNext)
+    private val demo: GoModesDemoView = card.findViewById(R.id.coachDemo)
     private val hand = ImageView(context).apply { setImageResource(R.drawable.ic_touch_hand) }
 
     private var steps: List<CoachStep> = emptyList()
@@ -99,6 +100,7 @@ class SpotlightView(context: Context) : FrameLayout(context) {
     private fun finish() {
         animator?.cancel()
         animator = null
+        demo.stop()
         (parent as? ViewGroup)?.removeView(this)
         onFinished()
     }
@@ -112,6 +114,8 @@ class SpotlightView(context: Context) : FrameLayout(context) {
         val step = steps[i]
         titleView.setText(step.titleRes)
         nextButton.setText(if (i == steps.lastIndex) R.string.tour_done else R.string.tour_next)
+        demo.visibility = if (step.demo) VISIBLE else GONE
+        if (step.demo) demo.start() else demo.stop()
         // A spot that is missing or hidden turns the step into a centred card, with its fallback text if it has one.
         val spot = step.target?.let(resolve)
         bodyView.setText(if (spot == null) (step.fallbackBodyRes ?: step.bodyRes) else step.bodyRes)

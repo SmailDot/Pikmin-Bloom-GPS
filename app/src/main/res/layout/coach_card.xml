@@ -14,6 +14,12 @@
         android:orientation="vertical"
         android:padding="@dimen/space_l">
 
+        <app.pikminbloom.gps.ui.GoModesDemoView
+            android:id="@+id/coachDemo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/coachTitle"
             android:layout_width="match_parent"

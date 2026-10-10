@@ -586,6 +586,14 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     }
 
     private fun onWaypointTapped(index: Int) {
+        if (GoModesDemo.shouldShowIntro(prefs.goModesSeen)) {
+            WaypointDialogs.showGoModesIntro(this, prefs) { openMarkerActions(index) }
+        } else {
+            openMarkerActions(index)
+        }
+    }
+
+    private fun openMarkerActions(index: Int) {
         WaypointDialogs.showMarkerActions(this, store, index, running = PatrolService.isRunning,
             onStartHere = { startHereOrGoTo(it) }, onTeleport = { startHereOrGoTo(it, teleport = true) },
             onStayThere = { goThereAndStay(it) })
