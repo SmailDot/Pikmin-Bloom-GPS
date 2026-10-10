@@ -34,9 +34,9 @@
     <string name="return_saved_home_teleport">瞬移到 %1$s（停在那裡，模擬維持）</string>
     <string name="status_home_custom">回家目的地：自訂的家</string>
     <string name="dlg_stop_parked_title">回到真實位置？</string>
-    <string name="dlg_stop_parked_msg">停止後模擬定位解除，遊戲會立刻從自訂的家跳回真實 GPS 位置。要停止嗎？</string>
+    <string name="dlg_stop_parked_msg">停止後模擬定位解除，遊戲會立刻從自訂的家瞬移回真實 GPS 位置。要停止嗎？</string>
     <string name="dlg_stop_plain_title">停止巡邏？</string>
-    <string name="dlg_stop_returning_msg">正在回家的路上。現在停止，遊戲會立刻從目前位置跳回真實 GPS 位置。</string>
+    <string name="dlg_stop_returning_msg">正在回家的路上。現在停止，遊戲會立刻從目前位置瞬移回真實 GPS 位置。</string>
     <string name="dlg_stop_real_msg">遊戲現在已經看到真實位置，停止不會再跳；虛擬位置與這次巡邏的進度會結束。</string>
     <string name="dlg_stop_starting_msg">巡邏還在啟動中，停止後不會開始模擬。</string>
     <string name="snack_parked">已回到自訂的家，模擬定位維持中</string>
@@ -97,7 +97,7 @@
     <string name="toast_go_now">前往：%1$s</string>
 
     <!-- 真實位置 (PatrolPhase.SUSPENDED), 2026-10-03; the switch's own labels and dialogs are in ui/RealModeCopy (T18) -->
-    <string name="phase_suspended">真實位置中：手機上所有 App 看到的是真實 GPS，虛擬巡邏停著等你；按「回到虛擬位置…」才會跳回去</string>
+    <string name="phase_suspended">真實位置中：手機上所有 App 看到的是真實 GPS，虛擬巡邏停著等你；按「回到虛擬位置…」才會瞬移回去</string>
     <string name="ovl_phase_suspended">真實位置（真實 GPS）</string>
     <string name="ovl_real_on">已切到真實位置：所有 App（包含遊戲）都看到真實 GPS；要回去請再按定位鈕</string>
     <string name="ovl_virtual_back">已回到虛擬位置</string>

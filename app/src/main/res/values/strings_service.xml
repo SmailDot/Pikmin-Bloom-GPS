@@ -34,6 +34,6 @@
     <string name="svc_parked_text">模擬定位維持中，遊戲仍看到你在這裡。按「繼續」再巡一圈；按「停止」才會回到真實 GPS 位置。</string>
 
     <!-- 真實位置 (PatrolPhase.SUSPENDED), 2026-10-03 -->
-    <string name="svc_phase_suspended">真實位置中：按「回到虛擬位置…」才會跳回虛擬巡邏</string>
+    <string name="svc_phase_suspended">真實位置中：按「回到虛擬位置…」才會瞬移回虛擬巡邏</string>
     <string name="svc_err_suspended">目前在真實位置，請先按「回到虛擬位置…」</string>
 </resources>

@@ -60,7 +60,7 @@ class RealModeCopyTest {
     fun goingRealNamesTheJumpAndHowFar() {
         assertEquals(
             "手機上所有 App（包含遊戲和 Google 地圖）會馬上看到你真正的位置，遊戲會看到一次瞬移，約 2,230 km。\n\n" +
-                "虛擬巡邏會停在原處等你，之後要按「回到虛擬位置…」才會跳回去（那也是一次瞬移）。",
+                "虛擬巡邏會停在原處等你，之後要按「回到虛擬位置…」才會瞬移回去。",
             RealModeCopy.confirmMessage(toReal = true, jumpM = far),
         )
     }
@@ -68,7 +68,7 @@ class RealModeCopyTest {
     @Test
     fun goingBackNamesTheJumpAndHowFar() {
         assertEquals(
-            "遊戲會看到一次瞬移：從你的真實位置跳回巡邏停放的位置，約 2,230 km。\n\n回去之後巡邏會回到切走之前的狀態。",
+            "遊戲會看到一次瞬移：從你的真實位置回到巡邏停放的位置，約 2,230 km。\n\n回去之後巡邏會回到切走之前的狀態。",
             RealModeCopy.confirmMessage(toReal = false, jumpM = far),
         )
     }
@@ -77,11 +77,11 @@ class RealModeCopyTest {
     fun anUnknownJumpLeavesTheDistanceOut() {
         assertEquals(
             "手機上所有 App（包含遊戲和 Google 地圖）會馬上看到你真正的位置，遊戲會看到一次瞬移。\n\n" +
-                "虛擬巡邏會停在原處等你，之後要按「回到虛擬位置…」才會跳回去（那也是一次瞬移）。",
+                "虛擬巡邏會停在原處等你，之後要按「回到虛擬位置…」才會瞬移回去。",
             RealModeCopy.confirmMessage(toReal = true, jumpM = null),
         )
         assertEquals(
-            "遊戲會看到一次瞬移：從你的真實位置跳回巡邏停放的位置。\n\n回去之後巡邏會回到切走之前的狀態。",
+            "遊戲會看到一次瞬移：從你的真實位置回到巡邏停放的位置。\n\n回去之後巡邏會回到切走之前的狀態。",
             RealModeCopy.confirmMessage(toReal = false, jumpM = null),
         )
     }
