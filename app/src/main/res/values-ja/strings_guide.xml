@@ -1,21 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- First-run guide (ui/GuidePages, shown once after the disclaimer, and from the 使い方 menu item). -->
+    <!-- First-run tour (ui/SpotlightView): shown once after the disclaimer, and from the menu item. -->
     <string name="menu_guide">使い方</string>
-    <string name="guide_next">次へ</string>
-    <string name="guide_start">使ってみる</string>
     <string name="guide_skip">スキップ</string>
-    <string name="guide_open_setup">初期設定を開く</string>
     <string name="guide_1_title">これは何？</string>
     <string name="guide_1_body">模擬の歩きでアバターをおおきな花から花へ巡回させ、歩数をヘルスコネクトに書き込み、いつでも帰宅できます。</string>
-    <string name="guide_2_title">まず初期設定</string>
-    <string name="guide_2_body">メニューの「初期設定」で、モック位置情報アプリや権限、ヘルスコネクトのデータソースなどを一つずつ済ませてください。終わるまで動きません。</string>
-    <string name="guide_3_title">巡回を開始</string>
-    <string name="guide_3_body">地図を長押しして おおきな花を追加するか、「近くのおおきな花の候補を検索」を使います。「巡回開始」を押したらゲームを開きます。</string>
-    <string name="guide_4_title">フローティングバー</string>
-    <string name="guide_4_body">▶ 一時停止／再開、🏠 帰宅、■ 停止、🚶 移動方法、速度、🎮 ジョイスティック、◎ おおきな花をスキャン、🤖 自動操作、📍 実際の位置の切り替え。ハンドルはドラッグで移動できます。</string>
-    <string name="guide_5_title">自動操作（実験的）</string>
-    <string name="guide_5_body">ゲームの探検リストで🤖を押すと、果実と苗の探検を自動で派遣します（赤いギフトとキノコには触れません）。餵精華の画面で🤖を押すと、ミツを与えて花びらを収穫します。最初はユーザー補助サービスをオンにしてください。停止は通知から。</string>
     <string name="tour_2_title">メニュー</string>
     <string name="tour_2_body">メニューの「初期設定」で一つずつ済ませてください。終わるまで動きません。</string>
     <string name="tour_3_title">おおきな花を追加</string>
@@ -24,4 +13,6 @@
     <string name="tour_4_body">ここを押して巡回を開始し、ゲームを開きます。</string>
     <string name="tour_5_title">フローティングバーと自動操作</string>
     <string name="tour_5_body">巡回中はフローティングバーが出ます：▶ 一時停止／再開、🏠 帰宅、■ 停止、🚶 移動方法、速度、🎮 ジョイスティック、◎ 花のスキャン、🤖 自動操作、📍 実際の位置の切り替え。ハンドルはドラッグで移動できます。🤖 は探検リストで果実・苗の探検、餵精華の画面でミツを自動で行います。停止は通知から。</string>
+    <string name="tour_next">次へ</string>
+    <string name="tour_done">完了</string>
 </resources>

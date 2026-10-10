@@ -5,6 +5,13 @@
     <dimen name="space_m">12dp</dimen>
     <dimen name="space_l">16dp</dimen>
     <dimen name="space_xl">24dp</dimen>
+    <!-- Spotlight tour (ui/SpotlightView): the card's width, the screen margin, the hole's padding and corner, the ring's pulse, the hand. -->
+    <dimen name="coach_card_width">300dp</dimen>
+    <dimen name="coach_margin">16dp</dimen>
+    <dimen name="coach_padding">8dp</dimen>
+    <dimen name="coach_hole_corner">12dp</dimen>
+    <dimen name="coach_pulse">12dp</dimen>
+    <dimen name="coach_hand">48dp</dimen>
 
     <dimen name="card_corner">20dp</dimen>
     <dimen name="card_elevation">6dp</dimen>

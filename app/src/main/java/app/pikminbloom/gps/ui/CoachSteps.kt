@@ -23,4 +23,7 @@ object CoachSteps {
         CoachStep(TargetKey.START, R.string.tour_4_title, R.string.tour_4_body, Gesture.TAP),
         CoachStep(null, R.string.tour_5_title, R.string.tour_5_body, Gesture.NONE),
     )
+
+    /** The tour opens once, after the disclaimer is accepted. The 使用教學 menu item always opens it regardless. */
+    fun shouldShowGuide(disclaimerAccepted: Boolean, guideSeen: Boolean): Boolean = disclaimerAccepted && !guideSeen
 }

@@ -1,6 +1,7 @@
 package app.pikminbloom.gps.ui
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -91,6 +92,15 @@ class SpotlightLayoutTest {
     fun thePulseStartsAtTheRingAndFadesOutAtTheEnd() {
         assertEquals(Pulse(growth = 0, alpha = 255), SpotlightLayout.pulse(0f, maxGrowth = 12))
         assertEquals(Pulse(growth = 12, alpha = 0), SpotlightLayout.pulse(1f, maxGrowth = 12))
+    }
+
+    @Test
+    fun aPointIsInTheHoleFromItsLeftTopEdgeUpToButNotIncludingItsRightBottomEdge() {
+        val hole = Bounds(10, 20, 30, 40)
+        assertTrue(hole.contains(10f, 20f))
+        assertTrue(hole.contains(29.5f, 39.5f))
+        assertFalse(hole.contains(30f, 40f))
+        assertFalse(hole.contains(5f, 25f))
     }
 
     @Test

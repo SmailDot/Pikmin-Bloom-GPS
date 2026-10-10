@@ -14,8 +14,10 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.widget.ActionMenuView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
@@ -129,6 +131,14 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         override fun handleOnBackPressed() = endCenterPick()
     }
 
+    /** The spotlight tour over the main screen, while it runs. Back skips it. */
+    private var tour: SpotlightView? = null
+    private val tourBack = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            tour?.skip()
+        }
+    }
+
     // ------------------------------------------------------------------ lifecycle
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -150,6 +160,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         setupMap()
         setupButtons()
         onBackPressedDispatcher.addCallback(this, pickBack)
+        onBackPressedDispatcher.addCallback(this, tourBack)
         collectFlows()
 
         maybeShowDisclaimer()
@@ -1023,7 +1034,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         R.id.action_overlay -> { toggleOverlay(); true }
         R.id.action_scan_flowers -> { startScanFlow(); true }
         R.id.action_setup -> { startActivity(Intent(this, SetupActivity::class.java)); true }
-        R.id.action_guide -> { maybeShowGuide(force = true); true }
+        R.id.action_guide -> { startTour(); true }
         R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
         R.id.action_home -> { showHomeDialog(); true }
         R.id.action_import -> { importLauncher.launch(arrayOf(MIME_ANY)); true }
@@ -1349,7 +1360,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
 
     private fun maybeShowDisclaimer() {
         if (prefs.disclaimerAccepted) {
-            maybeShowGuide()
+            maybeStartTour()
             return
         }
         MaterialAlertDialogBuilder(this)
@@ -1358,41 +1369,48 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
             .setCancelable(false)
             .setPositiveButton(R.string.action_accept) { _, _ ->
                 prefs.disclaimerAccepted = true
-                maybeShowGuide()
+                maybeStartTour()
             }
             .setNegativeButton(R.string.action_exit) { _, _ -> finish() }
             .show()
     }
 
-    /** The first-run guide: once after the disclaimer, and again whenever the 使用教學 menu item asks for it. */
-    private fun maybeShowGuide(force: Boolean = false) {
-        if (!force && !GuidePages.shouldShowGuide(prefs.disclaimerAccepted, prefs.guideSeen)) return
-        showGuidePage(0)
+    /** The spotlight tour: once after the disclaimer is accepted (or on a later launch, if it was never finished). */
+    private fun maybeStartTour() {
+        if (CoachSteps.shouldShowGuide(prefs.disclaimerAccepted, prefs.guideSeen)) startTour()
     }
 
-    /** One guide page as a dialog, its position in the title. Page 2 also opens 初始設定. Any way out marks the guide seen. */
-    private fun showGuidePage(index: Int) {
-        val pages = GuidePages.pages
-        val page = pages[index]
-        val last = index == pages.lastIndex
-        val builder = MaterialAlertDialogBuilder(this)
-            .setTitle("${getString(page.titleRes)}  ${index + 1}/${pages.size}")
-            .setMessage(page.bodyRes)
-            .setPositiveButton(if (last) R.string.guide_start else R.string.guide_next) { _, _ ->
-                if (last) finishGuide() else showGuidePage(index + 1)
-            }
-            .setNegativeButton(R.string.guide_skip) { _, _ -> finishGuide() }
-            .setOnCancelListener { finishGuide() }
-        if (index == 1) {
-            builder.setNeutralButton(R.string.guide_open_setup) { _, _ ->
-                finishGuide()
-                startActivity(Intent(this, SetupActivity::class.java))
-            }
+    /** Lays the tour over the main screen. Does nothing if it is already running. */
+    private fun startTour() {
+        if (tour != null) return
+        val view = SpotlightView(this)
+        addContentView(view, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        tour = view
+        tourBack.isEnabled = true
+        view.start(CoachSteps.steps, ::tourTarget) { endTour() }
+    }
+
+    /** The control each tour step points at. Null (a centred card) when it is not on screen. */
+    private fun tourTarget(key: TargetKey): View? = when (key) {
+        TargetKey.MENU -> overflowButton()
+        TargetKey.MAP -> binding.map
+        TargetKey.START -> binding.btnStart
+    }
+
+    /** The toolbar's ⋮ button: the last child of its action-menu view. */
+    private fun overflowButton(): View? {
+        val toolbar = binding.toolbar
+        for (i in 0 until toolbar.childCount) {
+            val child = toolbar.getChildAt(i)
+            if (child is ActionMenuView && child.childCount > 0) return child.getChildAt(child.childCount - 1)
         }
-        builder.show()
+        return null
     }
 
-    private fun finishGuide() {
+    /** However the tour ends (略過, Back, 完成), it counts as seen. */
+    private fun endTour() {
+        tour = null
+        tourBack.isEnabled = false
         prefs.guideSeen = true
     }
 

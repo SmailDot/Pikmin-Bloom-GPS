@@ -1,21 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- First-run guide (ui/GuidePages, shown once after the disclaimer, and from the Guide menu item). -->
+    <!-- First-run tour (ui/SpotlightView): shown once after the disclaimer, and from the menu item. -->
     <string name="menu_guide">Guide</string>
-    <string name="guide_next">Next</string>
-    <string name="guide_start">Start</string>
     <string name="guide_skip">Skip</string>
-    <string name="guide_open_setup">Open setup</string>
     <string name="guide_1_title">What this is</string>
     <string name="guide_1_body">It walks your avatar from one Big Flower to the next with a simulated walk, writes the distance to Health Connect as steps, and takes you home whenever you like.</string>
-    <string name="guide_2_title">Do the setup first</string>
-    <string name="guide_2_body">Work down the Setup menu item and tick each step (the mock location app, permissions, the Health Connect data source…). Nothing moves until it is done.</string>
-    <string name="guide_3_title">Start a patrol</string>
-    <string name="guide_3_body">Long-press the map to add a Big Flower, or use Find nearby candidate Big Flowers. Press Start patrol, then open the game.</string>
-    <string name="guide_4_title">The floating bar</string>
-    <string name="guide_4_body">▶ pause and resume, 🏠 go home, ■ stop, 🚶 travel mode, speed, 🎮 joystick, ◎ scan for Big Flowers, 🤖 auto actions, 📍 real location switch. Drag the handle to move the bar.</string>
-    <string name="guide_5_title">Auto actions (experimental)</string>
-    <string name="guide_5_body">In the game\'s expedition list, tap 🤖 to send fruit and seedling expeditions automatically (red gifts and mushrooms are never touched). On the feed screen, tap 🤖 to feed nectar and harvest the petals. The first time, turn on the accessibility service; stop from the notification.</string>
     <string name="tour_2_title">Menu</string>
     <string name="tour_2_body">Open the menu → Setup, and tick each step. Nothing moves until it is done.</string>
     <string name="tour_3_title">Add a Big Flower</string>
@@ -24,4 +13,6 @@
     <string name="tour_4_body">Press here to start the patrol, then open the game.</string>
     <string name="tour_5_title">The floating bar and auto actions</string>
     <string name="tour_5_body">While patrolling, the floating bar appears: ▶ pause and resume, 🏠 go home, ■ stop, 🚶 travel mode, speed, 🎮 joystick, ◎ scan for Big Flowers, 🤖 auto actions, 📍 real location switch. Drag the handle to move it. 🤖 sends fruit and seedling expeditions from the game\'s expedition list, or feeds nectar on the feed screen. Stop it from the notification.</string>
+    <string name="tour_next">Next</string>
+    <string name="tour_done">Done</string>
 </resources>

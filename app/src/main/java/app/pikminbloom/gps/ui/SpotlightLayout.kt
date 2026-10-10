@@ -8,6 +8,9 @@ data class Bounds(val left: Int, val top: Int, val right: Int, val bottom: Int) 
     val height: Int get() = bottom - top
     val centerX: Int get() = (left + right) / 2
     val centerY: Int get() = (top + bottom) / 2
+
+    /** Left and top edges are inside; right and bottom are not, like the rectangle's pixels. */
+    fun contains(x: Float, y: Float): Boolean = x >= left && x < right && y >= top && y < bottom
 }
 
 data class Size(val width: Int, val height: Int)
