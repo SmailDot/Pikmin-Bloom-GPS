@@ -16,4 +16,12 @@
     <string name="guide_4_body">▶ 暫停／繼續、🏠 回家、■ 停止、🚶 移動方式、速度、🎮 搖桿、◎ 掃描大花、🤖 自動操作、📍 真實位置切換；把手可以拖動。</string>
     <string name="guide_5_title">自動操作（實驗）</string>
     <string name="guide_5_body">在遊戲的探險清單按 🤖 可自動派果實／花苗探險（紅色禮品和蘑菇不會碰）；在餵食畫面按 🤖 可自動餵精華、收花瓣；第一次要開無障礙服務，停止在通知列。</string>
+    <string name="tour_2_title">選單</string>
+    <string name="tour_2_body">先到選單 →「初始設定」逐項打勾，沒做完不會動。</string>
+    <string name="tour_3_title">加一朵大花</string>
+    <string name="tour_3_body">在地圖上長按，加一朵大花（也可以從選單「搜尋附近候選大花」帶入）。</string>
+    <string name="tour_4_title">開始巡邏</string>
+    <string name="tour_4_body">按這裡開始巡邏，接著打開遊戲。</string>
+    <string name="tour_5_title">浮動列與自動操作</string>
+    <string name="tour_5_body">巡邏時會出現浮動列：▶ 暫停／繼續、🏠 回家、■ 停止、🚶 移動方式、速度、🎮 搖桿、◎ 掃描大花、🤖 自動操作、📍 真實位置切換；把手可以拖動。🤖 可在遊戲的探險清單自動派果實／花苗，或在餵食畫面自動餵精華；停止在通知列。</string>
 </resources>

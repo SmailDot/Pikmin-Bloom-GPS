@@ -16,4 +16,12 @@
     <string name="guide_4_body">▶ pause and resume, 🏠 go home, ■ stop, 🚶 travel mode, speed, 🎮 joystick, ◎ scan for Big Flowers, 🤖 auto actions, 📍 real location switch. Drag the handle to move the bar.</string>
     <string name="guide_5_title">Auto actions (experimental)</string>
     <string name="guide_5_body">In the game\'s expedition list, tap 🤖 to send fruit and seedling expeditions automatically (red gifts and mushrooms are never touched). On the feed screen, tap 🤖 to feed nectar and harvest the petals. The first time, turn on the accessibility service; stop from the notification.</string>
+    <string name="tour_2_title">Menu</string>
+    <string name="tour_2_body">Open the menu → Setup, and tick each step. Nothing moves until it is done.</string>
+    <string name="tour_3_title">Add a Big Flower</string>
+    <string name="tour_3_body">Long-press the map to add a Big Flower, or bring one in from the menu item \"Find nearby candidate Big Flowers\".</string>
+    <string name="tour_4_title">Start a patrol</string>
+    <string name="tour_4_body">Press here to start the patrol, then open the game.</string>
+    <string name="tour_5_title">The floating bar and auto actions</string>
+    <string name="tour_5_body">While patrolling, the floating bar appears: ▶ pause and resume, 🏠 go home, ■ stop, 🚶 travel mode, speed, 🎮 joystick, ◎ scan for Big Flowers, 🤖 auto actions, 📍 real location switch. Drag the handle to move it. 🤖 sends fruit and seedling expeditions from the game\'s expedition list, or feeds nectar on the feed screen. Stop it from the notification.</string>
 </resources>

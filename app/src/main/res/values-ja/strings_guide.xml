@@ -16,4 +16,12 @@
     <string name="guide_4_body">▶ 一時停止／再開、🏠 帰宅、■ 停止、🚶 移動方法、速度、🎮 ジョイスティック、◎ おおきな花をスキャン、🤖 自動操作、📍 実際の位置の切り替え。ハンドルはドラッグで移動できます。</string>
     <string name="guide_5_title">自動操作（実験的）</string>
     <string name="guide_5_body">ゲームの探検リストで🤖を押すと、果実と苗の探検を自動で派遣します（赤いギフトとキノコには触れません）。餵精華の画面で🤖を押すと、ミツを与えて花びらを収穫します。最初はユーザー補助サービスをオンにしてください。停止は通知から。</string>
+    <string name="tour_2_title">メニュー</string>
+    <string name="tour_2_body">メニューの「初期設定」で一つずつ済ませてください。終わるまで動きません。</string>
+    <string name="tour_3_title">おおきな花を追加</string>
+    <string name="tour_3_body">地図を長押しして おおきな花を追加します（メニューの「近くのおおきな花の候補を検索」からも追加できます）。</string>
+    <string name="tour_4_title">巡回を開始</string>
+    <string name="tour_4_body">ここを押して巡回を開始し、ゲームを開きます。</string>
+    <string name="tour_5_title">フローティングバーと自動操作</string>
+    <string name="tour_5_body">巡回中はフローティングバーが出ます：▶ 一時停止／再開、🏠 帰宅、■ 停止、🚶 移動方法、速度、🎮 ジョイスティック、◎ 花のスキャン、🤖 自動操作、📍 実際の位置の切り替え。ハンドルはドラッグで移動できます。🤖 は探検リストで果実・苗の探検、餵精華の画面でミツを自動で行います。停止は通知から。</string>
 </resources>
