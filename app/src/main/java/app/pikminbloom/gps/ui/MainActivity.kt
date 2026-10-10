@@ -1023,6 +1023,7 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
         R.id.action_overlay -> { toggleOverlay(); true }
         R.id.action_scan_flowers -> { startScanFlow(); true }
         R.id.action_setup -> { startActivity(Intent(this, SetupActivity::class.java)); true }
+        R.id.action_guide -> { maybeShowGuide(force = true); true }
         R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
         R.id.action_home -> { showHomeDialog(); true }
         R.id.action_import -> { importLauncher.launch(arrayOf(MIME_ANY)); true }
@@ -1347,14 +1348,52 @@ class MainActivity : AppCompatActivity(), MapEventsReceiver {
     /** Reuses a recent home (so we do not need a fresh fix) or returns null to let the service locate. */
 
     private fun maybeShowDisclaimer() {
-        if (prefs.disclaimerAccepted) return
+        if (prefs.disclaimerAccepted) {
+            maybeShowGuide()
+            return
+        }
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.dlg_disclaimer_title)
             .setMessage(R.string.dlg_disclaimer_msg)
             .setCancelable(false)
-            .setPositiveButton(R.string.action_accept) { _, _ -> prefs.disclaimerAccepted = true }
+            .setPositiveButton(R.string.action_accept) { _, _ ->
+                prefs.disclaimerAccepted = true
+                maybeShowGuide()
+            }
             .setNegativeButton(R.string.action_exit) { _, _ -> finish() }
             .show()
+    }
+
+    /** The first-run guide: once after the disclaimer, and again whenever the 使用教學 menu item asks for it. */
+    private fun maybeShowGuide(force: Boolean = false) {
+        if (!force && !GuidePages.shouldShowGuide(prefs.disclaimerAccepted, prefs.guideSeen)) return
+        showGuidePage(0)
+    }
+
+    /** One guide page as a dialog, its position in the title. Page 2 also opens 初始設定. Any way out marks the guide seen. */
+    private fun showGuidePage(index: Int) {
+        val pages = GuidePages.pages
+        val page = pages[index]
+        val last = index == pages.lastIndex
+        val builder = MaterialAlertDialogBuilder(this)
+            .setTitle("${getString(page.titleRes)}  ${index + 1}/${pages.size}")
+            .setMessage(page.bodyRes)
+            .setPositiveButton(if (last) R.string.guide_start else R.string.guide_next) { _, _ ->
+                if (last) finishGuide() else showGuidePage(index + 1)
+            }
+            .setNegativeButton(R.string.guide_skip) { _, _ -> finishGuide() }
+            .setOnCancelListener { finishGuide() }
+        if (index == 1) {
+            builder.setNeutralButton(R.string.guide_open_setup) { _, _ ->
+                finishGuide()
+                startActivity(Intent(this, SetupActivity::class.java))
+            }
+        }
+        builder.show()
+    }
+
+    private fun finishGuide() {
+        prefs.guideSeen = true
     }
 
     // ------------------------------------------------------------------ suspend helpers

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- First-run guide (ui/GuidePages, shown once after the disclaimer, and from the 使用教學 menu item). -->
+    <string name="menu_guide">使用教學</string>
+    <string name="guide_next">下一步</string>
+    <string name="guide_start">開始使用</string>
+    <string name="guide_skip">略過</string>
+    <string name="guide_open_setup">打開初始設定</string>
+    <string name="guide_1_title">這是什麼</string>
+    <string name="guide_1_body">用模擬走路依序巡 Pikmin Bloom 的大花、把步數寫進 Health Connect、隨時回家。</string>
+    <string name="guide_2_title">先做初始設定</string>
+    <string name="guide_2_body">選單 →「初始設定」逐項打勾（模擬位置 App、權限、Health Connect 資料來源…），沒做完不會動。</string>
+    <string name="guide_3_title">開始巡邏</string>
+    <string name="guide_3_body">在地圖長按加大花，或用「搜尋附近候選大花」；按「開始巡邏」後打開遊戲。</string>
+    <string name="guide_4_title">浮動列</string>
+    <string name="guide_4_body">▶ 暫停／繼續、🏠 回家、■ 停止、🚶 移動方式、速度、🎮 搖桿、◎ 掃描大花、🤖 自動操作、📍 真實位置切換；把手可以拖動。</string>
+    <string name="guide_5_title">自動操作（實驗）</string>
+    <string name="guide_5_body">在遊戲的探險清單按 🤖 可自動派果實／花苗探險（紅色禮品和蘑菇不會碰）；在餵食畫面按 🤖 可自動餵精華、收花瓣；第一次要開無障礙服務，停止在通知列。</string>
+</resources>
