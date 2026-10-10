@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the live controls added 2026-09-12: custom home, vehicle override, joystick,
+     Go now, and the settings / waypoint edits that now apply mid-patrol. -->
+<resources>
+    <!-- phases -->
+    <string name="phase_parked">At your saved home (mock on; tap \"Stop\" to return to your real location)</string>
+    <string name="phase_manual">Joystick control</string>
+    <string name="ovl_phase_parked">At home</string>
+    <string name="ovl_phase_manual">Joystick</string>
+    <string name="btn_resume_lap">One more lap</string>
+
+    <!-- custom home -->
+    <string name="menu_home">Home locations…</string>
+    <string name="dlg_home_title">Home locations</string>
+    <string name="dlg_home_msg">A patrol starts from your \"current real GPS location\" by default (the homes saved here are only destinations for \"Go home\"). It only teleports the one time you tap \"Teleport\" yourself; automatic returns and the notification\'s \"Go home\" always walk.\n\nYou can save several homes here (Home 1, Home 2…). When you tap \"Go home\", you can \"Walk\" or \"Teleport\" to each destination: your real location (ends the mock) or one of your homes (stays there with the mock on; tap \"Stop\" to return to your real location).\n\nTap a saved home to center it on the map or delete it.</string>
+    <string name="action_home_help">Help…</string>
+    <string name="action_home_add_map_center">+ Add: map center</string>
+    <string name="action_home_add_coords">+ Add: enter coordinates</string>
+    <string name="pick_home_title">Move the map so the crosshair is on your home</string>
+    <string name="pick_cd_crosshair">Map center crosshair</string>
+    <string name="action_home_enter_coords">Enter coordinates</string>
+    <string name="action_next">Next</string>
+    <string name="dlg_home_name_title">Name this home</string>
+    <string name="dlg_home_coords_hint">Latitude, longitude (e.g. 35.6812, 139.7671)</string>
+    <string name="action_home_center_map">Center on map</string>
+    <string name="action_home_delete">Delete this home</string>
+    <string name="toast_home_added">Added %1$s: %2$s</string>
+    <string name="toast_home_deleted">Deleted %1$s</string>
+    <string name="toast_home_coords_invalid">Invalid coordinates. Use \"latitude, longitude\"</string>
+    <string name="dlg_return_pick_title">Go back where?</string>
+    <string name="return_real_position">Walk back to real location (mock ends on arrival)</string>
+    <string name="return_real_teleport">Teleport back to real location (mock ends now)</string>
+    <string name="return_saved_home">Walk to %1$s (stay there, mock stays on)</string>
+    <string name="return_saved_home_teleport">Teleport to %1$s (stay there, mock stays on)</string>
+    <string name="status_home_custom">Home destination: saved home</string>
+    <string name="dlg_stop_parked_title">Back to real location?</string>
+    <string name="dlg_stop_parked_msg">Stopping ends the mock location, and the game will jump from your saved home straight back to your real GPS location. Stop now?</string>
+    <string name="dlg_stop_plain_title">Stop patrol?</string>
+    <string name="dlg_stop_returning_msg">On the way home. If you stop now, the game will jump from the current position straight back to your real GPS location.</string>
+    <string name="dlg_stop_real_msg">The game already sees your real location, so stopping won\'t cause another jump. The virtual location and this patrol\'s progress will end.</string>
+    <string name="dlg_stop_starting_msg">The patrol is still starting. If you stop now, the mock won\'t start.</string>
+    <string name="snack_parked">Back at your saved home; mock location still on</string>
+
+    <!-- Auto Nectar -->
+    <string name="nectar_service_label">Pikmin Bloom GPS: Auto actions</string>
+    <string name="pref_auto_nectar_title">Auto-collect Nectar at Big Flowers (experimental)</string>
+    <string name="pref_auto_nectar_summary">In bird\'s-eye view: pause patrol → tap the Big Flower → tap its name label → swipe down on the info page → close → walk on. Each step checks with screen capture that the screen changed before doing the next. Needs a scan (screen capture) running, and the \"Pikmin Bloom GPS: Auto Nectar\" accessibility service turned on in system settings. Note: any app can see which accessibility services are on, so the game could use this to detect it. Only turn it on when you need it.</string>
+    <string name="toast_nectar_enable_service">Turn on \"Pikmin Bloom GPS: Auto actions\" in Accessibility settings</string>
+    <string name="snack_nectar_ok">%1$s: tapped the flower and swiped to collect</string>
+    <string name="snack_nectar_failed">%1$s: Auto Nectar didn\'t finish (%2$s)</string>
+
+    <!-- travel mode override -->
+    <string name="label_travel_mode">Travel mode</string>
+    <string name="travel_walk_configured">Walk (set speed %1$s km/h)</string>
+    <string name="travel_item">%1$s (%2$s km/h)</string>
+    <string name="travel_item_no_steps">%1$s (%2$s km/h, no steps)</string>
+    <string name="dlg_travel_title">Travel mode</string>
+    <string name="dlg_travel_msg">A vehicle goes to the \"next\" Big Flower at its own speed and switches back to walking on arrival. Above about 20 km/h the game doesn\'t plant flowers and no steps are written, so it\'s handy for rushing to a mushroom or moving to another area.</string>
+    <string name="snack_travel_changed">Travel mode: %1$s</string>
+    <string name="snack_travel_auto_walk">Arrived; switched back to walking</string>
+    <string name="snack_speed_changed">Speed updated: %1$s km/h</string>
+    <string name="ovl_travel_flash">Travel mode: %1$s</string>
+    <string name="ovl_cd_vehicle">Change travel mode</string>
+    <string name="travel_short_walk">Walk</string>
+    <string name="ovl_cd_speed_down">Slower</string>
+    <string name="ovl_cd_speed_up">Faster</string>
+    <string name="ovl_speed_flash">Speed: %1$s %2$s km/h</string>
+    <string name="ovl_cd_speed">Adjust speed (shows − / +)</string>
+
+    <!-- joystick -->
+    <string name="label_joystick">Joystick</string>
+    <string name="ovl_cd_joystick">Joystick</string>
+    <string name="toast_joystick_on">Joystick on: up = north. When you turn it off, the route continues from where you are</string>
+    <string name="toast_joystick_off">Joystick off; back on the route</string>
+    <string name="toast_joystick_need_patrol">Start a patrol first for the joystick to work</string>
+    <string name="toast_joystick_need_overlay">The joystick is on the floating bar. Turn on the floating bar first</string>
+    <string name="ovl_cd_cruise">Cruise control (lock direction)</string>
+    <string name="ovl_cd_joystick_move">Hold and drag to move the joystick</string>
+    <string name="ovl_cd_joystick_size">Change joystick size</string>
+    <string name="toast_joystick_size">Joystick size: %1$s</string>
+    <string name="toast_cruise_on">Cruise control: keeps walking in the last direction even after you let go of the joystick. Tap it again, or \"Go home\", \"Stop\" or \"Go now\" to stop</string>
+    <string name="toast_cruise_off">Cruise control off</string>
+    <string name="toast_cruise_need_heading">Push the joystick in a direction first, then tap the lock</string>
+    <string name="snack_replanned">Route updated; continuing from your current position</string>
+
+    <!-- Go now -->
+    <string name="action_go_now">Go now</string>
+    <!-- Go and stay there (2026-10-08) -->
+    <string name="action_go_and_stay">Go and stay there</string>
+    <string name="action_start_and_stay">Start from real location, go and stay there</string>
+    <string name="toast_go_and_stay">Heading to %1$s; will stay on arrival</string>
+    <string name="status_stay_at">Will stay at \"%1$s\" on arrival</string>
+    <string name="ovl_stay_at">Stay on arrival</string>
+    <string name="svc_stayed_title">Arrived at \"%1$s\", staying here</string>
+    <string name="svc_stayed_text">The patrol is paused next to this flower. After collecting your rewards, tap \"Resume\" to continue the patrol.</string>
+    <string name="snack_stayed">Arrived at %1$s, staying here (tap \"Resume\" to continue the patrol)</string>
+    <string name="toast_go_now">Heading to %1$s</string>
+
+    <!-- Real location (PatrolPhase.SUSPENDED), 2026-10-03; the switch's own labels and dialogs are in ui/RealModeCopy (T18) -->
+    <string name="phase_suspended">Real location: every app on the phone sees the real GPS, and the virtual patrol waits for you. Tap \"Back to virtual location…\" to jump back</string>
+    <string name="ovl_phase_suspended">Real location (real GPS)</string>
+    <string name="ovl_real_on">Switched to real location: all apps (including the game) see the real GPS. Tap the location button again to go back</string>
+    <string name="ovl_virtual_back">Switched back to virtual location</string>
+    <string name="snack_real_on">Switched to real location. The virtual patrol waits where it was; to go back, tap \"Back to virtual location…\"</string>
+    <string name="snack_virtual_back">Switched back to virtual location; the patrol picks up where it left off</string>
+    <string name="scan_wait_real">Real location: the scan continues after you tap \"Back to virtual location…\"</string>
+
+    <!-- Switch to real location when Google Maps opens (opt-in), 2026-10-03 -->
+    <string name="pref_auto_real_maps_title">Ask to switch to real location when Google Maps opens</string>
+    <string name="pref_auto_real_maps_summary">When Google Maps comes to the front, a small window asks you (tap outside it or tap \"No thanks\" to do nothing). Only tapping \"Switch to real location\" removes the mock location (the patrol state is kept), and at that moment the game sees your real location too; to go back, you always have to tap \"Back to virtual location…\" yourself. No need to switch just to look up a shop or read reviews. Needs \"Usage access\"; without the \"Display over other apps\" permission, it asks with a notification instead.</string>
+    <string name="toast_usage_access_needed">Allow \"Pikmin Bloom GPS\" in \"Usage access\"</string>
+</resources>

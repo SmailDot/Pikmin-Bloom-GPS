@@ -1,7 +1,6 @@
 package app.pikminbloom.gps
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.w3c.dom.Element
@@ -9,13 +8,14 @@ import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
- * The three languages (2026-10-08) hold the same strings: English in values/ (also every other phone language),
- * Traditional Chinese in values-zh-rTW/, Japanese in values-ja/. A string missing from one of them shows English in the
- * middle of a Chinese screen (or fails the release build), and a format specifier that differs crashes getString.
+ * The three languages hold the same strings. Traditional Chinese is the default: it lives in values/, which every
+ * phone language other than English and Japanese gets. English is in values-en/, Japanese in values-ja/. A string
+ * missing from one of them shows the default language in the middle of another screen, and a format specifier that
+ * differs crashes getString.
  */
 class TranslationParityTest {
     private val res: File = listOf(File("src/main/res"), File("app/src/main/res")).first { it.isDirectory }
-    private val folders = listOf("values", "values-zh-rTW", "values-ja")
+    private val folders = listOf("values", "values-en", "values-ja")
     private val fmt = Regex("""%(?:\d+\$)?[-#+ 0,(]*\d*(?:\.\d+)?[sdfxXcbeEgGoh%]""")
 
     /** name -> text of every translatable <string>, plus "name[i]" for string-array items. */
@@ -43,9 +43,9 @@ class TranslationParityTest {
 
     @Test
     fun everyLanguageHasTheSameStrings() {
-        val zh = strings("values-zh-rTW")
-        assertTrue("found the Chinese strings", zh.size > 400)
-        for (folder in listOf("values", "values-ja")) {
+        val zh = strings("values")
+        assertTrue("found the Traditional Chinese strings", zh.size > 400)
+        for (folder in listOf("values-en", "values-ja")) {
             val other = strings(folder)
             assertEquals("$folder: missing", emptySet<String>(), zh.keys - other.keys)
             assertEquals("$folder: extra", emptySet<String>(), other.keys - zh.keys)
@@ -54,8 +54,8 @@ class TranslationParityTest {
 
     @Test
     fun formatSpecifiersMatch() {
-        val zh = strings("values-zh-rTW")
-        for (folder in listOf("values", "values-ja")) {
+        val zh = strings("values")
+        for (folder in listOf("values-en", "values-ja")) {
             val other = strings(folder)
             for ((key, text) in zh) {
                 if (key.endsWith(":lang_code")) continue
@@ -68,26 +68,27 @@ class TranslationParityTest {
 
     @Test
     fun eachFolderSaysWhichLanguageItIs() {
-        assertEquals(listOf("en", "zh", "ja"), folders.map { strings(it)["strings.xml:lang_code"] })
+        assertEquals(listOf("zh", "en", "ja"), folders.map { strings(it)["strings.xml:lang_code"] })
     }
 
     @Test
     fun noChineseLeftInEnglish() {
         val han = Regex("[\\u4e00-\\u9fff]")
-        val left = strings("values").filterValues { han.containsMatchIn(it) }
-        assertEquals(emptyMap<String, String>(), left)
+        val en = strings("values-en")
+        assertTrue("found the English strings", en.size > 400)
+        assertEquals(emptyMap<String, String>(), en.filterValues { han.containsMatchIn(it) })
     }
 
     @Test
-    fun chineseFolderNamesTheTraditionalScript() {
+    fun defaultLanguageIsTraditionalChinese() {
+        assertEquals("zh", strings("values")["strings.xml:lang_code"])
         assertTrue(
-            "src/main/res/values-zh-rTW is missing: the Traditional Chinese strings belong there",
-            File(res, "values-zh-rTW").isDirectory,
+            "src/main/res/values-en is missing: English must live there, or every phone gets Chinese",
+            File(res, "values-en").isDirectory,
         )
-        assertFalse(
-            "src/main/res/values-zh exists: Android reads a bare values-zh as Simplified Chinese, so a zh-TW " +
-                "(Traditional) phone never matches it and falls back to English. Rename it to values-zh-rTW.",
-            File(res, "values-zh").exists(),
-        )
+        // A bare values-zh is read as Simplified; a values-zh-rTW would only reach Traditional phones. Neither is wanted:
+        // Traditional Chinese is the default, so no values-zh* folder may exist.
+        val zhFolders = res.listFiles { f -> f.name.startsWith("values-zh") }.orEmpty().map { it.name }
+        assertEquals("no values-zh* folder: the default folder holds Traditional Chinese", emptyList<String>(), zhFolders)
     }
 }

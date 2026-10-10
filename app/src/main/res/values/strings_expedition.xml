@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Auto expedition (ExpeditionRunner, overlay bar button, Settings switch). -->
-    <string name="accessibility_service_desc">Takes screenshots of the game\'s screen and taps and swipes in it, only while an auto expedition run is going (debug builds also tap for auto nectar). It never reads window content, and screenshots are never saved or sent. Any app can see which accessibility services are on, so turn this off when you do not need it.</string>
-    <string name="pref_auto_expedition_title">Auto expedition (experimental)</string>
-    <string name="pref_auto_expedition_summary">From the floating bar, sends Pikmin on fruit and seedling-pot expeditions in one go, or feeds nectar on the feed screen. Needs Android 11 or newer and this app\'s accessibility service turned on. While a run goes, the app reads the game\'s screen and taps and swipes in it. Red gifts and mushrooms are never touched. The game can see that accessibility is on, so use it at your own risk.</string>
-    <string name="ovl_cd_expedition">Auto actions</string>
-    <string name="expedition_channel_name">Auto expedition</string>
-    <string name="expedition_running">Auto expedition running</string>
-    <string name="expedition_stop">Stop</string>
-    <string name="expedition_needs_android11">Auto expedition needs Android 11 or newer</string>
-    <string name="expedition_title">Auto actions</string>
-    <string name="expedition_target_fruit">Fruit</string>
-    <string name="expedition_target_pot">Seedlings</string>
-    <string name="expedition_target_both">Fruit + seedlings</string>
-    <string name="expedition_target_feed">Feed nectar</string>
-    <string name="expedition_max_label">Most expeditions (1–50)</string>
-    <string name="expedition_max_invalid">Enter a number from 1 to 50</string>
-    <string name="expedition_start">Start</string>
-    <string name="expedition_result">Sent %1$d (%2$s)</string>
-    <string name="expedition_reason_end">reached the end of the list</string>
-    <string name="expedition_reason_limit">limit reached</string>
-    <string name="expedition_reason_no_pikmin">no Pikmin free to send</string>
-    <string name="expedition_reason_not_list">open the Expedition list first</string>
-    <string name="expedition_reason_lost">the screen was not as expected, stopped</string>
-    <string name="expedition_reason_cancelled">stopped by you</string>
+    <string name="accessibility_service_desc">只在自動探險執行時擷取遊戲畫面並在遊戲中點擊與滑動（除錯版的自動拉花也用它點擊）。不讀取視窗內容，截圖不會被儲存或傳送。任何 App 都看得到哪些無障礙服務已開啟，不需要時請關閉。</string>
+    <string name="pref_auto_expedition_title">自動探險（實驗）</string>
+    <string name="pref_auto_expedition_summary">在浮動列上直接派出果實與花苗的探險，或在餵精華畫面自動餵精華。需要 Android 11 以上，並開啟本 App 的無障礙服務。執行期間才會讀取遊戲畫面並在其中點擊與滑動。紅色禮品與蘑菇不會被點擊。遊戲可能看得出無障礙服務已開啟，風險自負。</string>
+    <string name="ovl_cd_expedition">自動操作</string>
+    <string name="expedition_channel_name">自動探險</string>
+    <string name="expedition_running">自動探險進行中</string>
+    <string name="expedition_stop">停止</string>
+    <string name="expedition_needs_android11">自動探險需要 Android 11 以上</string>
+    <string name="expedition_title">自動操作</string>
+    <string name="expedition_target_fruit">果實</string>
+    <string name="expedition_target_pot">花苗</string>
+    <string name="expedition_target_both">果實＋花苗</string>
+    <string name="expedition_target_feed">餵精華</string>
+    <string name="expedition_max_label">最多派幾次（1–50）</string>
+    <string name="expedition_max_invalid">請輸入 1 到 50 的數字</string>
+    <string name="expedition_start">開始</string>
+    <string name="expedition_result">派出 %1$d 次（%2$s）</string>
+    <string name="expedition_reason_end">列表已看完</string>
+    <string name="expedition_reason_limit">已達上限</string>
+    <string name="expedition_reason_no_pikmin">沒有可派出的皮克敏</string>
+    <string name="expedition_reason_not_list">請先打開探險列表</string>
+    <string name="expedition_reason_lost">畫面不符預期，已停止</string>
+    <string name="expedition_reason_cancelled">已手動停止</string>
 </resources>

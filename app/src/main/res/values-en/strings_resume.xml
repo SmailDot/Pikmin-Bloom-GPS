@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Crash / thermal-kill recovery (service/PatrolCheckpoint + MainActivity.maybeOfferResume). -->
+<resources>
+    <string name="dlg_resume_title">The last patrol didn\'t end normally</string>
+    <string name="dlg_resume_msg">The system closed the app %1$s (usually from overheating), and your character in the game is still where it stopped.\n\nRoute: %2$s\nWalked: %3$s\nDistance from home: %4$s\n\n\"Resume from checkpoint\" picks up right at that spot and walks on; the game won\'t see any jump.\n\"Walk home from checkpoint\" picks up at that spot, then walks back to the home you last started from.\n\"Discard\" hands the location back to the real GPS right away; the game will see one teleport.</string>
+    <string name="action_resume_patrol">Resume from checkpoint</string>
+    <string name="action_resume_go_home">Walk home from checkpoint</string>
+    <string name="action_discard_checkpoint">Discard</string>
+    <string name="dlg_discard_title">Discard it?</string>
+    <string name="dlg_discard_msg">If you discard, the game will jump right away from the checkpoint back to your real location. If the two are far apart, this is the move most likely to be flagged as unusual. We recommend \"Walk home from checkpoint\" instead.</string>
+    <string name="toast_checkpoint_discarded">Last patrol discarded; location handed back to the real GPS</string>
+    <string name="snack_resumed">Picked up from the checkpoint saved %1$s; patrol continues</string>
+
+    <!-- Killed on real location (Prefs.suspendedAtMs): the providers were already gone, so the game sees the real GPS. -->
+    <string name="dlg_resume_msg_real">When the app was closed %1$s, you were on real location (real GPS), so the game now sees your real GPS location.\n\nRoute: %2$s\nWalked: %3$s\nVirtual location\'s distance from home: %4$s\n\n\"Resume from checkpoint\" moves the game back to the virtual patrol position (one jump), then walks on.\n\"Walk home from checkpoint\" also jumps back to the virtual position first, then walks back to the home you last started from.\n\"Discard\" keeps the game on your real location, with no jump at all.</string>
+    <string name="dlg_discard_msg_real">Discarding deletes this patrol\'s progress; the game stays on your real location, with no jump at all.</string>
+
+    <!-- Checkpoint taken while PAUSED (ResumeCopy.usePausedText): Resume from checkpoint puts the avatar back at that spot and keeps it paused. -->
+    <string name="dlg_resume_msg_paused">The system closed the app %1$s (usually from overheating), and your character in the game is still where it stopped.\n\nRoute: %2$s\nWalked: %3$s\nDistance from home: %4$s\n\nThe patrol was paused before it stopped.\n\"Resume from checkpoint\" puts your character back at that spot and keeps it paused; the game won\'t see any jump. Tap \"Resume\" to walk on.\n\"Walk home from checkpoint\" picks up at that spot, then walks back to the home you last started from.\n\"Discard\" hands the location back to the real GPS right away; the game will see one teleport.</string>
+</resources>

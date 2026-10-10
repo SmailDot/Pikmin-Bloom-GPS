@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Auto expedition (ExpeditionRunner, overlay bar button, Settings switch). -->
+    <string name="accessibility_service_desc">Takes screenshots of the game\'s screen and taps and swipes in it, only while an auto expedition run is going (debug builds also tap for auto nectar). It never reads window content, and screenshots are never saved or sent. Any app can see which accessibility services are on, so turn this off when you do not need it.</string>
+    <string name="pref_auto_expedition_title">Auto expedition (experimental)</string>
+    <string name="pref_auto_expedition_summary">From the floating bar, sends Pikmin on fruit and seedling-pot expeditions in one go, or feeds nectar on the feed screen. Needs Android 11 or newer and this app\'s accessibility service turned on. While a run goes, the app reads the game\'s screen and taps and swipes in it. Red gifts and mushrooms are never touched. The game can see that accessibility is on, so use it at your own risk.</string>
+    <string name="ovl_cd_expedition">Auto actions</string>
+    <string name="expedition_channel_name">Auto expedition</string>
+    <string name="expedition_running">Auto expedition running</string>
+    <string name="expedition_stop">Stop</string>
+    <string name="expedition_needs_android11">Auto expedition needs Android 11 or newer</string>
+    <string name="expedition_title">Auto actions</string>
+    <string name="expedition_target_fruit">Fruit</string>
+    <string name="expedition_target_pot">Seedlings</string>
+    <string name="expedition_target_both">Fruit + seedlings</string>
+    <string name="expedition_target_feed">Feed nectar</string>
+    <string name="expedition_max_label">Most expeditions (1–50)</string>
+    <string name="expedition_max_invalid">Enter a number from 1 to 50</string>
+    <string name="expedition_start">Start</string>
+    <string name="expedition_result">Sent %1$d (%2$s)</string>
+    <string name="expedition_reason_end">reached the end of the list</string>
+    <string name="expedition_reason_limit">limit reached</string>
+    <string name="expedition_reason_no_pikmin">no Pikmin free to send</string>
+    <string name="expedition_reason_not_list">open the Expedition list first</string>
+    <string name="expedition_reason_lost">the screen was not as expected, stopped</string>
+    <string name="expedition_reason_cancelled">stopped by you</string>
+</resources>

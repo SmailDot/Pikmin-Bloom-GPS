@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Report a bug / suggest something (ui/FeedbackDialog) and the offer after a crash (support/CrashLog). -->
+<!-- 回報問題／建議 (ui/FeedbackDialog) and the crash offer after a crash (support/CrashLog). -->
 <resources>
-    <string name="menu_feedback">Report a bug / suggest</string>
-    <string name="pref_feedback_title">Report a bug / suggest</string>
-    <string name="pref_feedback_summary">Tell the developer by email or on GitHub. The app adds its version and error details, never your location, and you see and can edit everything before it is sent.</string>
-    <string name="dlg_feedback_title">Report a bug or suggest something</string>
-    <string name="feedback_kind_bug">Report a bug (adds error details)</string>
-    <string name="feedback_kind_idea">Suggest something</string>
+    <string name="menu_feedback">回報問題／建議</string>
+    <string name="pref_feedback_title">回報問題／建議</string>
+    <string name="pref_feedback_summary">用 Email 或 GitHub 告訴作者。App 會自動附上版本和錯誤資訊，不含位置；送出前都看得到、可以修改。</string>
+    <string name="dlg_feedback_title">回報問題／建議</string>
+    <string name="feedback_kind_bug">回報 Bug（附上錯誤資訊）</string>
+    <string name="feedback_kind_idea">功能建議</string>
     <string name="feedback_via_email">Email</string>
     <string name="feedback_via_github">GitHub</string>
-    <string name="toast_feedback_copied">No app could open it, so the report is copied. Please paste it at %1$s</string>
-    <string name="snack_last_crash">The app closed unexpectedly last time. Report it to the developer?</string>
-    <string name="action_report">Report</string>
+    <string name="toast_feedback_copied">找不到可以開啟的 App，內容已複製，請貼到 %1$s</string>
+    <string name="snack_last_crash">上次 App 異常關閉了，要回報給作者嗎？</string>
+    <string name="action_report">回報</string>
 </resources>

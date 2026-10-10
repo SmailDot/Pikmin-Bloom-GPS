@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 自動餵精華 (FeedRunner): the run notification title, the result toast, its reasons, and the rounds label. -->
+    <string name="feed_running">Auto feed running</string>
+    <string name="feed_result">Fed %1$d rounds (%2$s)</string>
+    <string name="feed_reason_done">all rounds done</string>
+    <string name="feed_reason_not_feed">open the feed screen first</string>
+    <string name="feed_reason_no_bloom">no bloom to harvest</string>
+    <string name="feed_reason_lost">the screen was not as expected, stopped</string>
+    <string name="feed_reason_cancelled">stopped by you</string>
+    <string name="feed_rounds_label">Rounds (1–50)</string>
+</resources>

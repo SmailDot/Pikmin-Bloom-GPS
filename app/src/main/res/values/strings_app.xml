@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Notification channels (PikminGpsApp). -->
 <resources>
-    <string name="channel_patrol_name">Patrol status</string>
-    <string name="channel_patrol_desc">The ongoing notification while a patrol runs</string>
-    <string name="channel_events_name">Arrival alerts</string>
-    <string name="channel_events_desc">Reaching a Big Flower, arriving home, errors and other alerts</string>
+    <string name="channel_patrol_name">巡邏狀態</string>
+    <string name="channel_patrol_desc">巡邏進行中的常駐通知</string>
+    <string name="channel_events_name">抵達提醒</string>
+    <string name="channel_events_desc">抵達巨大花朵、回家完成、錯誤等提醒</string>
 </resources>

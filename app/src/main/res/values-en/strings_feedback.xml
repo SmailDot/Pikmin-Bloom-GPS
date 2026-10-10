@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Report a bug / suggest something (ui/FeedbackDialog) and the offer after a crash (support/CrashLog). -->
+<resources>
+    <string name="menu_feedback">Report a bug / suggest</string>
+    <string name="pref_feedback_title">Report a bug / suggest</string>
+    <string name="pref_feedback_summary">Tell the developer by email or on GitHub. The app adds its version and error details, never your location, and you see and can edit everything before it is sent.</string>
+    <string name="dlg_feedback_title">Report a bug or suggest something</string>
+    <string name="feedback_kind_bug">Report a bug (adds error details)</string>
+    <string name="feedback_kind_idea">Suggest something</string>
+    <string name="feedback_via_email">Email</string>
+    <string name="feedback_via_github">GitHub</string>
+    <string name="toast_feedback_copied">No app could open it, so the report is copied. Please paste it at %1$s</string>
+    <string name="snack_last_crash">The app closed unexpectedly last time. Report it to the developer?</string>
+    <string name="action_report">Report</string>
+</resources>

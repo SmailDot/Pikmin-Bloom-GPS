@@ -19,9 +19,9 @@ class StringFormatTest {
 
     @Test
     fun travelModeItemsFormatWithAStringSpeed() {
-        assertEquals("汽機車（45 km/h）", String.format(resource("values-zh-rTW","strings_live.xml", "travel_item"), "汽機車", "45"))
-        assertEquals("腳踏車（17.5 km/h，不計步）", String.format(resource("values-zh-rTW","strings_live.xml", "travel_item_no_steps"), "腳踏車", "17.5"))
-        for (folder in listOf("values", "values-ja")) {
+        assertEquals("汽機車（45 km/h）", String.format(resource("values","strings_live.xml", "travel_item"), "汽機車", "45"))
+        assertEquals("腳踏車（17.5 km/h，不計步）", String.format(resource("values","strings_live.xml", "travel_item_no_steps"), "腳踏車", "17.5"))
+        for (folder in listOf("values-en", "values-ja")) {
             val item = String.format(resource(folder, "strings_live.xml", "travel_item"), "X", "45")
             val noSteps = String.format(resource(folder, "strings_live.xml", "travel_item_no_steps"), "X", "17.5")
             assert("45" in item && "X" in item) { "$folder: $item" }

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bird's-eye view Big Flower scan (vision/ScreenCaptureService, vision/FlowerScanner). Separate file to avoid merge conflicts. -->
+<resources>
+    <string name="menu_scan_flowers">Scan Big Flowers in bird\'s-eye view</string>
+
+    <!-- Persistent screen capture notification -->
+    <string name="scan_channel_name">Screen scan</string>
+    <string name="scan_channel_desc">Ongoing screen capture notification while scanning Big Flowers in bird\'s-eye view</string>
+    <string name="scan_notif_title">Scanning Big Flowers in bird\'s-eye view</string>
+    <string name="scan_notif_text">The screen is analyzed only on your phone and never uploaded</string>
+    <string name="scan_notif_stop">Stop scan</string>
+
+    <!-- Errors -->
+    <string name="scan_err_projection_stopped">Screen capture was stopped by the system</string>
+    <string name="scan_err_projection_denied">Screen capture permission not granted</string>
+    <string name="scan_err_foreground">Couldn\'t start the screen capture service: %1$s</string>
+    <string name="scan_err_display">Couldn\'t create the capture display: %1$s</string>
+    <string name="scan_err_capture_failed">Screen capture kept failing, so the scan stopped</string>
+
+    <!-- Waiting -->
+    <string name="scan_wait_wrong_view">Switch to bird\'s-eye view</string>
+    <string name="scan_wait_no_flowers">No Big Flowers on screen. Move the map to an area with Big Flowers</string>
+    <string name="scan_wait_patrol">Waiting for the patrol to start</string>
+    <string name="scan_wait_blank">Captured a black screen: the game may still be loading, please wait. If it stays black, restart the game</string>
+    <string name="dlg_scan_blank_title">The captured screen is all black</string>
+    <string name="dlg_scan_blank_msg">Screen capture is only getting an all-black screen. There are two possible causes:\n\n1. The game is cold-starting: the screen stays black for about a minute before the opening animation. Just wait until it reaches the main map.\n\n2. The game has marked its own screen as \"do not record\": this isn\'t caused by the capture (leaving capture on in the main map or bird\'s-eye view for several minutes never turns it black). It\'s triggered by opening certain pages in the game (the shop, payments and the like), and after that the whole game stays black until it\'s restarted. Fix: swipe Pikmin Bloom away from your recent apps, tap \"Open Pikmin Bloom\" below to restart it, and switch to bird\'s-eye view; the scan continues automatically. Avoid opening that page again while scanning.</string>
+
+    <!-- One-line status on the floating bar -->
+    <string name="scan_status_need_projection">Screen capture permission needed</string>
+    <string name="scan_status_calibrating">Calibrating %1$d m</string>
+    <string name="scan_status_scanning">Found: %1$d</string>
+    <string name="scan_status_done">Scan done: %1$d</string>
+    <string name="scan_status_error">Scan error: %1$s</string>
+    <string name="ovl_cd_scan">Scan</string>
+
+    <!-- Main screen flow -->
+    <string name="dlg_scan_title">Scan Big Flowers in bird\'s-eye view</string>
+    <!-- verify: in-game names of the result screens ("Well done", challenge rewards, memory cards), the game's bird's-eye view mode, its "Back to current location" button, and Android's "Entire screen" capture option -->
+    <string name="dlg_scan_msg">This feature captures Pikmin Bloom\'s bird\'s-eye view, recognizes the Big Flowers on screen, converts them to coordinates and adds them to your patrol route.\n\nSteps:\n1. A patrol must be running: the distance it walks is used as the scale. Calibration finishes after about 40 m, and the patrol keeps going meanwhile.\n2. Important: in the game, first tap through all the result screens (Well done, challenge rewards, memory cards…) and stay in bird\'s-eye view, then come back and start the scan. Those screens would mislead the calibration. No need to restart the game.\n3. After granting permission, switch back to Pikmin Bloom, tap the map button at the bottom center to switch to \"bird\'s-eye view\", then tap \"Back to current location\" at the bottom right.\n4. While scanning, the status bar shows a screen recording icon. The screen is analyzed only on your phone, never uploaded, and the app never taps the game for you.\n5. Progress is shown on the floating bar; come back to this screen to see the results.\n\nNext, the system will ask for screen capture permission. Choose \"Entire screen\".</string>
+    <string name="dlg_scan_need_patrol_title">Patrol needed</string>
+    <string name="dlg_scan_need_patrol_msg">The scan uses the distance walked by the patrol as its scale, so start a patrol first. Once it\'s running, come back and tap \"Scan Big Flowers in bird\'s-eye view\" again.</string>
+    <string name="action_scan_start_patrol">Start patrol first</string>
+    <string name="action_scan_start">Start scan</string>
+    <string name="action_scan_stop">Stop scan</string>
+    <string name="action_scan_view_results">View results</string>
+    <string name="dlg_scan_running_title">Scan in progress</string>
+    <string name="dlg_scan_running_msg">Status: %1$s</string>
+    <string name="toast_scan_started">Scan started</string>
+    <string name="dlg_scan_launch_title">Permission granted. Now open the game</string>
+    <!-- verify: in-game names of the result screens ("Well done", challenge rewards, memory cards) -->
+    <string name="dlg_scan_launch_msg">It\'s fine if the game is already open; no need to restart it. Switch to the game and tap the map button at the bottom center to enter bird\'s-eye view; the scan then runs automatically. Before the scan starts, tap through all of the game\'s result screens (Well done, challenge rewards, memory cards…) and stay in bird\'s-eye view, or those screens will mislead the calibration.</string>
+    <string name="action_scan_launch_game">Switch to Pikmin Bloom</string>
+    <string name="action_scan_launch_later">I\'ll open it later</string>
+    <string name="toast_scan_stopped">Scan stopped</string>
+    <string name="toast_scan_denied">Screen capture permission not granted, can\'t scan</string>
+    <string name="toast_scan_no_results">No Big Flowers found in this scan</string>
+
+    <!-- Results dialog -->
+    <string name="dlg_scan_results_title">Scan results (%1$d)</string>
+    <string name="scan_result_item">%1$s · %2$s away · %3$s</string>
+    <string name="scan_confidence_high">Stem found, position more accurate</string>
+    <string name="scan_confidence_low">No stem, position estimated</string>
+    <string name="action_scan_add_current">Add to current route</string>
+    <string name="action_scan_new_route">Create new route \"Scan results\"</string>
+    <string name="scan_route_name">Scan results</string>
+    <string name="toast_scan_added">Big Flowers added: %1$d</string>
+    <string name="toast_scan_nothing_selected">No Big Flowers selected</string>
+</resources>

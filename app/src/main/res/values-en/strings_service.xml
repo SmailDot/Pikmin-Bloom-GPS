@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="svc_phase_idle">Idle</string>
+    <string name="svc_phase_starting">Starting: getting real location…</string>
+    <string name="svc_phase_walking">Patrolling: heading to %1$s</string>
+    <string name="svc_phase_dwelling">Planting flowers in the \"%1$s\" circle</string>
+    <string name="svc_phase_paused">Paused (position held)</string>
+    <string name="svc_phase_returning">Going home… %1$s left</string>
+    <string name="svc_phase_stopping">Stopping…</string>
+    <string name="svc_status_line">Walked %1$s · %2$d steps this run · %3$d steps written today</string>
+    <string name="svc_action_pause">Pause</string>
+    <string name="svc_action_resume">Resume</string>
+    <string name="svc_action_home">Go home</string>
+    <string name="svc_action_stop">Stop</string>
+    <string name="svc_arrived_title">Arrived at \"%1$s\"</string>
+    <string name="svc_arrived_text">In the game, tap the Big Flower and swipe down to collect Nectar; the app keeps planting flowers inside the circle.</string>
+    <string name="svc_home_title">Back at real location</string>
+    <string name="svc_home_text">Mock location ended; the game now sees your real GPS.</string>
+    <string name="svc_error_title">Patrol error</string>
+    <string name="svc_err_not_mock_app">This app isn\'t selected yet under \"Developer options → Select mock location app\"</string>
+    <string name="svc_err_no_location_permission">Location permission missing; can\'t start</string>
+    <string name="svc_err_no_home">Couldn\'t get your real location (close other mock location apps and make sure GPS is on)</string>
+    <string name="svc_err_no_waypoints">No Big Flowers added yet</string>
+    <string name="svc_err_background_start">Open the app\'s main screen first, then tap \"Start patrol\". Android doesn\'t allow starting location services in the background.</string>
+    <string name="svc_err_no_checkpoint">No patrol found to resume</string>
+    <string name="svc_err_checkpoint_pending">The last patrol hasn\'t been dealt with: choose \"Resume from checkpoint\" or \"Discard\" on the main screen first</string>
+    <string name="svc_target_home">Home</string>
+    <string name="svc_target_joystick">Joystick</string>
+
+    <!-- Custom home (PatrolPhase.PARKED) and the joystick (PatrolPhase.MANUAL), added 2026-09-12 -->
+    <string name="svc_phase_parked">At your saved home (mock location still on)</string>
+    <string name="svc_phase_manual">Joystick control</string>
+    <string name="svc_parked_title">Back at your saved home</string>
+    <string name="svc_parked_text">Mock location stays on, so the game still sees you here. Tap \"Resume\" for another lap; tap \"Stop\" to go back to your real GPS location.</string>
+
+    <!-- Real location (PatrolPhase.SUSPENDED), 2026-10-03 -->
+    <string name="svc_phase_suspended">Real location: tap \"Back to virtual location…\" to jump back to the virtual patrol</string>
+    <string name="svc_err_suspended">You\'re on real location now. Tap \"Back to virtual location…\" first</string>
+</resources>

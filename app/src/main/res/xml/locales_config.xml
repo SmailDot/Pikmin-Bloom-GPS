@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Android 13+ lists these under Settings > Apps > Pikmin Bloom GPS > Language, so the app can run in another
-     language than the phone. English (values/) is the default; zh-TW is the Traditional Chinese locale (values-zh-rTW/). -->
+     language than the phone. Traditional Chinese (values/) is the default for every other phone language; zh-TW is the same Traditional Chinese. English is values-en/. -->
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
     <locale android:name="en" />
     <locale android:name="zh-TW" />

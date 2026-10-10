@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the OpenStreetMap candidate search (ui/OverpassSearch.kt). Kept in a separate file
+     so it can be edited without touching the main strings.xml. -->
+<resources>
+    <string name="menu_find_candidates">Find nearby candidate Big Flowers</string>
+    <string name="overpass_search_short">Search nearby</string>
+    <string name="overpass_title">Find nearby candidate Big Flowers</string>
+    <string name="overpass_explain">Niantic doesn\'t publish Big Flower coordinates. Big Flowers grow on Wayspots (the same places as Pokémon GO PokéStops), and most of these places have a matching landmark on OpenStreetMap.\n\nThis feature looks up nearby memorials, public art, temples and churches, playgrounds, park facilities and so on, and adds them to your list as \"candidates\". About 3 to 6 in 10 turn out to be real hits; walk there to check, then delete the ones without a Big Flower.</string>
+    <string name="overpass_need_center">The app doesn\'t know where to start searching yet. Let it get your location once, or long-press the map to add a Big Flower.</string>
+    <string name="overpass_radius_title">Search radius</string>
+    <string name="overpass_radius_item">%1$d m radius</string>
+    <string name="overpass_search">Search</string>
+    <string name="overpass_searching">Searching OpenStreetMap…</string>
+    <string name="overpass_none">No new candidates found nearby (places already in your list are skipped).</string>
+    <string name="overpass_failed_title">Search failed</string>
+    <string name="overpass_failed_msg">Couldn\'t reach the OpenStreetMap search service: %1$s\n\nCheck your internet connection, or try again later (the public service has rate limits).</string>
+    <string name="overpass_pick_title">Found %1$d candidates</string>
+    <string name="overpass_item">%1$s (%2$.0f m)</string>
+    <string name="overpass_toggle_all">Select all / none</string>
+    <string name="overpass_add">Add to list</string>
+    <string name="overpass_added">Candidates added: %1$d</string>
+</resources>

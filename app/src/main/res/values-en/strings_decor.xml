@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the decor hunt (ui/DecorHunt.kt): pick a Pikmin Bloom decor, find real-world places
+     of that category on OpenStreetMap, judge purity, and turn one into a waypoint / route. -->
+<resources>
+    <string name="decor_hunt_short">Decor hunt</string>
+    <string name="decor_hunt_title">Decor hunt</string>
+    <string name="decor_need_center">The app doesn\'t know where to start searching yet. Let it get your location once, or long-press the map to add a Big Flower.</string>
+
+    <!-- picker -->
+    <string name="decor_pick_title">Which decor are you looking for?</string>
+    <string name="decor_pick_filter_hint">Filter decor or places</string>
+    <string name="decor_pick_empty">No matching decor</string>
+    <string name="decor_pick_next">Next</string>
+    <string name="decor_pick_none_selected">Tap a decor first</string>
+
+    <!-- radius -->
+    <string name="decor_radius_title">%1$s: search radius</string>
+    <string name="decor_radius_item">%1$d km radius</string>
+    <string name="decor_radius_search">Search</string>
+
+    <!-- search -->
+    <string name="decor_searching">Searching OpenStreetMap for \"%1$s\"…</string>
+    <string name="decor_failed_title">Search failed</string>
+    <string name="decor_failed_msg">Couldn\'t reach the OpenStreetMap search service: %1$s\n\nCheck your internet connection, or try again later (the public service has rate limits).</string>
+    <string name="decor_none">No \"%2$s\" found within %1$d km. Try a larger radius.</string>
+
+    <!-- results -->
+    <string name="decor_results_title">%1$s: %2$d places</string>
+    <string name="decor_results_explain">Pure spot = no other decor category within 120 m, so walking there only gets you this decor. The first 5 are checked automatically; tap \"Check more\" for the rest.</string>
+    <string name="decor_results_check_more">Check more</string>
+    <string name="decor_results_all_checked">All checked</string>
+    <string name="decor_purity_unchecked">Not checked</string>
+    <string name="decor_purity_failed">Couldn\'t check</string>
+
+    <!-- confirm -->
+    <string name="decor_confirm_title">Go to \"%1$s\"</string>
+    <string name="decor_confirm_summary">Decor: %1$s\nPlace: %2$s\nDistance: %3$s\nPurity: %4$s</string>
+    <string name="decor_confirm_travel_label">Travel mode</string>
+    <string name="decor_confirm_travel_note">Vehicles (Other, Car, Plane) don\'t write steps or plant flowers on the way; circling at walking speed starts only after arrival.</string>
+    <string name="decor_confirm_radius_hint">Circling radius after arrival (m)</string>
+    <string name="decor_confirm_radius_helper">The list allows 8–40 m; anything larger is reduced to 40.</string>
+    <string name="decor_confirm_radius_clamped">Over 40: it will be reduced to 40 m when added.</string>
+    <string name="decor_confirm_minutes_hint">Circling time after arrival (minutes, 0–30)</string>
+    <!-- The quoted setting name is pref_orbit_title. -->
+    <string name="decor_confirm_minutes_note">Only applies when the setting \"Circle the Big Flower after arriving\" is on.</string>
+    <string name="decor_confirm_add">Add to list</string>
+    <string name="decor_confirm_new_route">Create separate route</string>
+    <string name="decor_confirm_new_route_hint">Creates a separate route named \"%1$s\" and switches to it. Your current route is not affected.</string>
+    <string name="decor_confirm_err_radius">Enter a number from 1 to 500</string>
+    <string name="decor_confirm_err_minutes">Enter a whole number from 0 to 30</string>
+    <string name="decor_added_to_list">Added \"%1$s\" to route \"%2$s\"</string>
+    <string name="decor_route_created">Created route \"%1$s\" and switched to it. Go back to the main screen and tap \"Start patrol\" to set off.</string>
+</resources>

@@ -1,85 +1,80 @@
-# Pikmin Bloom GPS
+# 皮克敏巡花助手（Pikmin Bloom GPS）
 
-**English** ｜ [繁體中文](README.zh-TW.md) ｜ [日本語](README.ja.md)
+**繁體中文** ｜ [English](README.en.md) ｜ [日本語](README.ja.md)
 
-A Big Flower patrol helper for **Pikmin Bloom**. No root needed. The app speaks English, Traditional Chinese and
-Japanese and follows your phone's language (on Android 13+ you can also pick a language for this app alone under
-Settings → Apps → Language).
+專為 **Pikmin Bloom** 設計的巡花輔助 App，不需要 root。介面有英文、繁體中文、日文，會跟著手機語言自動切換（Android 13 以上也可以在「設定 → 應用程式 → 語言」單獨指定）。
 
-## Features
-- **Patrol**: mark Big Flowers on the map; the app walks the avatar from one to the next with a simulated walk until you tap "Go home".
-- **Steps while patrolling**: the simulated distance is written to Health Connect as steps, so the game grows your seedlings.
-- **Go home**: walk or teleport back to your real location, or go to a saved home (Home 1, Home 2, …) and stay there.
-- **Go now / Go and stay there**: tap a Big Flower to head straight there. "Go and stay there" pauses on arrival, handy for leaving it running overnight and collecting in the morning. If the trip is longer than a set distance (15 km by default), the app first asks whether to walk (writes steps) or take a vehicle (no steps).
-- **Vehicles**: Other, Car and Plane, with speeds you can set. Vehicles write no steps and switch back to walking at the next Big Flower.
-- **Floating bar and joystick**: control the patrol on top of the game (pause, go home, change vehicle). The joystick can be dragged anywhere and comes in three sizes.
-- **Auto expedition (experimental, off by default)**: one tap on the floating bar sends Pikmin on every fruit and seedling-pot expedition in the Expedition list, using the game's own auto team picker. Red gifts and mushrooms are never touched. Needs Android 11 or newer and the accessibility service turned on. While a run goes, it reads the game's screen (screenshots are never saved) and taps in it.
-- **Auto feed (experimental, off by default)**: on the game's feed screen, start it from the floating bar's flag button (choose Feed nectar and the number of rounds). Each round feeds the nectar shown in the bubble to your current squad, then harvests the petals, sweeping again while flowers are left. Stop it from the notification. Same detection risk as auto expedition: the game can see that the accessibility service is on, so use it at your own risk.
-- **Real location switch**: hand the real GPS back to the phone for a while (for Google Maps, say), then switch back to the virtual location.
-- **Find nearby candidate Big Flowers**: pulls nearby landmarks from OpenStreetMap as candidates.
-- **Resume from checkpoint**: if the system closes the app, carry on from the same spot and state.
+## 功能
+- **自動巡邏**：在地圖上標記大花，App 用模擬走路依序巡邏，直到你按「回家」。
+- **巡邏時計步**：模擬距離換算成步數寫入 Health Connect，遊戲會拿去培育花苗。
+- **回家**：可以走回或瞬移回真實位置，也可以去存好的家（家 1、家 2…）停著。
+- **立刻前往／前往後停在這裡**：點大花直接去。「前往後停在這裡」到了就暫停，適合晚上掛著、早上再領獎勵；路程超過設定的公里數（預設 15 km）會先問你要走路（寫步數）還是搭交通工具（不寫步數）。
+- **交通工具**：其他、汽車、飛機，速度可以自己設定，不寫步數；到下一朵大花時自動切回走路。
+- **浮動控制列＋搖桿**：浮在遊戲畫面上，可以暫停、回家、切換交通工具；搖桿可以拖到任何位置，有三種大小。
+- **自動探險（實驗）**：在浮動控制列按一下，用遊戲自己的「自動」編隊派出探險列表裡所有果實與花苗探險。紅色禮品與蘑菇不會被點到。預設關閉，需要 Android 11 以上與無障礙服務；執行期間才會讀取遊戲畫面（截圖不儲存）並點擊。
+- **自動餵精華（實驗）**：在遊戲的餵精華畫面，從浮動控制列的旗子按鈕開始（選「餵精華」並填輪數）。每一輪把泡泡裡顯示的精華餵給目前的隊伍，再收取花瓣，花還沒收完會再掃一次。可從通知列停止。偵測風險與自動探險相同：遊戲可能看得出無障礙服務已開啟，風險自負。
+- **真實位置切換**：暫時把定位還給手機（例如要開 Google 地圖），回來時再切回虛擬位置。
+- **搜尋附近候選大花**：從 OpenStreetMap 帶入附近的地標當作候選點。
+- **中斷點續走**：App 被系統關掉後，可以從原本的位置和狀態接著走。
 
-## Requirements
-- Android 9 (API 28) or later; steps need Android 14 or later (Health Connect is built in).
-- Developer options → **Select mock location app** → Pikmin Bloom GPS.
+## 需求
+- Android 9（API 28）以上；步數功能需要 Android 14 以上（內建 Health Connect）。
+- 開發者選項 → **選擇模擬位置應用程式** → 皮克敏巡花助手。
 
-## Setup (the in-app "Setup" screen checks each step)
-1. Location and notification permissions, and "Display over other apps" (for the floating bar).
-2. Developer options → Select mock location app → this app.
-3. Health Connect read/write permission for steps and distance.
-4. **⚠ In Health Connect, open steps → "Data sources and priority" and add "Pikmin Bloom GPS".**
-   This is the step people miss. Without it the steps are written but not counted in the daily total, so the game never sees them.
-5. Exclude this app from battery optimization (on HyperOS, also allow Autostart).
-6. In Pikmin Bloom's settings, set the step source to **Health Connect**, and in Health Connect allow Pikmin Bloom
-   to read steps, also in the background. Set the game's location permission to "Allow all the time".
-7. Turning off "Google Location Accuracy" (Settings → Location → Location services) is recommended: it lowers the chance of the location jumping back to your real one.
+## 設定步驟（App 內「初始設定」會逐項檢查）
+1. 定位權限、通知權限、顯示在其他應用程式上層（浮動控制列）。
+2. 開發者選項 → 選擇模擬位置應用程式 → 本 App。
+3. Health Connect 步數與距離的讀寫權限。
+4. **⚠ Health Connect →「管理資料」→「資料來源與優先順序」→ 新增「皮克敏巡花助手」。**
+   這一步最容易漏，沒做的話步數寫得進去，但不會算進每日總計，遊戲讀不到。
+5. 把本 App 排除在電池最佳化之外（HyperOS 另外要允許自啟動）。
+6. Pikmin Bloom 遊戲內：設定 → 隱私權&步數 → 步數 → **Health Connect**，
+   並在 Health Connect 允許 Pikmin Bloom 讀取步數與「在背景存取資料」。遊戲的定位權限設為「一律允許」。
+7. 建議關閉「Google 定位準確度」（設定 → 位置 → 定位服務），減少定位跳回真實位置的機會。
 
-> If the game counts steps with the phone's own step sensor, it reads the hardware step counter, which no app can write to. It has to use Health Connect.
+> 遊戲的「使用手機追蹤測量」模式讀的是硬體計步器，任何 App 都寫不進去，一定要改用 Health Connect。
 
-## How to use
-1. **Long-press** the map to add a Big Flower, or use "Find nearby candidate Big Flowers".
-2. Tap "Start patrol", then start planting flowers in the game.
-3. When the arrival alert pops up, tap the Big Flower in the game and swipe down to collect Nectar.
-4. To finish, tap "Go home". Once the avatar is back at your real location the app stops mocking.
+## 使用流程
+1. 在地圖上**長按**加入大花，或用「搜尋附近候選大花」帶入候選點。
+2. 按「開始巡邏」，再到遊戲內開啟種花。
+3. 跳出抵達提醒時，到遊戲內點大花、往下滑領花蜜。
+4. 要結束時按「回家」，走回真實位置後 App 會自動停止模擬。
 
-## Settings worth knowing
-| Setting | Suggestion |
+## 設定重點
+| 設定 | 建議 |
 |---|---|
-| Walking speed | 18 km/h by default, the steadiest in testing. The maximum is 20; at 19–20 a phone that stutters from overheating may jump ahead in one go, and the game may think you are in a vehicle. |
-| Go and stay there: ask how to travel when farther than (km) | 15 by default. 0 never asks. |
-| Circle the Big Flower after arriving | Off by default. Turn it on only to push one Big Flower to bloom (300 flowers). |
-| Stride | 70 cm. Steps = distance ÷ stride. |
-| Daily step cap | Empty means no cap. Enter 50000 to follow the game's seedling growth cap. |
-| Auto expedition (experimental) | Off by default. It reads the game's screen and taps in it through the accessibility service, only while a run goes; any app can see that the service is on, and the game may notice too. Use at your own risk. |
+| 走路速度 | 預設 18 km/h，實測最穩。上限 20；開到 19–20 時，手機過熱卡頓可能一次衝一大段，遊戲可能當成你在坐車。 |
+| 前往後停在這裡：超過幾公里先問怎麼去 | 預設 15。填 0 就不會問。 |
+| 抵達後在大花圈內繞行 | 預設關閉，只有想衝某朵大花開花（300 朵）時才打開。 |
+| 步幅 | 70 公分，用距離除以步幅換算步數。 |
+| 每日步數上限 | 留空就是不限制。想照遊戲的花苗成長上限就填 50000。 |
+| 自動探險（實驗） | 預設關閉。透過無障礙服務，只在執行期間讀取遊戲畫面並點擊；任何 App 都看得到該服務已開啟，遊戲也可能察覺。風險自負。 |
 
-## Build
-Needs JDK 21 and the Android SDK (platform 37).
+## 建置
+需要 JDK 21 與 Android SDK（platform 37）。
 ```bash
 ./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew assembleRelease      # app/build/outputs/apk/release/app-release.apk
 ```
-Release signing reads `../keystore/keystore.properties` **next to** the repository (`storeFile`, `storePassword`,
-`keyAlias`, `keyPassword`); never put it inside the repo. Without that file the release APK is unsigned and will not install.
+Release 簽章讀的是 repo **旁邊**的 `../keystore/keystore.properties`（`storeFile`、`storePassword`、`keyAlias`、`keyPassword`），
+不要放進 repo。沒有這個檔案時，release APK 不會簽章，裝不上手機。
 
-Install with adb and make it the mock location app:
+用 adb 安裝並設定成模擬位置 App：
 ```bash
 adb install -r -g app/build/outputs/apk/debug/app-debug.apk
 adb shell appops set app.pikminbloom.gps android:mock_location allow
 ```
 
-## Where the Big Flower locations come from
-Niantic does not publish Big Flower coordinates. Big Flowers grow on Wayspots, so the app asks the OpenStreetMap
-Overpass API for nearby landmarks (memorials, public art, temples and churches, playgrounds and so on) as
-**candidates**. Roughly 30–60% of them really have a Big Flower; keep the ones that do.
-OpenStreetMap data is licensed under the ODbL.
+## 大花位置從哪來
+Niantic 不公開大花座標。大花長在 Wayspot 上，所以 App 用 OpenStreetMap Overpass API 查附近的地標
+（紀念物、公共藝術、廟宇教堂、遊戲場等）當作**候選點**，大概三到六成真的有大花，留下有的就好。
+OpenStreetMap 資料採 ODbL 授權。
 
-## Bug reports and suggestions
-In the app: menu → **Report a bug / suggest** (also at the bottom of Settings). Pick email or GitHub; the report opens
-already filled in with the app and Android versions, the phone model and the last error or crash. It never includes
-your location, and you can read and edit everything before sending. You can also write directly:
-[GitHub Issues](https://github.com/SmailDot/Pikmin-Bloom-GPS/issues) or smaildot@aidot.me.
+## 回報問題／建議
+App 內：選單 →「**回報問題／建議**」（設定頁最下面也有）。選 Email 或 GitHub，內容會自動帶好 App 和 Android 版本、手機型號、
+最後的錯誤或閃退紀錄，不含任何位置，送出前都看得到、可以修改。也可以直接到
+[GitHub Issues](https://github.com/SmailDot/Pikmin-Bloom-GPS/issues) 或寄信到 smaildot@aidot.me。
 
-## Disclaimer
-This app has nothing to do with Niantic, Scopely or Nintendo. Changing your location and steps breaks the Pikmin Bloom
-terms of service (three strikes: a 7-day warning → a 30-day suspension → a permanent ban). You use it at your own risk.
-Keep to sensible speeds and avoid teleporting.
+## 免責聲明
+本 App 與 Niantic、Scopely、任天堂沒有任何關係。修改定位與步數違反 Pikmin Bloom 使用條款（三振政策：
+警告 7 天 → 停權 30 天 → 永久停權），風險由使用者自行承擔。請保持合理速度，避免瞬移。

@@ -4,9 +4,8 @@ import android.content.Context
 import app.pikminbloom.gps.R
 
 /**
- * The app's languages (2026-10-08, "造福英文社群和日文社群的玩家"): English in values/, which is also what every
- * other phone language gets, Traditional Chinese in values-zh-rTW/ (zh-TW, and the other Traditional-script locales)
- * and Japanese in values-ja/. A bare values-zh/ would be read as Simplified and never match a zh-TW phone.
+ * The app's languages (2026-10-08, "造福英文社群和日文社群的玩家"): Traditional Chinese in values/, the default that every
+ * phone language other than English and Japanese gets, English in values-en/, and Japanese in values-ja/.
  *
  * Android picks the XML strings by itself. The texts built in Kotlin - the pure, unit-tested formatters such as
  * TripChoices or RealModeCopy, and names like TravelMode.label - read [current] instead, which [refresh] takes from

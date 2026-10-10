@@ -118,7 +118,7 @@ class ResumeCopyTest {
     // The paused text itself, read from strings_resume.xml and formatted like getString(R.string.x, args) does (String.format):
     // a wrong placeholder takes the Activity down (StringFormatTest, 2026-09-14), here at app start, in the resume dialog.
     private fun pausedDialogText(): String {
-        val f = listOf(File("src/main/res/values-zh-rTW/strings_resume.xml"), File("app/src/main/res/values-zh-rTW/strings_resume.xml")).first { it.exists() }
+        val f = listOf(File("src/main/res/values/strings_resume.xml"), File("app/src/main/res/values/strings_resume.xml")).first { it.exists() }
         val m = Regex("""<string name="dlg_resume_msg_paused">(.*?)</string>""", RegexOption.DOT_MATCHES_ALL).find(f.readText())
             ?: error("dlg_resume_msg_paused is missing from strings_resume.xml")
         return m.groupValues[1].replace("\\n", "\n")
