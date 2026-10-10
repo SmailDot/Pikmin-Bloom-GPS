@@ -11,6 +11,9 @@ import android.content.Intent
 import android.content.res.Resources
 import android.net.Uri
 import android.os.Build
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.RadioGroup
 import android.widget.Toast
 import app.pikminbloom.gps.BuildConfig
 import app.pikminbloom.gps.R
@@ -22,6 +25,7 @@ import app.pikminbloom.gps.support.CrashLog
 import app.pikminbloom.gps.support.FeedbackInfo
 import app.pikminbloom.gps.support.FeedbackKind
 import app.pikminbloom.gps.support.FeedbackReport
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.time.Instant
 import java.time.ZoneId
@@ -36,12 +40,22 @@ object FeedbackDialog {
 
     fun show(activity: Activity, kind: FeedbackKind = FeedbackKind.BUG) {
         var picked = kind
+        val view = LayoutInflater.from(activity).inflate(R.layout.dialog_feedback, null)
+        val kinds = view.findViewById<RadioGroup>(R.id.feedbackKinds)
+        kinds.check(if (kind == FeedbackKind.IDEA) R.id.feedbackKindIdea else R.id.feedbackKindBug)
+        kinds.setOnCheckedChangeListener { _, id ->
+            picked = if (id == R.id.feedbackKindIdea) FeedbackKind.IDEA else FeedbackKind.BUG
+        }
+        // The last auto run's log can be copied for a GitHub report, whose link may not be able to hold it.
+        AutoRunLog.readLastRun(activity)?.let { section ->
+            view.findViewById<MaterialButton>(R.id.feedbackCopyLog).apply {
+                visibility = View.VISIBLE
+                setOnClickListener { copyAutoRunLog(activity, section) }
+            }
+        }
         MaterialAlertDialogBuilder(activity)
             .setTitle(R.string.dlg_feedback_title)
-            .setSingleChoiceItems(
-                arrayOf(activity.getString(R.string.feedback_kind_bug), activity.getString(R.string.feedback_kind_idea)),
-                picked.ordinal,
-            ) { _, which -> picked = FeedbackKind.entries[which] }
+            .setView(view)
             .setPositiveButton(R.string.feedback_via_email) { _, _ -> sendByEmail(activity, picked) }
             .setNeutralButton(R.string.feedback_via_github) { _, _ -> openGithub(activity, picked) }
             .setNegativeButton(R.string.action_cancel, null)
@@ -59,18 +73,30 @@ object FeedbackDialog {
 
     private fun openGithub(activity: Activity, kind: FeedbackKind) {
         val info = collect(activity, kind)
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(FeedbackReport.githubUrl(kind, info)))
-        launchOrCopy(activity, intent, FeedbackReport.body(kind, info), FeedbackReport.NEW_ISSUE_URL)
+        val link = FeedbackReport.githubLink(kind, info)
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
+        val launched = launchOrCopy(activity, intent, FeedbackReport.body(kind, info), FeedbackReport.NEW_ISSUE_URL)
+        // The link could not hold the log: it goes on the clipboard, and the issue body says to paste it there.
+        info.autoRunLog?.takeIf { launched && link.logLeftOut }?.let { copyAutoRunLog(activity, it) }
     }
 
-    private fun launchOrCopy(activity: Activity, intent: Intent, body: String, where: String) {
+    /** True when the intent opened; otherwise the whole report went to the clipboard instead. */
+    private fun launchOrCopy(activity: Activity, intent: Intent, body: String, where: String): Boolean {
         try {
             activity.startActivity(intent)
+            return true
         } catch (_: ActivityNotFoundException) {
             val clipboard = activity.getSystemService(ClipboardManager::class.java)
             clipboard?.setPrimaryClip(ClipData.newPlainText("Pikmin Bloom GPS", body))
             Toast.makeText(activity, activity.getString(R.string.toast_feedback_copied, where), Toast.LENGTH_LONG).show()
+            return false
         }
+    }
+
+    /** Puts the auto-run log on the clipboard under its own label, and says where to paste it. */
+    private fun copyAutoRunLog(context: Context, section: String) {
+        context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("auto-run log", section))
+        Toast.makeText(context, R.string.toast_auto_log_copied, Toast.LENGTH_LONG).show()
     }
 
     private fun collect(context: Context, kind: FeedbackKind): FeedbackInfo {

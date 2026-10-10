@@ -117,6 +117,42 @@ class FeedbackReportTest {
         assertTrue(body.contains("閃退紀錄"))
     }
 
+    private val bigLog = "=== feed run, target=3\n" + (1..400).joinToString("\n") { "第 $it 次 測試 done" }
+
+    @Test
+    fun aGithubLinkThatCannotHoldTheLogLeavesItOutAndSaysSoInTheBody() {
+        val link = FeedbackReport.githubLink(FeedbackKind.BUG, info.copy(autoRunLog = bigLog), Lang.ZH, ZoneOffset.UTC)
+        assertTrue(link.logLeftOut)
+        assertTrue(link.url.length <= FeedbackReport.MAX_URL_CHARS)
+        val body = URLDecoder.decode(link.url.substringAfter("&body="), "UTF-8") // throws if a %-escape was cut
+        assertTrue(body.contains("（自動操作紀錄已複製，請貼在這裡）"))
+        assertFalse(body.contains("最近一次自動操作紀錄"))
+    }
+
+    @Test
+    fun theGithubPasteLineIsWrittenInEnglishToo() {
+        val link = FeedbackReport.githubLink(FeedbackKind.BUG, info.copy(autoRunLog = bigLog), Lang.EN, ZoneOffset.UTC)
+        val body = URLDecoder.decode(link.url.substringAfter("&body="), "UTF-8")
+        assertTrue(body.contains("(The auto-run log was copied; paste it here.)"))
+    }
+
+    @Test
+    fun aGithubLinkWithRoomKeepsTheLogAndAddsNoPasteLine() {
+        val link = FeedbackReport.githubLink(FeedbackKind.BUG, info.copy(autoRunLog = autoLog), Lang.ZH, ZoneOffset.UTC)
+        assertFalse(link.logLeftOut)
+        val body = URLDecoder.decode(link.url.substringAfter("&body="), "UTF-8")
+        assertTrue(body.contains("最近一次自動操作紀錄"))
+        assertFalse(body.contains("（自動操作紀錄已複製，請貼在這裡）"))
+    }
+
+    @Test
+    fun theMailBodyKeepsTheLogAndNeverGetsThePasteLine() {
+        val uri = FeedbackReport.mailtoUri(FeedbackKind.BUG, info.copy(autoRunLog = bigLog), Lang.ZH, ZoneOffset.UTC)
+        val body = URLDecoder.decode(uri.substringAfter("&body="), "UTF-8")
+        assertTrue(body.contains("最近一次自動操作紀錄"))
+        assertFalse(body.contains("（自動操作紀錄已複製，請貼在這裡）"))
+    }
+
     @Test
     fun crashFileRoundTrip() {
         val text = CrashLog.format(1_728_000_000_000L, "1.5.0", "main", "java.lang.RuntimeException: boom\n\tat a.B.c(B.kt:1)")

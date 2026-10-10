@@ -8,6 +8,8 @@
     <string name="feedback_kind_bug">回報 Bug（附上錯誤資訊）</string>
     <string name="feedback_kind_idea">功能建議</string>
     <string name="feedback_via_email">Email</string>
+    <string name="copy_auto_log">複製自動操作紀錄</string>
+    <string name="toast_auto_log_copied">已複製，貼到 GitHub 回報裡即可</string>
     <string name="feedback_via_github">GitHub</string>
     <string name="toast_feedback_copied">找不到可以開啟的 App，內容已複製，請貼到 %1$s</string>
     <string name="snack_last_crash">上次 App 異常關閉了，要回報給作者嗎？</string>

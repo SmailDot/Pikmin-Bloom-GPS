@@ -62,6 +62,7 @@ object FeedbackReport {
         lang: Lang = Lang.current,
         maxTraceLines: Int = MAX_TRACE_LINES,
         zone: ZoneId = ZoneId.systemDefault(),
+        pasteNote: Boolean = false,
     ): String = buildString {
         if (kind == FeedbackKind.BUG) {
             appendLine(tr("請描述發生了什麼事、怎麼重現（按了什麼、在哪個畫面）：", "What happened, and how can it be repeated (what you tapped, on which screen)?",
@@ -71,6 +72,11 @@ object FeedbackReport {
         }
         appendLine()
         appendLine()
+        if (pasteNote) {
+            // The GitHub link could not hold the auto-run log, so it is on the clipboard: tell the user where to paste it.
+            appendLine(tr("（自動操作紀錄已複製，請貼在這裡）", "(The auto-run log was copied; paste it here.)", "（自動操作の記録をコピーしました。ここに貼ってください）", lang))
+            appendLine()
+        }
         appendLine("---")
         appendLine(tr("以下由 App 自動填入，不含位置座標；送出前可以修改或刪除。", "Filled in by the app, without any location; edit or delete freely before sending.",
             "以下はアプリが自動で記入したもので、位置情報は含みません。送信前に編集・削除できます。", lang))
@@ -97,26 +103,35 @@ object FeedbackReport {
         }
     }.trimEnd() + "\n"
 
+    /** A new-issue link, and whether the auto-run log had to be left out of it to keep the link whole. */
+    data class GithubLink(val url: String, val logLeftOut: Boolean)
+
     /**
      * A new-issue link with the title and body filled in. The stack trace is shortened until the link fits
-     * [MAX_URL_CHARS]; if it still does not, the auto-run log is left out (it still goes in the mail).
+     * [MAX_URL_CHARS]; if it still does not, the auto-run log is left out, and the body says where to paste it (the
+     * caller copies the log to the clipboard). The mail keeps the log.
      */
-    fun githubUrl(kind: FeedbackKind, info: FeedbackInfo, lang: Lang = Lang.current, zone: ZoneId = ZoneId.systemDefault()): String {
+    fun githubLink(kind: FeedbackKind, info: FeedbackInfo, lang: Lang = Lang.current, zone: ZoneId = ZoneId.systemDefault()): GithubLink {
         val title = encode(subject(kind, info.app.substringBefore(' '), lang) + ": ")
         var lines = MAX_TRACE_LINES
         var shown = info
+        var logLeftOut = false
         while (true) {
-            val url = "$NEW_ISSUE_URL?title=$title&body=" + encode(body(kind, shown, lang, lines, zone))
-            if (url.length <= MAX_URL_CHARS) return url
+            val url = "$NEW_ISSUE_URL?title=$title&body=" + encode(body(kind, shown, lang, lines, zone, pasteNote = logLeftOut))
+            if (url.length <= MAX_URL_CHARS) return GithubLink(url, logLeftOut)
             if (lines > 0) {
                 lines = if (lines > 5) lines - 5 else 0
             } else if (shown.autoRunLog != null) {
                 shown = shown.copy(autoRunLog = null)
+                logLeftOut = true
             } else {
-                return url.take(MAX_URL_CHARS)
+                return GithubLink(url.take(MAX_URL_CHARS), logLeftOut)
             }
         }
     }
+
+    fun githubUrl(kind: FeedbackKind, info: FeedbackInfo, lang: Lang = Lang.current, zone: ZoneId = ZoneId.systemDefault()): String =
+        githubLink(kind, info, lang, zone).url
 
     /** mailto: with the subject and body, for email apps that read them from the link (RFC 6068). */
     fun mailtoUri(kind: FeedbackKind, info: FeedbackInfo, lang: Lang = Lang.current, zone: ZoneId = ZoneId.systemDefault()): String =
