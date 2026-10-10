@@ -8,6 +8,7 @@ import app.pikminbloom.gps.auto.AutoRuns
 import app.pikminbloom.gps.auto.RunNotice
 import app.pikminbloom.gps.nectar.NectarAccessibilityService
 import app.pikminbloom.gps.nectar.NectarIo
+import app.pikminbloom.gps.support.AutoRunLog
 import app.pikminbloom.gps.vision.RgbImage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -42,7 +43,8 @@ object ExpeditionRunner {
         val svc = NectarAccessibilityService.instance
         if (svc == null) { Log.i(TAG, "expedition: skipped, accessibility service off"); return }
         job = scope.launch {
-            val session = ExpeditionSession(io(svc), log = { Log.i(TAG, "expedition: $it") })
+            AutoRunLog.startRun(app, "expedition", "target=$target, max=$maxDispatch")
+            val session = ExpeditionSession(io(svc), log = { Log.i(TAG, "expedition: $it"); AutoRunLog.append(app, it) })
             RunNotice.show(app, R.string.expedition_running)
             var stop = ExpeditionStop.CANCELLED
             var count = 0

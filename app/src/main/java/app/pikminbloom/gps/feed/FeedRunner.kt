@@ -7,6 +7,7 @@ import app.pikminbloom.gps.R
 import app.pikminbloom.gps.auto.AutoRuns
 import app.pikminbloom.gps.auto.RunNotice
 import app.pikminbloom.gps.nectar.NectarAccessibilityService
+import app.pikminbloom.gps.support.AutoRunLog
 import app.pikminbloom.gps.vision.RgbImage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +42,8 @@ object FeedRunner {
         val svc = NectarAccessibilityService.instance
         if (svc == null) { Log.i(TAG, "feed: skipped, accessibility service off"); return }
         job = scope.launch {
-            val session = FeedSession(io(svc), log = { Log.i(TAG, "feed: $it") })
+            AutoRunLog.startRun(app, "feed", "target=$rounds")
+            val session = FeedSession(io(svc), log = { Log.i(TAG, "feed: $it"); AutoRunLog.append(app, it) })
             RunNotice.show(app, R.string.feed_running)
             var stop = FeedStop.CANCELLED
             var count = 0

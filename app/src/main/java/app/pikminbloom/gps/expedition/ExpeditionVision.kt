@@ -9,6 +9,9 @@ enum class ExpScreen { LIST, DETAIL, SELECT, RESULT, OTHER }
 /** What a list cell holds. The session only ever taps POT or FRUIT. */
 enum class ItemKind { POT, FRUIT, GIFT, UNKNOWN, COVERED, IN_PROGRESS }
 
+/** A GO bubble with at least this saturated fraction of its pixels counts as active (picked 自動). */
+const val GO_ACTIVE_FRACTION = 0.08
+
 /** A list cell: [x] is the column centre, [y] the centre of its icon. */
 data class Cell(val x: Int, val y: Int, val kind: ItemKind)
 
@@ -23,6 +26,8 @@ data class ExpFrame(
     val goExploreY: Int? = null,
     val selectRowY: Int? = null,
     val goActive: Boolean = false,
+    /** The saturated fraction of the GO bubble that [goActive] was decided on (SELECT only; for the diagnostic log). */
+    val goSat: Double = 0.0,
     val tabY: Int? = null,
 )
 
@@ -39,7 +44,10 @@ object ExpeditionVision {
     fun analyze(img: RgbImage): ExpFrame {
         val hsv = DoubleArray(3)
         if (isResult(img, hsv)) return ExpFrame(ExpScreen.RESULT)
-        selectRowY(img, hsv)?.let { return ExpFrame(ExpScreen.SELECT, selectRowY = it, goActive = isGoActive(img, hsv)) }
+        selectRowY(img, hsv)?.let {
+            val sat = goSaturation(img, hsv)
+            return ExpFrame(ExpScreen.SELECT, selectRowY = it, goActive = sat >= GO_ACTIVE_FRACTION, goSat = sat)
+        }
         goExploreY(img, hsv)?.let { return ExpFrame(ExpScreen.DETAIL, goExploreY = it) }
         val tab = listTab(img, hsv) ?: return ExpFrame(ExpScreen.OTHER)
         return ExpFrame(ExpScreen.LIST, cells = listCells(img, tab.last, hsv), tabY = (tab.first + tab.last) / 2)
@@ -110,14 +118,13 @@ object ExpeditionVision {
         return null
     }
 
-    /** The GO bubble is bright once 自動 is picked, and faded before. */
-    private fun isGoActive(img: RgbImage, hsv: DoubleArray): Boolean {
+    /** The saturated fraction of the GO bubble: it is bright once 自動 is picked, and faded before (see [GO_ACTIVE_FRACTION]). */
+    private fun goSaturation(img: RgbImage, hsv: DoubleArray): Double {
         val w = img.width
         val h = img.height
-        val frac = fraction(img, (0.767 * w).toInt(), bottomAnchored(h, 0.234, w), (0.933 * w).toInt(), bottomAnchored(h, 0.078, w), hsv) {
+        return fraction(img, (0.767 * w).toInt(), bottomAnchored(h, 0.234, w), (0.933 * w).toInt(), bottomAnchored(h, 0.078, w), hsv) {
             it[1] > 0.5
         }
-        return frac >= 0.08
     }
 
     /** Outlined green 前往探險 button: first and last green rows on the centre column, a button tall apart. */

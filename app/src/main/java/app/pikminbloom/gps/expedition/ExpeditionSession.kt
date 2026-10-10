@@ -37,7 +37,7 @@ class ExpeditionSession(
             log("expedition cancelled after $dispatched")
             throw e
         }
-        log("expedition stopped: $stop after $dispatched")
+        log(ExpeditionLines.stopped(stop, dispatched))
         return ExpeditionResult(dispatched, stop)
     }
 
@@ -46,7 +46,7 @@ class ExpeditionSession(
 
     private suspend fun drive(target: ExpeditionTarget, maxDispatch: Int): ExpeditionStop {
         // The screen can still be fading in when the run starts (a dialog's scrim, say): look a few times first.
-        val first = poll(LIST_LOOKS, LIST_LOOK_MS, ExpScreen.LIST)
+        val first = poll(LIST_LOOKS, LIST_LOOK_MS, ExpScreen.LIST)?.let(::logList)
         if (first == null) {
             log("not on the 探險 list after $LIST_LOOKS looks")
             return ExpeditionStop.NOT_ON_LIST
@@ -68,43 +68,56 @@ class ExpeditionSession(
                 io.swipe((0.5 * before.width).toInt(), fromY, (0.40 * before.height).toInt(), SWIPE_MS)
                 io.wait(SWIPE_SETTLE_MS)
                 // The sheet bounces for a moment after a swipe: take the first look that is the list, then compare.
-                val after = poll(LIST_LOOKS, LIST_LOOK_MS, ExpScreen.LIST) ?: return ExpeditionStop.LOST
+                val after = poll(LIST_LOOKS, LIST_LOOK_MS, ExpScreen.LIST)?.let(::logList) ?: return ExpeditionStop.LOST
                 if (FrameDiff.changedFraction(before, after.img) < 0.01) return ExpeditionStop.DONE_END_OF_LIST
                 list = after
                 continue
             }
 
-            io.tap(cell.x, cell.y)
+            tapAt("cell ${cell.kind}", cell.x, cell.y)
             val detail = poll(POLL_FRAMES, POLL_MS, ExpScreen.DETAIL)
             if (detail == null) {
                 io.back()
                 return ExpeditionStop.LOST
             }
             val goExploreY = detail.frame.goExploreY ?: return ExpeditionStop.LOST
-            io.tap((0.5 * detail.img.width).toInt(), goExploreY)
+            tapAt("explore", (0.5 * detail.img.width).toInt(), goExploreY)
             val select = poll(POLL_FRAMES, POLL_MS, ExpScreen.SELECT) ?: return ExpeditionStop.LOST
 
             val selectRowY = select.frame.selectRowY ?: return ExpeditionStop.LOST
             val (autoX, autoY) = ExpeditionVision.autoTap(select.img.width, selectRowY)
-            io.tap(autoX, autoY)
+            tapAt("auto", autoX, autoY)
             io.wait(SELECT_SETTLE_MS)
             val picked = look(ExpScreen.SELECT)
+            picked?.let { log(ExpeditionLines.select(it.frame)) }
             if (picked == null || picked.frame.screen != ExpScreen.SELECT) return ExpeditionStop.LOST
             if (!picked.frame.goActive) return backToList(picked)
             val (goX, goY) = ExpeditionVision.goTap(picked.img.width, picked.img.height)
-            io.tap(goX, goY)
+            tapAt("go", goX, goY)
 
             val shown = poll(RESULT_FRAMES, RESULT_POLL_MS, ExpScreen.RESULT) ?: return ExpeditionStop.LOST
             val (closeX, closeY) = ExpeditionVision.closeTap(shown.img.width, shown.img.height)
-            io.tap(closeX, closeY)
+            tapAt("close", closeX, closeY)
             io.wait(CLOSE_SETTLE_MS)
-            list = poll(POLL_FRAMES, POLL_MS, ExpScreen.LIST) ?: return ExpeditionStop.LOST
+            list = poll(POLL_FRAMES, POLL_MS, ExpScreen.LIST)?.let(::logList) ?: return ExpeditionStop.LOST
 
             dispatched++
             swipes = 0
             log("dispatched $dispatched")
             if (dispatched >= maxDispatch) return ExpeditionStop.LIMIT_REACHED
         }
+    }
+
+    /** One of our own taps, logged with its target and its point before it is made. */
+    private suspend fun tapAt(what: String, x: Int, y: Int) {
+        log(ExpeditionLines.tap(what, x, y))
+        io.tap(x, y)
+    }
+
+    /** A LIST look, logged as how its cells counted (screen kinds only). */
+    private fun logList(look: Look): Look {
+        log(ExpeditionLines.list(look.frame))
+        return look
     }
 
     private fun wanted(target: ExpeditionTarget, kind: ItemKind): Boolean = when (target) {
@@ -119,7 +132,7 @@ class ExpeditionSession(
         repeat(BACK_TAPS) {
             if (at.frame.screen != ExpScreen.SELECT && at.frame.screen != ExpScreen.DETAIL) return ExpeditionStop.LOST
             val (x, y) = ExpeditionVision.backTap(at.img.width, at.img.height)
-            io.tap(x, y)
+            tapAt("back", x, y)
             io.wait(POLL_MS)
             at = look(ExpScreen.LIST) ?: return ExpeditionStop.LOST
             if (at.frame.screen == ExpScreen.LIST) return ExpeditionStop.NO_PIKMIN

@@ -17,6 +17,7 @@ import app.pikminbloom.gps.R
 import app.pikminbloom.gps.data.PatrolPhase
 import app.pikminbloom.gps.i18n.Lang
 import app.pikminbloom.gps.service.PatrolService
+import app.pikminbloom.gps.support.AutoRunLog
 import app.pikminbloom.gps.support.CrashLog
 import app.pikminbloom.gps.support.FeedbackInfo
 import app.pikminbloom.gps.support.FeedbackKind
@@ -85,6 +86,7 @@ object FeedbackDialog {
             lastError = state.lastError.takeIf { bug },
             lastExit = if (bug) lastExit(context) else null,
             crash = if (bug) CrashLog.latest(context, System.currentTimeMillis()) else null,
+            autoRunLog = if (bug) AutoRunLog.readLastRun(context) else null,
         )
     }
 

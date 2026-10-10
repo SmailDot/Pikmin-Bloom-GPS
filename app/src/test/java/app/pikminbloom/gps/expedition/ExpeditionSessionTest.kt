@@ -169,6 +169,33 @@ class ExpeditionSessionTest {
     }
 
     @Test
+    fun `a run logs each list look, each of our taps, the select state after auto and its stop, and nothing else`() {
+        val lines = mutableListOf<String>()
+        val io = FakeIo(
+            listOf(
+                Scene(list(Cell(226, 1000, ItemKind.POT), tabY = 2400)),
+                Scene(detail), Scene(select(true)), Scene(select(true)), Scene(resultScreen), Scene(list()),
+            ),
+        )
+        runBlocking { session(io) { lines += it }.run(ExpeditionTarget.POT, maxDispatch = 1) }
+        assertEquals(
+            listOf(
+                "list: tabY=2400, cells=[POT×1, FRUIT×0, GIFT×0, COVERED×0, IN_PROGRESS×0, UNKNOWN×0]",
+                "tap cell POT at 226,1000",
+                "tap explore at 610,2003",
+                "tap auto at 295,1031",
+                "select: goActive=true, goSat=0.000",
+                "tap go at 1034,2527",
+                "tap close at 117,2594",
+                "list: tabY=-, cells=[POT×0, FRUIT×0, GIFT×0, COVERED×0, IN_PROGRESS×0, UNKNOWN×0]",
+                "dispatched 1",
+                "stopped: LIMIT_REACHED after 1",
+            ),
+            lines,
+        )
+    }
+
+    @Test
     fun `a look that misses the list logs the screen it saw and the frame size`() {
         val lines = mutableListOf<String>()
         val io = FakeIo(

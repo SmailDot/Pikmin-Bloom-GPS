@@ -26,6 +26,8 @@ data class FeedbackInfo(
     /** Why the app's process last ended (Android 11+), e.g. "LOW_MEMORY · 2026-10-08 23:10". */
     val lastExit: String? = null,
     val crash: CrashLog.Crash? = null,
+    /** The last auto run's diagnostic log section (AutoRunLog.lastRun), when there is one. */
+    val autoRunLog: String? = null,
 )
 
 /**
@@ -88,16 +90,31 @@ object FeedbackReport {
             lines.take(maxTraceLines).forEach { appendLine(it) }
             if (lines.size > maxTraceLines) appendLine("… (+${lines.size - maxTraceLines})")
         }
+        info.autoRunLog?.takeIf { it.isNotBlank() }?.let { log ->
+            appendLine()
+            appendLine(tr("最近一次自動操作紀錄", "Last auto-run log", "最後の自動操作の記録", lang) + ":")
+            redact(log).lines().forEach { appendLine(it) }
+        }
     }.trimEnd() + "\n"
 
-    /** A new-issue link with the title and body filled in, the stack trace shortened until it fits [MAX_URL_CHARS]. */
+    /**
+     * A new-issue link with the title and body filled in. The stack trace is shortened until the link fits
+     * [MAX_URL_CHARS]; if it still does not, the auto-run log is left out (it still goes in the mail).
+     */
     fun githubUrl(kind: FeedbackKind, info: FeedbackInfo, lang: Lang = Lang.current, zone: ZoneId = ZoneId.systemDefault()): String {
         val title = encode(subject(kind, info.app.substringBefore(' '), lang) + ": ")
         var lines = MAX_TRACE_LINES
+        var shown = info
         while (true) {
-            val url = "$NEW_ISSUE_URL?title=$title&body=" + encode(body(kind, info, lang, lines, zone))
-            if (url.length <= MAX_URL_CHARS || lines == 0) return url.take(MAX_URL_CHARS)
-            lines = if (lines > 5) lines - 5 else 0
+            val url = "$NEW_ISSUE_URL?title=$title&body=" + encode(body(kind, shown, lang, lines, zone))
+            if (url.length <= MAX_URL_CHARS) return url
+            if (lines > 0) {
+                lines = if (lines > 5) lines - 5 else 0
+            } else if (shown.autoRunLog != null) {
+                shown = shown.copy(autoRunLog = null)
+            } else {
+                return url.take(MAX_URL_CHARS)
+            }
         }
     }
 

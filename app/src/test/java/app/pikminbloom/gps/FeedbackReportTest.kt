@@ -70,6 +70,53 @@ class FeedbackReportTest {
         assertFalse(uri.contains("+"))
     }
 
+    private val autoLog = "=== expedition run, target=POT, max=10, app 1.5.0, Android 14/API 34, screen 1220x2712, density 420, locale zh-TW\n" +
+        "00:00:01.000 list: tabY=2400, cells=[POT×1, FRUIT×0, GIFT×0, COVERED×0, IN_PROGRESS×0, UNKNOWN×0]\n" +
+        "00:00:02.000 tap cell POT at 226,1000\n" +
+        "00:00:09.000 stopped: LIMIT_REACHED after 1"
+
+    @Test
+    fun aBugReportCarriesTheLastAutoRunLogUnderItsHeading() {
+        val body = FeedbackReport.body(FeedbackKind.BUG, info.copy(autoRunLog = autoLog), Lang.ZH, zone = ZoneOffset.UTC)
+        assertTrue(body.contains("最近一次自動操作紀錄"))
+        assertTrue(body.contains("=== expedition run, target=POT"))
+        assertTrue(body.contains("stopped: LIMIT_REACHED after 1"))
+    }
+
+    @Test
+    fun theAutoRunLogHeadingIsEnglishInEnglish() {
+        val body = FeedbackReport.body(FeedbackKind.BUG, info.copy(autoRunLog = autoLog), Lang.EN, zone = ZoneOffset.UTC)
+        assertTrue(body.contains("Last auto-run log"))
+    }
+
+    @Test
+    fun aBugReportWithoutARunHasNoAutoRunSection() {
+        val body = FeedbackReport.body(FeedbackKind.BUG, info, Lang.ZH, zone = ZoneOffset.UTC)
+        assertFalse(body.contains("最近一次自動操作紀錄"))
+    }
+
+    @Test
+    fun aSuggestionLeavesTheAutoRunLogOut() {
+        val body = FeedbackReport.body(FeedbackKind.IDEA, info.copy(autoRunLog = autoLog), Lang.ZH, zone = ZoneOffset.UTC)
+        assertFalse(body.contains("最近一次自動操作紀錄") || body.contains("stopped:"))
+    }
+
+    @Test
+    fun theMailtoBodyCarriesTheAutoRunLog() {
+        val uri = FeedbackReport.mailtoUri(FeedbackKind.BUG, info.copy(autoRunLog = autoLog), Lang.EN, ZoneOffset.UTC)
+        assertTrue(URLDecoder.decode(uri.substringAfter("&body="), "UTF-8").contains("Last auto-run log"))
+    }
+
+    @Test
+    fun theGithubLinkLeavesALongAutoRunLogOutRatherThanCuttingTheLinkMidEscape() {
+        val long = info.copy(autoRunLog = "=== feed run, target=3\n" + (1..400).joinToString("\n") { "第 $it 次 測試 done" })
+        val url = FeedbackReport.githubUrl(FeedbackKind.BUG, long, Lang.ZH, ZoneOffset.UTC)
+        assertTrue(url.length <= FeedbackReport.MAX_URL_CHARS)
+        val body = URLDecoder.decode(url.substringAfter("&body="), "UTF-8") // throws if a %-escape was cut
+        assertFalse(body.contains("最近一次自動操作紀錄"))
+        assertTrue(body.contains("閃退紀錄"))
+    }
+
     @Test
     fun crashFileRoundTrip() {
         val text = CrashLog.format(1_728_000_000_000L, "1.5.0", "main", "java.lang.RuntimeException: boom\n\tat a.B.c(B.kt:1)")
