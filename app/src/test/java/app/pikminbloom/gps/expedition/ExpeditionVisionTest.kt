@@ -105,6 +105,34 @@ class ExpeditionVisionTest {
         )
     }
 
+    /**
+     * An expanded sheet with a 柳橙 to send, where the labels sit under each icon. The finder used to take the label with
+     * its icon (the run ran on into the text), so the classify box landed on text and the cell read as UNKNOWN.
+     */
+    @Test
+    fun `list_orange - every cell is found by its icon, not its label, and the scan reads no unknown cell`() {
+        val img = fixture("list_orange.png")
+        val frame = ExpeditionVision.analyze(img)
+        // Centres are the midpoints of the icon ink runs (the rows' bottoms line up at 789, 1270, 1751, 2232). A pale top
+        // makes a run start lower than its icon (the fruit at 993 in row three); a split pot takes its body's centre.
+        val expected = listOf(
+            Expect(226, 705, ItemKind.GIFT), Expect(610, 705, ItemKind.GIFT), Expect(993, 705, ItemKind.GIFT),
+            Expect(226, 1186, ItemKind.GIFT), Expect(610, 1186, ItemKind.GIFT), Expect(993, 1186, ItemKind.GIFT),
+            Expect(226, 1667, ItemKind.GIFT), Expect(610, 1693, ItemKind.POT), Expect(993, 1679, ItemKind.FRUIT),
+            Expect(226, 2153, ItemKind.POT), Expect(610, 2153, ItemKind.POT), Expect(993, 2148, ItemKind.GIFT),
+        )
+        val left = frame.cells.toMutableList()
+        val missing = mutableListOf<Expect>()
+        for (e in expected) {
+            val i = left.indexOfFirst { it.x == e.x && it.kind == e.kind && abs(it.y - e.y) <= 12 }
+            if (i < 0) missing += e else left.removeAt(i)
+        }
+        // A partly visible bottom row may hold an in-progress or covered card; nothing else may be left over.
+        val unexpected = left.filter { it.kind != ItemKind.IN_PROGRESS && it.kind != ItemKind.COVERED }
+        val runs = ExpeditionVision.listColumnRuns(img)
+        assertTrue("missing $missing; unexpected $unexpected; runs per column $runs; cells ${frame.cells}", missing.isEmpty() && unexpected.isEmpty())
+    }
+
     @Test
     fun `detail - the outlined go-explore button is found at y 2003`() {
         val frame = ExpeditionVision.analyze(fixture("detail.png"))

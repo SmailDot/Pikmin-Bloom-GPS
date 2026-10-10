@@ -263,20 +263,37 @@ object ExpeditionVision {
         return out
     }
 
-    /** Cells of a LIST screen, in reading order. */
-    private fun listCells(img: RgbImage, tabBottom: Int, hsv: DoubleArray): List<Cell> {
+    /**
+     * The icon runs (global rows) the cell finder reads in each of the three columns of a LIST frame, before the gutter
+     * and kind checks. For the diagnostics of a failed frame test; the same runs [listCells] classifies.
+     */
+    internal fun listColumnRuns(img: RgbImage): List<Pair<Int, List<IntRange>>> {
+        val hsv = DoubleArray(3)
+        val tab = listTab(img, hsv) ?: return emptyList()
+        return columnRuns(img, tab.last, hsv)
+    }
+
+    /** The icon runs of each of the three columns below the tab row ([tabBottom]), before the shared-row pass. */
+    private fun columnRuns(img: RgbImage, tabBottom: Int, hsv: DoubleArray): List<Pair<Int, List<IntRange>>> {
         val w = img.width
         val h = img.height
         val bandTop = tabBottom + (0.02 * h).toInt()
         val bandBottom = bottomAnchored(h, 0.178, w)
-        val cells = ArrayList<Cell>()
-        for (fx in listOf(0.1856, 0.5, 0.8144)) {
+        return listOf(0.1856, 0.5, 0.8144).map { fx ->
             val cx = (fx * w).toInt()
-            for (run in iconRuns(img, cx, bandTop, bandBottom, hsv)) {
+            cx to iconRuns(img, cx, bandTop, bandBottom, hsv)
+        }
+    }
+
+    /** Cells of a LIST screen, in reading order. */
+    private fun listCells(img: RgbImage, tabBottom: Int, hsv: DoubleArray): List<Cell> {
+        val cells = ArrayList<Cell>()
+        for ((cx, runs) in columnRuns(img, tabBottom, hsv)) {
+            for (run in runs) {
                 if (!gutterClear(img, cx, run, hsv)) continue
                 val cy = (run.first + run.last) / 2
                 val kind = when {
-                    isCovered(cx, cy, w, h) -> ItemKind.COVERED
+                    isCovered(img, cx, cy, hsv) -> ItemKind.COVERED
                     isInProgress(img, cx, run.first) -> ItemKind.IN_PROGRESS
                     else -> classify(img, cx, cy, hsv)
                 }
@@ -341,9 +358,19 @@ object ExpeditionVision {
     /** White for the gutter check only: looser than [isWhite], so a faint tint in the gutter still counts as white. */
     private fun isGutterWhite(c: DoubleArray): Boolean = c[2] > 0.93 && c[1] < 0.13
 
-    /** The game's flower button covers the top-right cell; that cell is never tapped. */
-    private fun isCovered(cx: Int, cy: Int, w: Int, h: Int): Boolean =
-        abs(cx - 0.898 * w) < 0.155 * w && abs(cy - 0.284 * h) < 0.075 * w + 0.04 * h
+    /**
+     * The game's flower button covers the top-right cell; that cell is never tapped. The button is yellow, so a cell counts
+     * as covered only where that yellow is at the button too: a visible card in the same place is not covered.
+     */
+    private fun isCovered(img: RgbImage, cx: Int, cy: Int, hsv: DoubleArray): Boolean {
+        val w = img.width
+        val h = img.height
+        if (abs(cx - 0.898 * w) >= 0.155 * w || abs(cy - 0.284 * h) >= 0.075 * w + 0.04 * h) return false
+        val yellow = fraction(img, (0.82 * w).toInt(), cy - (0.05 * h).toInt(), (0.98 * w).toInt(), cy + (0.05 * h).toInt(), hsv) {
+            it[0] in 35.0..50.0 && it[1] > 0.3 && it[2] > 0.6
+        }
+        return yellow >= 0.2
+    }
 
     /** A pale grey (230,231,230) card above the icon means the pot is already growing; never tapped. */
     private fun isInProgress(img: RgbImage, cx: Int, top: Int): Boolean {
