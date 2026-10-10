@@ -133,6 +133,25 @@ class ExpeditionVisionTest {
         assertTrue("missing $missing; unexpected $unexpected; runs per column $runs; cells ${frame.cells}", missing.isEmpty() && unexpected.isEmpty())
     }
 
+    /**
+     * A community screen recording, rescaled to 1220 wide (so 2757 tall) and of lower quality. The dark plums (梅子：矮牽牛)
+     * are nearly unsaturated, so they read as UNKNOWN unless their dark ink counts as fruit. Only the plums and the yellow
+     * pot are asserted: the blurry red pot at the top left is left out.
+     */
+    @Test
+    fun `list_plum_video - the dark plums are fruit and the yellow pot is a pot`() {
+        val frame = ExpeditionVision.analyze(fixture("list_plum_video.png"))
+        val expected = listOf(
+            Expect(610, 620, ItemKind.FRUIT), Expect(993, 620, ItemKind.FRUIT),
+            Expect(226, 1110, ItemKind.FRUIT), Expect(610, 1110, ItemKind.FRUIT),
+            Expect(993, 1100, ItemKind.POT),
+        )
+        val missing = expected.filter { e ->
+            frame.cells.none { it.x == e.x && it.kind == e.kind && abs(it.y - e.y) <= 25 }
+        }
+        assertTrue("missing $missing; cells ${frame.cells}", missing.isEmpty())
+    }
+
     @Test
     fun `detail - the outlined go-explore button is found at y 2003`() {
         val frame = ExpeditionVision.analyze(fixture("detail.png"))

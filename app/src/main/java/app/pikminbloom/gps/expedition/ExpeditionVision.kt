@@ -372,16 +372,28 @@ object ExpeditionVision {
         return yellow >= 0.2
     }
 
-    /** A pale grey (230,231,230) card above the icon means the pot is already growing; never tapped. */
+    /**
+     * A pale grey (230,231,230) card above the icon means the pot is already growing; never tapped. A band of grey rows
+     * above the icon is a card only if it does not spread across most of the screen: a separator line of the list (a
+     * recording shows them, soft-edged) does, and does not count.
+     */
     private fun isInProgress(img: RgbImage, cx: Int, top: Int): Boolean {
         val w = img.width
         val x0 = cx - (0.11 * w).toInt()
         val x1 = cx + (0.11 * w).toInt()
         val reach = (0.04 * img.height).toInt()
-        for (y in (top - reach).coerceAtLeast(0) until top) {
+        var greyest = -1 // while inside a band of grey rows: the most of the screen width one of its rows is grey across
+        for (y in (top - reach).coerceAtLeast(0)..top) {
             var near = 0
-            for (x in x0..x1) if (isNearGrey(img.get(x, y))) near++
-            if (near >= 0.5 * (x1 - x0 + 1)) return true
+            if (y < top) for (x in x0..x1) if (isNearGrey(img.get(x, y))) near++
+            if (y < top && near >= 0.5 * (x1 - x0 + 1)) {
+                var whole = 0
+                for (x in 0 until w) if (isNearGrey(img.get(x, y))) whole++
+                greyest = maxOf(greyest, whole)
+            } else if (greyest >= 0) {
+                if (greyest < SEPARATOR_FRACTION * w) return true
+                greyest = -1
+            }
         }
         return false
     }
@@ -398,6 +410,7 @@ object ExpeditionVision {
         var red = 0
         var box = 0
         var saturated = 0
+        var dark = 0
         for (y in (cy - (0.035 * h).toInt())..(cy + (0.035 * h).toInt())) {
             for (x in (cx - (0.0778 * w).toInt())..(cx + (0.05 * w).toInt())) {
                 total++
@@ -409,14 +422,24 @@ object ExpeditionVision {
                 if ((hue < 12.0 || hue > 348.0) && s > 0.55 && v > 0.55) red++
                 if (s < 0.07 && v > 0.78 && v < 0.975) box++
                 if (s > 0.3) saturated++
+                if (v < 0.35) dark++
             }
         }
         val n = total.toDouble()
         return when {
             box / n >= 0.18 && red / n >= 0.08 -> ItemKind.GIFT
             soil / n >= 0.012 -> ItemKind.POT
-            saturated / n >= 0.3 -> ItemKind.FRUIT
+            saturated / n >= 0.3 || dark / n >= DARK_FRUIT_FRACTION -> ItemKind.FRUIT
             else -> ItemKind.UNKNOWN
         }
     }
+
+    /**
+     * A dark fruit (a plum) is nearly unsaturated, so its saturation says nothing; but its icon box is dark where a pot,
+     * a gift or any other fruit is not (at most a few per cent). This share of the box below value 0.35 counts as fruit.
+     */
+    private const val DARK_FRUIT_FRACTION = 0.15
+
+    /** A row grey across this share of the screen width is a separator line of the list, not an in-progress card. */
+    private const val SEPARATOR_FRACTION = 0.6
 }
